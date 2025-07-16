@@ -53,7 +53,7 @@ export class FieldComponent implements OnChanges {
   }
 
   handleLanguage(): void {
-    if (!this.storageService.getLanguage().screenDirectionRTL && this.field.visualContent) {
+    if (this.field.visualContent) {
       this.content = this.field.visualContent.split('');
     } else {
       this.content = this.field.content.split('');

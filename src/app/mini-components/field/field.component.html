@@ -5,7 +5,7 @@
       [id]="field.name"
       [ngStyle]="position"
       [style]="getCss()"
-      [dir]="(field.visualContent && storageService.getLanguage().screenDirectionRTL) ? 'rtl' : 'ltr'" 
+      [dir]="'ltr'" 
       [ngClass]="[field.blinking ? 'blink_me' : '', fgClass ? fgClass : '', bgClass ? bgClass : '', this.field.isIntensified ? 'gx_intf' : '']" 
       [hidden]="!field.visible">
     <span *ngFor="let ch of this.content; index as i">
