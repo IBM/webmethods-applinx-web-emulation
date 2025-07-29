@@ -62,7 +62,7 @@ export class NavigationService {
               ) {
     this.sendableFields = new Map<string, InputField>();
     this.setRoutingHandler();
-    this.checkHostScreenUpdate();
+    //this.checkHostScreenUpdate();
     this.getAuthMethod();
   }
 

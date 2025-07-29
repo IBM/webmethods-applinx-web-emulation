@@ -18,6 +18,7 @@ import { SimpleChange, SimpleChanges } from '@angular/core';
 describe('MultipleOptionsComponent', () => {
   let component: MultipleOptionsComponent;
   let fixture: ComponentFixture<MultipleOptionsComponent>;
+  let x: MultipleOptionsComponent;
   let screenService: ScreenService;
   let navigationServiceSpy: jasmine.SpyObj<NavigationService>;
 
@@ -51,6 +52,7 @@ describe('MultipleOptionsComponent', () => {
   });
 
   beforeEach(() => {
+    x = TestBed.createComponent(MultipleOptionsComponent).componentInstance;
     fixture = TestBed.createComponent(MultipleOptionsComponent);
     component = fixture.componentInstance;
     screenService = TestBed.inject(ScreenService);
