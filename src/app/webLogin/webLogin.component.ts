@@ -100,7 +100,6 @@ export class WebLoginComponent implements OnInit {
   sessionConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) {
     this.userExitsEventThrower.firePreConnect(createSessionRequest, authHeader);
     this.sessionService.connect(createSessionRequest, authHeader).subscribe((res: CreateSessionResponse)  => {
-      console.log("RESPONSE ======================= ", res);
       this.storageService.setConnected(res.token);
       this.navigationService.isConnectedtoHost.next(true);
       this.navigationService.isThereErrorSetter(false);

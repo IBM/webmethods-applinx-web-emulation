@@ -31,7 +31,7 @@ export class ClickableComponent implements OnInit {
   constructor(private navigationService: NavigationService) { }
 
   ngOnInit(): void {
-    console.log(this.transform)
+    
   }
 
   onClick(): void {

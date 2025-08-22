@@ -1,73 +1,25 @@
-<!-- <div id="copyParentDiv" #modalpopup tabindex="10">
-<div id="copyDiv" class="copyWrapper crosshair" (mousedown)="handleMouseDown($event)"
-(mouseup)="handleMouseUp($event)"></div>
-<div class="modal-footer unselectable" unselectable="on">
-  <div class="container">
-    <div class="row">
-      <div class="col-11 instruction">
-        <p class="mb-0" *ngIf="copyFlag">{{copyInstructionLineOne}} </p>
-        <p *ngIf="copyFlag">{{copyInstructionLineTwo}}
-          <mark class="selectbgcolor">{{copyInstruction_bgcolor}}</mark></p>
-        </div>
-        <div class="col-1 px-0">
-          <button mat-button mat-dialog-close>Cancel</button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div> -->
-
-<cds-modal [open]="this.copyModalFlag" id="copyContainer" (overlaySelected)="closeModal()"  (close)="closeModal()">
-  <!-- <cds-modal-header style="background-color: grey;" [showCloseButton]="false">
-  <p class="cds--modal-header__heading cds--type-beta">Copy</p>
-</cds-modal-header> -->
-<div id="copyParentDiv" #modalpopup tabindex="10">
-  <div id="copyDiv" class="copyWrapper crosshair" (mousedown)="handleMouseDown($event)"
-  (mouseup)="handleMouseUp($event)"></div>
-  <div class="modal-footer unselectable" unselectable="on">
-    <div class="container">
-      <!-- <div class="row"> -->
-      <div class="instruction">
-        @if (copyFlag) {
+<cds-modal [open]="this.copyModalFlag" id="copyContainer" (overlaySelected)="closeModal()" (close)="closeModal()">
+  <div id="copyParentDiv" #modalpopup tabindex="10">
+    <div id="copyDiv" class="copyWrapper crosshair" (mousedown)="handleMouseDown($event)"
+      (mouseup)="handleMouseUp($event)"></div>
+    <div class="modal-footer unselectable" unselectable="on">
+      <div class="container">
+        <div class="instruction">
+          @if (copyFlag) {
           <p class="mb-0">{{copyInstructionLineOne}}</p>
-        }
-        @if (copyFlag) {
+          }
+          @if (copyFlag) {
           <p>{{copyInstructionLineTwo}}
             <mark class="selectbgcolor">{{copyInstruction_bgcolor}}</mark>
           </p>
-        }
-      </div>
-      <div class="px-0">
-        <!-- <button mat-button mat-dialog-close>Cancel</button> -->
-        <button cdsButton="secondary" size="size" class="copyBtnSize button-corner" (click)="closeModal()" >
-          Cancel
-        </button>
-      </div>
-    <!-- </div> -->
-  </div>
-</div>
-</div>
-<!-- <cds-modal-footer>
-<ng-container>
-  <div class="modal-footer unselectable" unselectable="on">
-    <div>
-      <div class="row">
-        <div class="col-11 instruction">
-          <p *ngIf="copyFlag">{{copyInstructionLineOne}}</p>
-          <p *ngIf="copyFlag">{{copyInstructionLineTwo}}
-            <mark class="selectbgcolor">{{copyInstruction_bgcolor}}</mark>
-          </p>
+          }
         </div>
-        <div class="col-1 px-0">
-          <button (click)="this.copyModalFlag = false">Cancel</button>
-          <!-- <button cdsButton="secondary" size="size" class="copyBtnSize button-corner" (click)="this.copyModalFlag = false" >
-          Cancel
-        </button> ->
+        <div class="px-0">
+          <button cdsButton="secondary" size="size" class="copyBtnSize button-corner" (click)="closeModal()">
+            Cancel
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
-</ng-container>
-</cds-modal-footer> -->
 </cds-modal>
