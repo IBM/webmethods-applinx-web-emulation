@@ -1,6 +1,6 @@
-<cds-modal [open]="this.playMacro" (overlaySelected)="this.playMacro = true" (close)="this.playMacro = false">
+<cds-modal [open]="this.playMacro" (overlaySelected)="onCancelMacro('play')" (close)="onCancelMacro('play')">
   <form #playMacroForm="ngForm" (ngSubmit)="onPlayMacro()">
-    <cds-modal-header (closeSelect)="this.playMacro = false" [showCloseButton]="false" class="model-border">
+    <cds-modal-header (closeSelect)="onCancelMacro('play')" [showCloseButton]="false" class="model-border">
       <p class="cds--modal-header__heading cds--type-beta">Play Macro</p>
     </cds-modal-header>
     <div class="cds--modal-content card custom-margin">
@@ -28,9 +28,9 @@
   </form>
 </cds-modal>
 
-<cds-modal [open]="this.recMacro" (overlaySelected)="this.recMacro = true" (close)="this.recMacro = false">
+<cds-modal [open]="this.recMacro" (overlaySelected)="onCancelMacro('record')" (close)="onCancelMacro('record')">
   <form #recordMacroForm="ngForm" (ngSubmit)="onRecordMacro(recordMacroForm)">
-    <cds-modal-header (closeSelect)="this.recMacro = false" [showCloseButton]="false" class="model-border">
+    <cds-modal-header (closeSelect)="onCancelMacro('record')" [showCloseButton]="false" class="model-border">
       <p class="cds--modal-header__heading cds--type-beta">Record Macro</p>
     </cds-modal-header>
     <div class="cds--modal-content card custom-margin">
@@ -58,9 +58,9 @@
     </form>
   </cds-modal>
 
-  <cds-modal [open]="this.viewMacro" (overlaySelected)="this.viewMacro = true" (close)="this.viewMacro = false">
+  <cds-modal [open]="this.viewMacro" (overlaySelected)="onCancelMacro('view')" (close)="onCancelMacro('view')">
     <form #viewMacroForm="ngForm" (ngSubmit)="onViewMacro()">
-      <cds-modal-header (closeSelect)="this.viewMacro = false" [showCloseButton]="false" class="model-border">
+      <cds-modal-header (closeSelect)="onCancelMacro('view')" [showCloseButton]="false" class="model-border">
         <p class="cds--modal-header__heading cds--type-beta">View Macro</p>
       </cds-modal-header>
       <div class="cds--modal-content card custom-margin">
@@ -108,9 +108,9 @@
       </form>
     </cds-modal>
 
-    <cds-modal [open]="this.delMacro" (overlaySelected)="this.delMacro = false" (close)="this.delMacro = false">
+    <cds-modal [open]="this.delMacro" (overlaySelected)="onCancelMacro('remove')" (close)="onCancelMacro('remove')">
       <form #delMacroForm="ngForm" (ngSubmit)="onDeleteMacro()">
-        <cds-modal-header (closeSelect)="this.delMacro = false" [showCloseButton]="false" class="model-border">
+        <cds-modal-header (closeSelect)="onCancelMacro('remove')" [showCloseButton]="false" class="model-border">
           <p class="cds--modal-header__heading cds--type-beta">Delete Macro</p>
         </cds-modal-header>
         <div class="cds--modal-content card custom-margin">

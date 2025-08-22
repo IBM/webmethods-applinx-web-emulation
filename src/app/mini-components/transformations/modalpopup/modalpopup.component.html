@@ -17,8 +17,7 @@
   </div>
 </div> -->
 
-<cds-modal [open]="this.copyModalFlag" id="copyContainer" (close)="this.copyModalFlag = false"
-  (closeOnOutsideClick)="true" (overlaySelected)="this.copyModalFlag = false">
+<cds-modal [open]="this.copyModalFlag" id="copyContainer" (overlaySelected)="closeModal()"  (close)="closeModal()">
   <!-- <cds-modal-header style="background-color: grey;" [showCloseButton]="false">
   <p class="cds--modal-header__heading cds--type-beta">Copy</p>
 </cds-modal-header> -->
