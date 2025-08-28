@@ -293,6 +293,8 @@ export class GXUtils {
   public static PAGEDOWN = "PageDown";
   public static DELETE = "Delete";
   public static ENABLETYPEAHEADFLAG = false; // Variable to enable/disable type ahead
+  public static enableDoubleClickFlag: boolean = true; // Variable to enable/disable DoubleClick Feature
+  public static doubleClickPFKey: string = '[enter]'; // default value
   public static fieldOrder = 0;
   public static typeAheadCharacterArray: any = [];
   public static typeAheadStringArray: any = [];
@@ -311,6 +313,10 @@ export class GXUtils {
     DBCS_ONLY: 'DBCS_ONLY',
     DBCS_CAN_CREATE_SISO: 'DBCS_CAN_CREATE_SISO',
     REVERSED: 'REVERSED'  //(AS/400 Hebrew field)
+  }
+
+  public static setDoubleClickPFKey(pfKey: string): void {
+    this.doubleClickPFKey = pfKey;
   }
 
   public static appendTypeAheadChar(typeAheadChar) {

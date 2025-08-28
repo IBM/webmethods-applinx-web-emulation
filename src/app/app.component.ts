@@ -36,8 +36,8 @@ import { GXUtils } from 'src/utils/GXUtils';
 import { MacroComponent } from './macro/macro.component';
 import { SharedService } from './services/shared.service';
 import { ConfigurationService } from './services/configuration.service';
-import {DomSanitizer} from '@angular/platform-browser';
-import {FormControl, FormsModule, ReactiveFormsModule} from '@angular/forms';
+import { DomSanitizer } from '@angular/platform-browser';
+import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IconService, ModalService } from 'carbon-components-angular';
 import Notification20 from '@carbon/icons/es/notification/20';
 import UserAvatar20 from '@carbon/icons/es/user--avatar/20';
@@ -63,8 +63,8 @@ export class AppComponent implements OnInit, OnDestroy {
   hostKeysBool: boolean = false;
   showHostKeyFlag: boolean = GXUtils.showHostKeyFlag;
   errorMessage: string;
-  errorFlag : boolean = false;
-  showCloseButton : boolean = true;
+  errorFlag: boolean = false;
+  showCloseButton: boolean = true;
   disconnectSubscription: Subscription;
   hostKeysEmitterSubscription: Subscription;
   screenInitializedSubscription: Subscription;
@@ -83,10 +83,10 @@ export class AppComponent implements OnInit, OnDestroy {
   recMacroTitle: any;
   changeRecColor: boolean = false;
   recordStop: boolean = false;
-  showButtonFlag : boolean = true;
+  showButtonFlag: boolean = true;
   macroEvents = GXUtils.MACRO;
   macroFileListSubscription: Subscription;
-  macroList: any= [];
+  macroList: any = [];
   userName: string = "";
   listFlag: any;
   notificationObj: boolean;
@@ -99,13 +99,14 @@ export class AppComponent implements OnInit, OnDestroy {
   reportProgress = false;
   defaultHeaders = new HttpHeaders();
   selectedColor: string = '';
+  macroMode: string = '';
 
   @ViewChild('container', { read: ViewContainerRef, static: true }) container: ViewContainerRef;
 
-  RELOAD_ICON =`<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/></svg>`; // Autorenew
+  RELOAD_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z"/></svg>`; // Autorenew
   CLOSE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/></svg>`; //Close
   SENDTOHOST_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M516-120 402-402 120-516v-56l720-268-268 720h-56Zm26-148 162-436-436 162 196 78 78 196Zm-78-196Z"/></svg>`
-  SETTINGS_ICON =`<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>`;// Settings
+  SETTINGS_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z"/></svg>`;// Settings
   STYLE_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M480-80q-82 0-155-31.5t-127.5-86Q143-252 111.5-325T80-480q0-83 32.5-156t88-127Q256-817 330-848.5T488-880q80 0 151 27.5t124.5 76q53.5 48.5 85 115T880-518q0 115-70 176.5T640-280h-74q-9 0-12.5 5t-3.5 11q0 12 15 34.5t15 51.5q0 50-27.5 74T480-80Zm0-400Zm-220 40q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120-160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm200 0q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17Zm120 160q26 0 43-17t17-43q0-26-17-43t-43-17q-26 0-43 17t-17 43q0 26 17 43t43 17ZM480-160q9 0 14.5-5t5.5-13q0-14-15-33t-15-57q0-42 29-67t71-25h70q66 0 113-38.5T800-518q0-121-92.5-201.5T488-800q-136 0-232 93t-96 227q0 133 93.5 226.5T480-160Z"/></svg>`; //Palette
   ZOOM_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Zm-40-60v-80h-80v-80h80v-80h80v80h80v80h-80v80h-80Z"/></svg>`; //Zoom In
   PRINT_ICON = `<svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#FFFFFF"><path d="M640-640v-120H320v120h-80v-200h480v200h-80Zm-480 80h640-640Zm560 100q17 0 28.5-11.5T760-500q0-17-11.5-28.5T720-540q-17 0-28.5 11.5T680-500q0 17 11.5 28.5T720-460Zm-80 260v-160H320v160h320Zm80 80H240v-160H80v-240q0-51 35-85.5t85-34.5h560q51 0 85.5 34.5T880-520v240H720v160Zm80-240v-160q0-17-11.5-28.5T760-560H200q-17 0-28.5 11.5T160-520v160h80v-80h480v80h80Z"/></svg>`; // Print
@@ -135,7 +136,7 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-fnFormTypeaheadDetails(event: KeyboardEvent) {
+  fnFormTypeaheadDetails(event: KeyboardEvent) {
     if (event.code) {
       if (GXUtils.IGNOREKEYARRAY.indexOf(event.code) != -1) {
         event.preventDefault();
@@ -175,6 +176,57 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     }
   }
 
+  @HostListener('window:dblclick', ['$event'])
+  onGlobalDoubleClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+
+    const isInCalendar = target.closest('.flatpickr-calendar') ||
+      target.closest('.numInputWrapper') ||
+      target.closest('.cur-year') ||
+      target.closest('.cur-month') ||
+      target.closest('[class*="date-picker"]') ||
+      target.classList.contains('arrowUp') ||
+      target.classList.contains('arrowDown');
+
+    const isInCarbonDropdown = target.closest('.cds--list-box') ||
+      target.closest('.cds--list-box__field') ||
+      target.classList.contains('cds--list-box__label');
+
+    const isInCarbonRadio = target.classList.contains('cds--radio-button__appearance') ||
+      target.closest('label.cds--radio-button__label');
+
+    const isExcludedTarget =
+      target.tagName === 'INPUT' || // <input> fields
+      target.tagName === 'TEXTAREA' || // <textarea> fields
+      target.tagName === 'SELECT' || // <select> dropdowns
+      target.tagName === 'OPTION' || // <option> inside <select>
+      target.tagName === 'BUTTON' || // <button> fields
+      isInCarbonRadio ||  // <cds-radio> field
+      target.closest('.cds--modal') || // <cds-modal> field
+      isInCalendar ||  // <cds-date-picker> field
+      isInCarbonDropdown ||  // <cds-dropdown> field
+      GXUtils.ENABLETYPEAHEADFLAG ||  // disabled if typeahead is enabled
+      (this.macroMode === 'record' && !this.sharedService.getCancelFlag()) || // disabled when recording macros
+      (target instanceof HTMLInputElement && (target.type === 'radio' || target.type === 'checkbox')) || // radio and checkbox
+      target.isContentEditable; // contenteditable fields (e.g., divs with contenteditable)
+
+    if (isExcludedTarget) return;
+
+    // disable if PF-key is None
+    if (GXUtils.enableDoubleClickFlag && GXUtils.doubleClickPFKey && (GXUtils.doubleClickPFKey.toLowerCase() !== 'none')) {
+      try {
+        const pfKey = GXUtils.doubleClickPFKey.toLowerCase();
+        // Uncomment below lines to log the key used.
+        // console.log('🖱️ Double-click detected on:', target);
+        // console.log('📨 Sending PF-key:', GXUtils.doubleClickPFKey);
+
+        this.navigationService.sendKeys(GXUtils.doubleClickPFKey);
+      } catch (err) {
+        console.error('Double click PF-key error:', err);
+      }
+    }
+  }
+
   @HostListener('window:beforeunload')
   onBrowserClose(): void {
     if (!this.oAuth2handler.isRedirectToIDP) {
@@ -189,7 +241,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     private logger: NGXLogger, private httpClient: HttpClient, private messages: MessagesService,
     private oAuth2handler: OAuth2HandlerService, private sharedService: SharedService, private configurationService: ConfigurationService,
     private infoService: InfoService, private macroService: MacroService, sanitizer: DomSanitizer,
-    protected iconService: IconService, protected modalService: ModalService, private componentFactoryResolver: ComponentFactoryResolver 
+    protected iconService: IconService, protected modalService: ModalService, private componentFactoryResolver: ComponentFactoryResolver
   ) {
     this.userExitsEventThrower.clearEventListeners();
     this.userExitsEventThrower.addEventListener(new LifecycleUserExits(infoService, navigationService, storageService, keyboardMappingService, logger));
@@ -236,6 +288,9 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
   }
 
   ngOnInit(): void {
+    // Uncomment below method to change it to a different value
+    // GXUtils.setDoubleClickPFKey('[pf1]');
+    // GXUtils.setDoubleClickPFKey('none');
     this.iconService.registerAll([Notification20, UserAvatar20, AppSwitcher20]);
     this.changeBackgroundColor(this.themeColor);
     this.logger.debug(this.messages.get("INITIALIZING_WEB_APPLICATION"));
@@ -275,7 +330,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     // targetModal.classList.remove('dlt-modal-window__open')
     this.storageService.setNotConnected();
     this.clearMacroDetails();
-   
+
   }
 
   reload(): void {
@@ -441,30 +496,30 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     let objArray = [];
     let formattedArray = [];
     let maxLine = 0;
-    if(rawData.fields.length > 0){
-    this.generateObjectArray(rawData.fields, objArray);
-    this.formatTransformation(rawData.transformations, objArray);
-    if (rawData && rawData.windows) {
-      this.formatTransformationOfWindows(rawData.windows, objArray);
-      // this.drawBorderForPopUp(rawData.windows, objArray)
+    if (rawData.fields.length > 0) {
+      this.generateObjectArray(rawData.fields, objArray);
+      this.formatTransformation(rawData.transformations, objArray);
+      if (rawData && rawData.windows) {
+        this.formatTransformationOfWindows(rawData.windows, objArray);
+        // this.drawBorderForPopUp(rawData.windows, objArray)
+      }
+      let lineNo = 0;
+      objArray.sort((a, b) => {
+        return a.row - b.row;
+      });
+      maxLine = objArray[objArray.length - 1].row + 1;
+      do {
+        let lineDetails = objArray.filter(item => item.row == lineNo);
+        let temp = this.formatLineText(lineDetails);
+        formattedArray.push(temp);
+        lineNo++
+      } while (lineNo < maxLine);
+      if (!printFlag) {
+        this.formatCopyPage(formattedArray, printFlag);
+      } else {
+        this.formatPrintPage(formattedArray);
+      }
     }
-    let lineNo = 0;
-    objArray.sort((a, b) => {
-      return a.row - b.row;
-    });
-    maxLine = objArray[objArray.length - 1].row + 1;
-    do {
-      let lineDetails = objArray.filter(item => item.row == lineNo);
-      let temp = this.formatLineText(lineDetails);
-      formattedArray.push(temp);
-      lineNo++
-    } while (lineNo < maxLine);
-    if (!printFlag) {
-      this.formatCopyPage(formattedArray, printFlag);
-    } else {
-      this.formatPrintPage(formattedArray);
-    }
-  }
   }
 
   formatPrintPage(formattedArray: any) {
@@ -475,7 +530,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     popupWindow.document.open();
     popupWindow.document.write('<div class="copyWrapper crosshair" style="white-space: pre !important;"><pre>');
     printDetails.forEach(element => {
-      popupWindow.document.write("<div>" + element +  "</div>");
+      popupWindow.document.write("<div>" + element + "</div>");
     })
     popupWindow.document.write('</pre></div>')
     popupWindow.print();
@@ -484,7 +539,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
 
   formatCopyPage(formattedArray, printFlag) {
     let divElement = document.createElement("div");
-    divElement.style.cssText ="border :1px solid black;"
+    divElement.style.cssText = "border :1px solid black;"
     let lineIdentifier = 0;
     formattedArray.forEach(element => {
       let paraElement = document.createElement("span");
@@ -495,20 +550,20 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     });
 
     const divToRemove = document.getElementById("copyContainer")
-    if (divToRemove){
-      divToRemove.parentNode?.removeChild(divToRemove); 
+    if (divToRemove) {
+      divToRemove.parentNode?.removeChild(divToRemove);
     }
-        const factoryCopy = this.componentFactoryResolver.resolveComponentFactory(ModalpopupComponent);
-        const referenceCopy = this.container.createComponent(factoryCopy);
-        (referenceCopy.instance as ModalpopupComponent).copyData = divElement.innerHTML;
-        (referenceCopy.instance as ModalpopupComponent).typeFlag = printFlag;
+    const factoryCopy = this.componentFactoryResolver.resolveComponentFactory(ModalpopupComponent);
+    const referenceCopy = this.container.createComponent(factoryCopy);
+    (referenceCopy.instance as ModalpopupComponent).copyData = divElement.innerHTML;
+    (referenceCopy.instance as ModalpopupComponent).typeFlag = printFlag;
   }
 
   formatLineText(lineDetails) {
     let stringMaster = "                                                                                ";
     lineDetails.forEach(entry => {
       if (entry.data) {
-        stringMaster = GXUtils.replaceString(stringMaster, entry.col-1, entry.data);
+        stringMaster = GXUtils.replaceString(stringMaster, entry.col - 1, entry.data);
       }
 
     })
@@ -574,7 +629,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
       this.hostConnectionSubscription.unsubscribe();
     }
   }
-
+  
   macro() {
     this.showButtonFlag = true;
     this.recordStop = this.sharedService.getMacroRecordFlag();
@@ -582,12 +637,11 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     let applicationName = this.configurationService.applicationName;
     let tempUserName = sessionStorage.getItem('userName');
     this.userName = tempUserName.substr(1, tempUserName.length-2);
-
     this.macroFileListSubscription = this.macroService
-        .getMacro(this.userName, applicationName,token)
-        .subscribe(data =>{
-        data.fileList.forEach(file =>{
-          this.macroList.push(file.substring(0, file.length-5))
+      .getMacro(this.userName, applicationName, token)
+      .subscribe(data => {
+        data.fileList.forEach(file => {
+          this.macroList.push(file.substring(0, file.length - 5))
         });
         sessionStorage.setItem("macroFileList", JSON.parse(JSON.stringify(this.macroList)));
         this.macroList = [];
@@ -598,8 +652,8 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
   openMacro(paramType: string) { 
     this.showButtonFlag = false;
     const divToRemove = document.getElementById("macroRecordContainer")
-    if (divToRemove){
-      divToRemove.parentNode?.removeChild(divToRemove); 
+    if (divToRemove) {
+      divToRemove.parentNode?.removeChild(divToRemove);
     }
 
     const factory = this.componentFactoryResolver.resolveComponentFactory(MacroComponent);
@@ -608,9 +662,9 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     this.sharedService.setPopUpFlag(true);
     reference.instance.dataEmitter;
 
-    if (paramType == "stopRecord"){
+    if (paramType == "stopRecord") {
       this.changeRecColor = reference.instance.onRecordStopColor(false)
-    }else if (paramType == "record"){
+    } else if (paramType == "record") {
       this.changeRecColor = reference.instance.onRecordStopColor(true)
 
     }
@@ -707,7 +761,7 @@ fnFormTypeaheadDetails(event: KeyboardEvent) {
     }
     return color.toLowerCase();
   }
-  selected(event: any, color: string){
+  selected(event: any, color: string) {
     this.selectedColor = color;
     let themeColor = event.currentTarget.id;
     this.changeBackgroundColor(themeColor);

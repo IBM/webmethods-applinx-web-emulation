@@ -23,6 +23,7 @@ export class SharedService {
    public playMacroFlag : boolean = false;
    public macroFlag: boolean = false;
    public macroRecordCompleteFlag : boolean = false;
+   public cancelFlag: boolean =false;
    public validationObj ={
       "user" :"",
       "token":"",
@@ -131,6 +132,14 @@ export class SharedService {
  setPopUpFlag(flag){
    this.popUpFlag = flag;
  }
+
+ setCancelFlag(flag){
+   this.cancelFlag=flag;
+ } 
+
+ getCancelFlag(){
+   return this.cancelFlag;
+ } 
 
  getPopUpFlag(){
    return this.popUpFlag;

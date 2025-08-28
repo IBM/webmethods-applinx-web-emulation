@@ -119,6 +119,7 @@ export class MacroComponent {
   onCancelMacro(operation: string) {
     this.setOperationTypeFlag(operation);
     this.dataService.setPopUpFlag(false);
+    this.dataService.setCancelFlag(true);
   }
 
   onDeleteMacro() {
@@ -135,6 +136,7 @@ export class MacroComponent {
       })
       this.delMacro = false
       this.dataService.setPopUpFlag(false);
+      this.dataService.setCancelFlag(false);
   }
 
   onViewMacro() {
@@ -147,6 +149,7 @@ export class MacroComponent {
         this.selectedMacroObj["steps"] = this.selViewMacroContent.steps;
         this.viewMacroFlag = true;
       })
+      this.dataService.setCancelFlag(false);
   }
 
   setPasswordMask(stepsArray) {
@@ -193,6 +196,7 @@ export class MacroComponent {
       });
       this.dataService.setPopUpFlag(false);
       this.setOperationTypeFlag(GXUtils.PlayMacro)
+      this.dataService.setCancelFlag(false);
   }
 
   decryptBeforePlay(steps: any) {
@@ -237,6 +241,7 @@ export class MacroComponent {
         }
       });
       this.dataService.setPopUpFlag(false);
+      this.dataService.setCancelFlag(false);
   }
 
   onStopRecordMacro() { // Save Macro End - Saves the Macro & its steps in a .json file.
@@ -268,6 +273,7 @@ export class MacroComponent {
           });
         });
         this.dataService.setPopUpFlag(false);
+        this.dataService.setCancelFlag(false);
   }
 
   selected(event: Event) {
