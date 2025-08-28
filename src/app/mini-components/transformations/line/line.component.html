@@ -1,4 +1,6 @@
-<ng-container *ngIf="transform">
+@if (transform) {
   <span class="gx_line" [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': transform.position.column+transform.length}"></span>
-  <app-field class="customer_header" *ngIf="field" [field]="field"></app-field>
-</ng-container>
+  @if (field) {
+    <app-field class="customer_header" [field]="field"></app-field>
+  }
+}

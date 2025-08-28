@@ -20,9 +20,10 @@ import { GXUtils } from 'src/utils/GXUtils';
 import {Field} from '@ibm/applinx-rest-apis';
 
 @Component({
-  selector: 'app-field',
-  templateUrl: './field.component.html',
-  styleUrls: ['./field.component.scss']
+    selector: 'app-field',
+    templateUrl: './field.component.html',
+    styleUrls: ['./field.component.scss'],
+    standalone: false
 })
 export class FieldComponent implements OnChanges {
 

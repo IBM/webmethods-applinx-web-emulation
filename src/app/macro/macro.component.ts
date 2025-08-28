@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, Inject, Output, EventEmitter, ElementRef, ViewChild, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, Inject, Output, EventEmitter, ElementRef, ViewChild, Input, HostListener } from '@angular/core';
 import { GXUtils } from 'src/utils/GXUtils';
 import { ConfigurationService } from '../services/configuration.service';
 import { SharedService } from '../services/shared.service'
@@ -9,11 +9,12 @@ import { NotificationService } from 'carbon-components-angular';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 
 @Component({
-  selector: 'app-macro',
-  templateUrl: './macro.component.html',
-  styleUrls: ['./macro.component.scss'],
-  changeDetection: ChangeDetectionStrategy.Default,
-  providers: [NotificationService]
+    selector: 'app-macro',
+    templateUrl: './macro.component.html',
+    styleUrls: ['./macro.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Default,
+    providers: [NotificationService],
+    standalone: false
 })
 
 export class MacroComponent {
@@ -55,6 +56,21 @@ export class MacroComponent {
 
   @Input() operationType: string;
   @Output() dataEmitter = new EventEmitter<any>();
+  @HostListener('document:keydown.escape', ['$event'])
+  handleEscKey(event: KeyboardEvent) {
+    if (this.playMacro){
+      this.onCancelMacro('play')
+    }else if (this.recMacro){
+      this.onCancelMacro('record')
+    }
+    else if (this.viewMacro){
+      this.onCancelMacro('view')
+    }
+    else if (this.delMacro){
+      this.onCancelMacro('remove')
+    }
+  }
+
 
   constructor(private fileService: ConfigurationService, private macroService: MacroService,
     public dataService: SharedService, private storageService: StorageService, private httpClient: HttpClient,
@@ -167,9 +183,9 @@ export class MacroComponent {
         this.macroPlaySubscription = this.macroService
           .playMacro(playObj, this.token).subscribe(response => {
             this.dataService.setPlayMacroFlag(false);
-            console.log("Response for Play Macro : ", response)
+          //  console.log("Response for Play Macro : ", response)
           }, error => {
-            console.log("Error Response for Play Macro : ", error)
+        //    console.log("Error Response for Play Macro : ", error)
             this.notificationService.showToast({
               title: 'Play Macro',
               caption: error.error.message,

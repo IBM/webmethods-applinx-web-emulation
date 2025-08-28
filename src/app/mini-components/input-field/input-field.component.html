@@ -1,18 +1,17 @@
-<ng-container *ngIf="field">
-
-  <input class="move" #inputElement cdsText 
-    autocomplete="off"
-    [attr.name]="field.name"
-    [id]="field.name"
-    [ngClass]="[fgClass ? fgClass : '', bgClass ? bgClass : '', this.field.isIntensified || field.highIntensified ? 'gx_intf' : '']" 
-    *ngIf="!field.protected" 
-    [(ngModel)]="field.content"
-    (input)="onValueChange($event.target.value)"
-    [size]="field.length" 
-    [maxLength]="field.length" 
-    [type]="getDataType(field)"
-    [ngStyle]="position"
-    [style]="getCss()"
-    (focus)="onFocus()">
-           
-</ng-container>
+@if (field) {
+  @if (!field.protected) {
+    <input class="move" #inputElement cdsText
+      autocomplete="off"
+      [attr.name]="field.name"
+      [id]="field.name"
+      [ngClass]="[fgClass ? fgClass : '', bgClass ? bgClass : '', this.field.isIntensified || field.highIntensified ? 'gx_intf' : '']"
+      [(ngModel)]="field.content"
+      (input)="onValueChange($event.target.value)"
+      [size]="field.length"
+      [maxLength]="field.length"
+      [type]="getDataType(field)"
+      [ngStyle]="position"
+      [style]="getCss()"
+      (focus)="onFocus()">
+  }
+}

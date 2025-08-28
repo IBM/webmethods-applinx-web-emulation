@@ -18,9 +18,10 @@ import { CheckboxTransformation, InputField, Cursor } from '@ibm/applinx-rest-ap
 import {NavigationService} from '../../../services/navigation/navigation.service';
 
 @Component({
-  selector: 'app-checkbox',
-  templateUrl: './checkbox.component.html',
-  styleUrls: ['./checkbox.component.scss']
+    selector: 'app-checkbox',
+    templateUrl: './checkbox.component.html',
+    styleUrls: ['./checkbox.component.scss'],
+    standalone: false
 })
 export class CheckboxComponent implements OnChanges {
 

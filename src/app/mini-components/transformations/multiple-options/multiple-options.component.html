@@ -1,20 +1,28 @@
-<cds-dropdown (focus)="onFocus()" *ngIf="transform.multipleOptionsType === 'Combobox'"
-  (selected)="onSelect($event.item.value)"
+@if (transform.multipleOptionsType === 'Combobox') {
+  <cds-dropdown (focus)="onFocus()"
+    (selected)="onSelect($event.item.value)"
   [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column,
                          'grid-column-end': (transform.position.column+getLongestString(getItemsKeys(transform.items))), 'position': 'relative'}">
-  <cds-dropdown-list [items]="entries"></cds-dropdown-list>
-</cds-dropdown>
+    <cds-dropdown-list [items]="entries"></cds-dropdown-list>
+  </cds-dropdown>
+}
 
-<div *ngIf="transform.multipleOptionsType === 'Radio Buttons'" class="sm-radio radioButtons"
-  [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': transform.position.column+2}"
-  [ngClass]="transform.style">
-  <cds-radio-group>
-    <cds-radio *ngFor="let item of transform.items; index as i" [value]="item.value"
-      [checked]="radioValue !==null && item.value === radioValue" [id]="'radio-' + transform.position.row +'-'+ item.value"
-      (change)="onSelect($event.source.value)">
-      {{item.key}}
-    </cds-radio>
-  </cds-radio-group>
-</div>
+@if (transform.multipleOptionsType === 'Radio Buttons') {
+  <div class="sm-radio radioButtons"
+    [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': transform.position.column+2}"
+    [ngClass]="transform.style">
+    <cds-radio-group>
+      @for (item of transform.items; track item; let i = $index) {
+        <cds-radio [value]="item.value"
+          [checked]="radioValue !==null && item.value === radioValue" [id]="'radio-' + transform.position.row +'-'+ item.value"
+          (change)="onSelect($event.source.value)">
+          {{item.key}}
+        </cds-radio>
+      }
+    </cds-radio-group>
+  </div>
+}
 
-<app-text *ngIf="transform.leadingLabel" [transform]="transform.leadingLabel"></app-text>
+@if (transform.leadingLabel) {
+  <app-text [transform]="transform.leadingLabel"></app-text>
+}

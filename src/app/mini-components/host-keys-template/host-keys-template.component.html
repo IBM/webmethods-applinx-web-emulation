@@ -1,45 +1,23 @@
-<div class="hostKeysContainer" *ngIf="!this.multipleHostKeys">
-  <ng-container *ngFor="let transform of transformations; index as i">
-    <div *ngFor="let hostKey of transform.hostKeys">
-    <cds-tooltip [isOpen]="isOpen" [caret]="caret" [align]="align" [highContrast]="highContrast"
-      description="{{hostKey.caption}}">
-      <button cdsButton="secondary" size="lg" class="button-corner"
-        [ngClass]="{green_secondary: themeColor === 'Green'}" id="on-hover" 
-        (click)="onClick(hostKey.action)">
-        <span class="overflowText">
-          {{hostKey.caption}}
-        </span>
-      </button>
-    </cds-tooltip>
-  </div>
-  </ng-container>
+<div class="hostKeysContainer">
+  @for (transform of transformations; track transform; let i = $index) {
+    @for (hostKey of transform.hostKeys; track hostKey) {
+      <div>
+        <cds-tooltip [isOpen]="isOpen" [caret]="caret" [align]="align" [highContrast]="highContrast"
+          description="{{hostKey.caption}}">
+          <button cdsButton="secondary" size="sm" class="button-corner"
+            [ngClass]="{green_secondary: themeColor === 'Green'}" id="on-hover"
+            (click)="onClick(hostKey.action)">
+            <span class="overflowText">
+              {{hostKey.caption}}
+            </span>
+          </button>
+        </cds-tooltip>
+      </div>
+    }
+  }
 
   <cds-tooltip [isOpen]="isOpen" [caret]="caret" [align]="align" [highContrast]="highContrast" description="Enter">
-    <button cdsButton size="lg" class="button-corner" id="enter" [ngClass]="{green_enter: themeColor === 'Green'}"
-      style="margin-top: 10%" (click)="this.navigationService.sendKeys('[enter]')">
-      <span class="overflowText">
-        Enter
-      </span>
-    </button>
-  </cds-tooltip>
-</div>
-
-<div class="multiplehostKeysContainer" *ngIf="this.multipleHostKeys">
-  <ng-container *ngFor="let transform of transformations; index as i">
-    <div *ngFor="let hostKey of transform.hostKeys">
-    <cds-tooltip [isOpen]="isOpen" [caret]="caret" [align]="align" [highContrast]="highContrast"
-      description="{{hostKey.caption}}">
-      <button cdsButton size="lg" class="button-corner" [ngClass]="{green_secondary: themeColor === 'Green'}"
-        id="on-hover"  (click)="onClick(hostKey.action)">
-        <span class="overflowText">
-          {{hostKey.caption}}
-        </span>
-      </button>
-    </cds-tooltip>
-  </div>
-  </ng-container>
-  <cds-tooltip [isOpen]="isOpen" [caret]="caret" [align]="align" [highContrast]="highContrast" description="Enter">
-    <button cdsButton size="lg" class="button-corner" id="enter" [ngClass]="{green_enter: themeColor === 'Green'}"
+    <button cdsButton size="sm" class="button-corner" id="enter" [ngClass]="{green_enter: themeColor === 'Green'}"
       style="margin-top: 10%" (click)="this.navigationService.sendKeys('[enter]')">
       <span class="overflowText">
         Enter

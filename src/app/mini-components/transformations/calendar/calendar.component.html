@@ -1,23 +1,25 @@
-<div class="input" *ngIf="transform && sendableField" [ngStyle]="{'grid-row-start': field.position.row, 'grid-column-start': field.position.column, 
+@if (transform && sendableField) {
+<div class="input" [ngStyle]="{'grid-row-start': field.position.row, 'grid-column-start': field.position.column, 
     'grid-column-end': field.position.column + transform.dateInputFields[0].format.length + 2}">
-  <div class="">
+    <div class="">
       <cds-date-picker
-          class=""
-          [label]=""
-          [id]="defaultLabel"
-          [placeholder]="defaultFormat"
-          [cdsLayer]="light"
-          [value]="defaultDate"
-          [size]="'sm'"
-          [theme]="theme"
-          [disabled]="disabled"
-          [readonly]="readonly"
-          [invalid]="invalid"
-          [invalidText]="invalidText"
-          [warn]="warn"
-          [warnText]="warnText"
-          [dateFormat]="defaultFormat"
-          (valueChange)="valueChange($event)"
+        class=""
+        [label]=""
+        [id]="defaultLabel"
+        [placeholder]="defaultFormat"
+        [cdsLayer]="light"
+        [value]="defaultDate"
+        [size]="'sm'"
+        [theme]="theme"
+        [disabled]="disabled"
+        [readonly]="readonly"
+        [invalid]="invalid"
+        [invalidText]="invalidText"
+        [warn]="warn"
+        [warnText]="warnText"
+        [dateFormat]="defaultFormat"
+        (valueChange)="valueChange($event)"
       ></cds-date-picker>
+    </div>
   </div>
-</div>
+}

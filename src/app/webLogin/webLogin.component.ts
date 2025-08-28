@@ -33,9 +33,10 @@ import { Subscription } from 'rxjs';
 declare var $: any;
 
 @Component({
-  selector: 'app-login',
-  templateUrl: './webLogin.component.html',
-  styleUrls: ['./webLogin.component.scss']
+    selector: 'app-login',
+    templateUrl: './webLogin.component.html',
+    styleUrls: ['./webLogin.component.scss'],
+    standalone: false
 })
 export class WebLoginComponent implements OnInit {
 

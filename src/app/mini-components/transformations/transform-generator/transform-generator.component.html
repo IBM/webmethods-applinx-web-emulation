@@ -1,15 +1,34 @@
-<ng-container name="transformations" *ngFor="let transform of transformations">
-  <ng-container *ngIf="!transform.inTableCell">
-    <ng-container [ngSwitch]="transform.type">
-      <app-calendar *ngSwitchCase="'CalendarTransformation'" [transform]="transform"></app-calendar>
-      <app-clickable *ngSwitchCase="'ClickableTransformation'" [transform]="transform"></app-clickable>
-      <app-table *ngSwitchCase="'TableTransformation'" [transform]="transform"></app-table>
-      <app-multiple-options *ngSwitchCase="'MultipleOptionsTransformation'" [transform]="transform"></app-multiple-options>
-      <app-text *ngSwitchCase="'TextTransformation'" [transform]="transform"></app-text>
-      <app-menu *ngSwitchCase="'MenuTransformation'" [transform]="transform"></app-menu>
-      <app-line *ngSwitchCase="'LineTransformation'" [transform]="transform"></app-line>
-      <app-checkbox *ngSwitchCase="'CheckboxTransformation'" [transform]="transform"></app-checkbox>
-      <ng-container *ngSwitchDefault></ng-container>
-    </ng-container>
+@for (transform of transformations; track i; let i = $index) {
+  <ng-container name="transformations">
+    @if (!transform.inTableCell) {
+      @switch (transform.type) {
+        @case ('CalendarTransformation') {
+          <app-calendar [transform]="transform"></app-calendar>
+        }
+        @case ('ClickableTransformation') {
+          <app-clickable [transform]="transform"></app-clickable>
+        }
+        @case ('TableTransformation') {
+          <app-table [transform]="transform"></app-table>
+        }
+        @case ('MultipleOptionsTransformation') {
+          <app-multiple-options [transform]="transform"></app-multiple-options>
+        }
+        @case ('TextTransformation') {
+          <app-text [transform]="transform"></app-text>
+        }
+        @case ('MenuTransformation') {
+          <app-menu [transform]="transform"></app-menu>
+        }
+        @case ('LineTransformation') {
+          <app-line [transform]="transform"></app-line>
+        }
+        @case ('CheckboxTransformation') {
+          <app-checkbox [transform]="transform"></app-checkbox>
+        }
+        @default {
+        }
+      }
+    }
   </ng-container>
-</ng-container>
+}

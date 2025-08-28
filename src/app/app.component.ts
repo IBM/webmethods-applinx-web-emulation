@@ -45,10 +45,11 @@ import AppSwitcher20 from '@carbon/icons/es/app/20';
 import AddIcon from '@carbon/icons/es/4K/32';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  providers: [],
-  styleUrls: ['./app.component.scss']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    providers: [],
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent implements OnInit, OnDestroy {
 
@@ -571,11 +572,6 @@ export class AppComponent implements OnInit, OnDestroy {
 
   setHostKeys(hostkeys: HostKeyTransformation[]): void {
     this.hostKeyTransforms = hostkeys;
-    if (hostkeys !== null) {
-      if (hostkeys[0]?.hostKeys?.length > 12) {
-        this.hostKeysBool = true;
-      }
-    }
   }
 
   onActivate(component) {
@@ -633,40 +629,14 @@ export class AppComponent implements OnInit, OnDestroy {
       this.hostConnectionSubscription.unsubscribe();
     }
   }
-  /*
-    macro_test() {
-      this.recordStop = this.sharedService.getMacroRecordFlag();
-      this.getMacro().subscribe((response: any) => {
-        console.log("Test Response..... ", response)
-        response.fileList.forEach(file => {
-          this.macroList.push(file.substring(0, file.length - 5))
-        });
-        sessionStorage.setItem("macroFileList", JSON.parse(JSON.stringify(this.macroList)));
-        this.macroList = [];
-      })
-    }
   
-    getMacro_test() {
-      let applicationName = this.configurationService.applicationName;
-      let headers = this.defaultHeaders;
-      headers = headers.set('userName', String(this.userName));
-      headers = headers.set('applicationName', String(applicationName));
-      headers = headers.set('Authorization', String(this.storageService.getAuthToken()));
-      return this.httpClient.get(`${this.basePath}/macro/list`, {
-        // withCredentials: this.configuration.withCredentials,
-        headers: headers,
-        observe: "body", //this.observe,
-        reportProgress: this.reportProgress
-      });
-    }
-  */
   macro() {
     this.showButtonFlag = true;
     this.recordStop = this.sharedService.getMacroRecordFlag();
     let token = this.storageService.getAuthToken();
     let applicationName = this.configurationService.applicationName;
     let tempUserName = sessionStorage.getItem('userName');
-    this.userName = tempUserName.substr(1, tempUserName.length - 2);
+    this.userName = tempUserName.substr(1, tempUserName.length-2);
     this.macroFileListSubscription = this.macroService
       .getMacro(this.userName, applicationName, token)
       .subscribe(data => {
@@ -679,9 +649,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   }
 
-  openMacro(paramType: string) {
-    this.macroMode = paramType;
-    console.log("Action :", paramType)
+  openMacro(paramType: string) { 
     this.showButtonFlag = false;
     const divToRemove = document.getElementById("macroRecordContainer")
     if (divToRemove) {
@@ -693,7 +661,6 @@ export class AppComponent implements OnInit, OnDestroy {
     (reference.instance as MacroComponent).operationType = paramType;
     this.sharedService.setPopUpFlag(true);
     reference.instance.dataEmitter;
-    console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", reference.instance.dataService.getMacroRecordFlag());
 
     if (paramType == "stopRecord") {
       this.changeRecColor = reference.instance.onRecordStopColor(false)
@@ -796,10 +763,7 @@ export class AppComponent implements OnInit, OnDestroy {
   }
   selected(event: any, color: string) {
     this.selectedColor = color;
-    console.log(">>>>>>>>>>>>>>>>>>>>", this.selectedColor);
     let themeColor = event.currentTarget.id;
-    console.log(">>>>>>>>>>>>>>>>>>>>", themeColor);
-
     this.changeBackgroundColor(themeColor);
   }
 }

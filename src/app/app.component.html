@@ -12,82 +12,87 @@
     </button>
   </div>
   <!-- <cds-modal-footer>
-    <ng-container>
-      <button cdsButton="primary" (click)="errorFlag = false" [attr.modal-primary-focus]="true">
-        Okay
-      </button>
-    </ng-container>
-  </cds-modal-footer> -->
+  <ng-container>
+    <button cdsButton="primary" (click)="errorFlag = false" [attr.modal-primary-focus]="true">
+      Okay
+    </button>
+  </ng-container>
+</cds-modal-footer> -->
 </cds-modal>
 
-<ng-container *ngIf="storageService.isConnected()">
-
+@if (storageService.isConnected()) {
   <cds-header cdsTheme="g90" brand="IBM ApplinX">
     <!-- <img class="logoImage" src="assets/images/ApplinX-tsa-logo-light.svg" alt=""> -->
-    <cds-header-global> 
-      
+    <cds-header-global>
       <cds-overflow-menu [flip]="false" [customTrigger]="customMacroTrigger" description="Macro" [align]="align">
         <div class="flex" cdsTheme="g90">
-          <cds-header-action description="Play" *ngIf="!recordStop && showButtonFlag">
-            <svg cdsIcon="play" size="20" (click)="openMacro('play')"></svg>
-          </cds-header-action>
-          <cds-header-action description="Record" *ngIf="!recordStop && showButtonFlag">
-            <svg cdsIcon="recording--filled--alt" size="20" (click)="openMacro('record')"></svg>
-          </cds-header-action>
-          <cds-header-action description="Stop" *ngIf="recordStop && showButtonFlag">
-            <!-- <svg cdsIcon="stop--filled" size="20" (click)="stopRecord()"></svg> -->
-            <svg cdsIcon="stop--filled" size="20" (click)="openMacro('stopRecord')"></svg>
-          </cds-header-action>
-          <cds-header-action description="View" *ngIf="!recordStop && showButtonFlag">
-            <svg cdsIcon="view" size="20" (click)="openMacro('view')"></svg>
-          </cds-header-action>
-          <cds-header-action description="Delete" *ngIf="!recordStop && showButtonFlag">
-            <svg cdsIcon="trash-can" size="20" (click)="openMacro('remove')"></svg>
-          </cds-header-action>
+          @if (!recordStop && showButtonFlag) {
+            <cds-header-action description="Play">
+              <svg cdsIcon="play" size="20" (click)="openMacro('play')"></svg>
+            </cds-header-action>
+          }
+          @if (!recordStop && showButtonFlag) {
+            <cds-header-action description="Record">
+              <svg cdsIcon="recording--filled--alt" size="20" (click)="openMacro('record')"></svg>
+            </cds-header-action>
+          }
+          @if (recordStop && showButtonFlag) {
+            <cds-header-action description="Stop">
+              <!-- <svg cdsIcon="stop--filled" size="20" (click)="stopRecord()"></svg> -->
+              <svg cdsIcon="stop--filled" size="20" (click)="openMacro('stopRecord')"></svg>
+            </cds-header-action>
+          }
+          @if (!recordStop && showButtonFlag) {
+            <cds-header-action description="View">
+              <svg cdsIcon="view" size="20" (click)="openMacro('view')"></svg>
+            </cds-header-action>
+          }
+          @if (!recordStop && showButtonFlag) {
+            <cds-header-action description="Delete">
+              <svg cdsIcon="trash-can" size="20" (click)="openMacro('remove')"></svg>
+            </cds-header-action>
+          }
         </div>
       </cds-overflow-menu>
       <cds-placeholder></cds-placeholder>
-        <ng-template #customMacroTrigger>
-          <!-- <svg *ngIf="sharedService.getMacroRecordFlag()" cdsIcon="document--import" size="20" (click)="macro()" 
-          [ngStyle]="{'fill':'red'}"></svg>
-          <svg *ngIf="!sharedService.getMacroRecordFlag()" cdsIcon="document--import" size="20" (click)="macro()" 
-          [ngStyle]="{'fill':'white'}"></svg> -->
-          <svg cdsIcon="document--import" size="20" (click)="macro()" 
-          [ngStyle]="{'fill': sharedService.getMacroRecordFlag() ? 'red' : 'white'}"></svg>
-        </ng-template>
-
-      <cds-overflow-menu [flip]="false" [customTrigger]="copyText" description="Copy text from host screen"></cds-overflow-menu>
-      <ng-template #copyText>
-        <svg cdsIcon="copy" size="20" id="copy" (click)="copy()"></svg>
-      </ng-template>
-      <cds-overflow-menu [flip]="false" [customTrigger]="printer" description="Print host screen snapshot"></cds-overflow-menu>
-      <ng-template #printer>
-        <svg cdsIcon="printer" size="20" (click)="print()" id="print"></svg>
-      </ng-template>
-
-        <cds-overflow-menu [flip]="false" [customTrigger]="customZoomTrigger" description="Zoom" [align]="align"> 
-          <div class="range-slider">
-            <input class="input-range" type="range" [step]="zoomStep" [min]="zoomMinValue" [max]="zoomMaxValue" (change)=onZoomChange($event)
-            [(ngModel)]="value">
-            <div class="tooltip">{{value}}px</div>
-          </div>
-          <cds-placeholder></cds-placeholder>
-          <cds-header-action description="Reset" cdsTheme="g90">
-            <svg class="cds--btn__icon" cdsIcon="restart" size="20" (click)="setDefaultZoom()"></svg>
-          </cds-header-action>
-        </cds-overflow-menu>
+      <ng-template #customMacroTrigger>
+        <!-- <svg *ngIf="sharedService.getMacroRecordFlag()" cdsIcon="document--import" size="20" (click)="macro()"
+      [ngStyle]="{'fill':'red'}"></svg>
+      <svg *ngIf="!sharedService.getMacroRecordFlag()" cdsIcon="document--import" size="20" (click)="macro()"
+      [ngStyle]="{'fill':'white'}"></svg> -->
+      <svg cdsIcon="document--import" size="20" (click)="macro()"
+      [ngStyle]="{'fill': sharedService.getMacroRecordFlag() ? 'red' : 'white'}"></svg>
+    </ng-template>
+    <cds-overflow-menu [flip]="false" [customTrigger]="copyText" description="Copy text from host screen"></cds-overflow-menu>
+    <ng-template #copyText>
+      <svg cdsIcon="copy" size="20" id="copy" (click)="copy()"></svg>
+    </ng-template>
+    <cds-overflow-menu [flip]="false" [customTrigger]="printer" description="Print host screen snapshot"></cds-overflow-menu>
+    <ng-template #printer>
+      <svg cdsIcon="printer" size="20" (click)="print()" id="print"></svg>
+    </ng-template>
+    <cds-overflow-menu [flip]="false" [customTrigger]="customZoomTrigger" description="Zoom" [align]="align">
+      <div class="range-slider">
+        <input class="input-range" type="range" [step]="zoomStep" [min]="zoomMinValue" [max]="zoomMaxValue" (change)=onZoomChange($event)
+          [(ngModel)]="value">
+          <div class="tooltip">{{value}}px</div>
+        </div>
         <cds-placeholder></cds-placeholder>
-        <ng-template #customZoomTrigger>
-          <svg cdsIcon="zoom--in" size="20"></svg>
+        <cds-header-action description="Reset" cdsTheme="g90">
+          <svg class="cds--btn__icon" cdsIcon="restart" size="20" (click)="setDefaultZoom()"></svg>
+        </cds-header-action>
+      </cds-overflow-menu>
+      <cds-placeholder></cds-placeholder>
+      <ng-template #customZoomTrigger>
+        <svg cdsIcon="zoom--in" size="20"></svg>
       </ng-template>
-  
       <cds-overflow-menu [flip]="false" [customTrigger]="customColorTrigger" description="Style" [align]="align" >
         <div cdsTheme="g90">
           <cds-overflow-menu-option id="Black" (click)="selected($event, 'Black')" [divider]="true"
-          [ngClass]="{'active-option': selectedColor === 'Black'}" class="tooltip-container">
-          <div class="square-black"></div>
-          <span class="custom-tooltip">Black</span>
-        </cds-overflow-menu-option>
+            [ngClass]="{'active-option': selectedColor === 'Black'}" class="tooltip-container">
+            <div class="square-black"></div>
+            <span class="custom-tooltip">Black</span>
+          </cds-overflow-menu-option>
           <cds-overflow-menu-option id="White" (click)="selected($event, 'White')" [divider]="true"
             [ngClass]="{'active-option': selectedColor === 'White'}" class="tooltip-container">
             <span class="custom-tooltip">White</span>
@@ -98,13 +103,12 @@
             <div class="square-green"></div>
             <span class="custom-tooltip">Green</span>
           </cds-overflow-menu-option>
-      </div>
+        </div>
       </cds-overflow-menu>
       <cds-placeholder></cds-placeholder>
       <ng-template #customColorTrigger>
         <svg cdsIcon="color-palette" size="20"></svg>
       </ng-template>
-      
       <cds-overflow-menu [flip]="false" [customTrigger]="refresh" description="Refresh"></cds-overflow-menu>
       <ng-template #refresh>
         <svg cdsIcon="restart" size="20"></svg>
@@ -123,28 +127,27 @@
       </ng-template>
     </cds-header-global>
   </cds-header>
-
   <br />
   <br />
-
   <div class="middle-container">
-    <div *ngIf="!isSmallScreen()" class="flexContainer" [hidden]="!displayScreen">
-      <div class="main-container">
-        <div class="maindiv" id="maindiv">
-          <router-outlet (activate)="onActivate($event)" (deactivate)="onDeactivate()"></router-outlet>
+    @if (!isSmallScreen()) {
+      <div class="flexContainer" [hidden]="!displayScreen">
+        <div class="main-container">
+          <div class="maindiv" id="maindiv">
+            <router-outlet (activate)="onActivate($event)" (deactivate)="onDeactivate()"></router-outlet>
+          </div>
         </div>
       </div>
-    </div>
-    <div id="app-host-keys-btns" class="hostKeys key-transform-container hostKeys-btns-container"
-      *ngIf="hostKeyTransforms">
-      <app-host-keys-template [transformations]="hostKeyTransforms" [themeColor]="themeColor"
-        [multipleHostKeys]="this.hostKeysBool">
-      </app-host-keys-template>
-    </div>
+    }
+    @if (hostKeyTransforms) {
+      <div id="app-host-keys-btns" class="hostKeys key-transform-container hostKeys-btns-container"
+        >
+        <app-host-keys-template [transformations]="hostKeyTransforms" [themeColor]="themeColor"></app-host-keys-template>
+      </div>
+    }
   </div>
-
   <!-- *************************** For mobile *************************** -->
-  <ng-container *ngIf="isSmallScreen()">
+  @if (isSmallScreen()) {
     <mat-sidenav-container>
       <mat-sidenav #sidenav mode="side">
         <sag-topnav-right>
@@ -159,38 +162,47 @@
           </sag-topnav-item>
         </sag-topnav-right>
         <div style="bottom: 5px; position: fixed; width: max(7%, 56px); margin: 0 auto;"><img
-            src="assets/images/ApplinX-all white.svg"></div>
+        src="assets/images/ApplinX-all white.svg"></div>
       </mat-sidenav>
       <mat-sidenav-content style="position: absolute; width: 100%;">
         <div>
           <mat-icon [hidden]="sidenav.opened" (click)="sidenav.toggle()"
-            style="position: fixed;">navigate_next</mat-icon>
+          style="position: fixed;">navigate_next</mat-icon>
           <div class="flexContainer" [hidden]="!displayScreen">
             <div style="align-self: flex-start;">
               <router-outlet (activate)="onActivate($event)" (deactivate)="onDeactivate()"></router-outlet>
             </div>
-            <div class="hostKeys" *ngIf="hostKeyTransforms" style="max-width: 10%; right: 0; align-self: center;"
-              [ngStyle]="{'margin-left': sidenav.opened ? '1%' : '5%'}">
-              <app-host-keys-template [transformations]="hostKeyTransforms">
-              </app-host-keys-template>
-            </div>
+            @if (hostKeyTransforms) {
+              <div class="hostKeys" style="max-width: 10%; right: 0; align-self: center;"
+                [ngStyle]="{'margin-left': sidenav.opened ? '1%' : '5%'}">
+                <app-host-keys-template [transformations]="hostKeyTransforms">
+                </app-host-keys-template>
+              </div>
+            }
           </div>
         </div>
       </mat-sidenav-content>
     </mat-sidenav-container>
-  </ng-container>
-</ng-container>
+  }
+}
 
-<router-outlet *ngIf="!this.storageService.isConnected()" (activate)="onActivate($event)"
+@if (!this.storageService.isConnected()) {
+  <router-outlet (activate)="onActivate($event)"
   (deactivate)="onDeactivate()"></router-outlet>
+}
 
-<div *ngIf="screenLockerService.isShowScreenSpinner()" class="spinner">
-  <mat-spinner diameter="70"></mat-spinner>
-  <div>Loading...</div>
-</div>
+@if (screenLockerService.isShowScreenSpinner()) {
+  <div class="spinner">
+    <mat-spinner diameter="70"></mat-spinner>
+    <div>Loading...</div>
+  </div>
+}
 
-<cds-toast
-  *ngIf="notificationObj"
-  [notificationObj]="notificationToastObj" (click)="onClose()"
-></cds-toast>
+@if (notificationObj) {
+  <cds-toast
+    [notificationObj]="notificationToastObj" (click)="onClose()"
+  ></cds-toast>
+}
 <ng-template #container></ng-template>
+
+<!-- test demo commit  -->

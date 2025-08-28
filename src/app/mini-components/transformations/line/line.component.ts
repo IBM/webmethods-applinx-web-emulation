@@ -17,9 +17,10 @@ import {Component, Input, OnChanges, OnInit, SimpleChanges} from '@angular/core'
 import { LineTransformation, Field, Position } from '@ibm/applinx-rest-apis';
 
 @Component({
-  selector: 'app-line',
-  templateUrl: './line.component.html',
-  styleUrls: ['./line.component.scss']
+    selector: 'app-line',
+    templateUrl: './line.component.html',
+    styleUrls: ['./line.component.scss'],
+    standalone: false
 })
 export class LineComponent implements OnInit, OnChanges {
 

@@ -47,9 +47,10 @@ import { ScreenProcessorService } from '../services/screen-processor.service';
 import { ScreenLockerService } from '../services/screen-locker.service'
 
 @Component({
-  selector: 'app-screen',
-  templateUrl: './screen.component.html',
-  styleUrls: ['./screen.component.scss']
+    selector: 'app-screen',
+    templateUrl: './screen.component.html',
+    styleUrls: ['./screen.component.scss'],
+    standalone: false
 })
 export class ScreenComponent implements OnInit, OnChanges, AfterViewInit, OnDestroy {
 

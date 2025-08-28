@@ -5,10 +5,11 @@ import { DialogService } from 'carbon-components-angular';
 import { SharedService } from '../../../services/shared.service';
 
 @Component({
-  selector: 'app-modalpopup',
-  providers: [DialogService],
-  templateUrl: './modalpopup.component.html',
-  styleUrls: ['./modalpopup.component.scss']
+    selector: 'app-modalpopup',
+    providers: [DialogService],
+    templateUrl: './modalpopup.component.html',
+    styleUrls: ['./modalpopup.component.scss'],
+    standalone: false
 })
 export class ModalpopupComponent implements OnInit {
 
@@ -59,8 +60,8 @@ export class ModalpopupComponent implements OnInit {
   initCall() {
     document.getElementById("copyDiv").innerHTML = this.copyData; // this.data.content;
     this.printFlag = this.typeFlag;
-    console.log("Print Flag : ", this.printFlag)
-    console.log("copyData : ", this.copyData)
+    // console.log("Print Flag : ", this.printFlag)
+    // console.log("copyData : ", this.copyData)
     let elementList = document.querySelectorAll("[id='gx_text']");
     elementList.forEach(element => {
       element.classList.add("copyTextCss");
@@ -152,7 +153,6 @@ export class ModalpopupComponent implements OnInit {
   closeModal() {
     this.copyModalFlag = false; // Force modal to close
     this.sharedService.setPopUpFlag(false);
-    console.log("Modal closed by Esc");
   }
 }
 

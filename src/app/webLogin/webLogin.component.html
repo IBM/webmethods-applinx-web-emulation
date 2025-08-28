@@ -1,44 +1,49 @@
-<div *ngIf="webLoginVisible">
-  <div class="wrapper">
-    <div><img src="assets/images/ApplinX-tsa-logo-on-white.svg"></div>
-    <span class="dlt-form-label">{{'Version: ' + version}}</span>
-    <form [formGroup]="form" (ngSubmit)="onConnect()">
-      <div class="box-model">
-        <cds-text-label *ngIf="authMethod !== 'oidc' && authMethod !== 'disabled'">
-          User Name
-          <input cdsText type="text" [theme]="theme" class="input-field" [ngClass]="this.username.disabled ? 'opacity' : ''"
-            formControlName="username" id="usernameInput" required placeholder="User Name">
-        </cds-text-label>
-        <br />
-        <div *ngIf="authMethod !== 'oidc' && authMethod !== 'disabled'">
-          <cds-password-label>
-            Password
-            <input cdsPassword type="password" [theme]="theme" [ngClass]="this.username.disabled ? 'opacity' : ''" formControlName="password"
-              id="passwordInput" placeholder="Password" required>
-          </cds-password-label>
-          <ng-container *ngIf="authMethod === 'hostAuth'">
-            <cds-password-label>
-              New Password
-              <input cdsPassword type="password" [ngClass]="this.username.disabled ? 'opacity' : ''" formControlName="newPassword"
-                id="newPasswordInput" type="password" required>
-            </cds-password-label>
-          </ng-container>
+@if (webLoginVisible) {
+  <div>
+    <div class="wrapper">
+      <div><img src="assets/images/ApplinX-tsa-logo-on-white.svg"></div>
+      <span class="dlt-form-label">{{'Version: ' + version}}</span>
+      <form [formGroup]="form" (ngSubmit)="onConnect()">
+        <div class="box-model">
+          @if (authMethod !== 'oidc' && authMethod !== 'disabled') {
+            <cds-text-label>
+              User Name
+              <input cdsText type="text" [theme]="theme" class="input-field" [ngClass]="this.username.disabled ? 'opacity' : ''"
+                formControlName="username" id="usernameInput" required placeholder="User Name">
+              </cds-text-label>
+            }
+            <br />
+            @if (authMethod !== 'oidc' && authMethod !== 'disabled') {
+              <div>
+                <cds-password-label>
+                  Password
+                  <input cdsPassword type="password" [theme]="theme" [ngClass]="this.username.disabled ? 'opacity' : ''" formControlName="password"
+                    id="passwordInput" placeholder="Password" required>
+                  </cds-password-label>
+                  @if (authMethod === 'hostAuth') {
+                    <cds-password-label>
+                      New Password
+                      <input cdsPassword type="password" [ngClass]="this.username.disabled ? 'opacity' : ''" formControlName="newPassword"
+                        id="newPasswordInput" type="password" required>
+                      </cds-password-label>
+                    }
+                  </div>
+                }
+                <div style="padding-top: 6%;">
+                  <button [cdsButton]="kind" [size]="md" [disabled]="!this.username.value && this.authMethod !== 'oidc' && this.authMethod !== 'disabled'" class="connect-btn custom-btn">
+                    Connect
+                  </button>
+                </div>
+              </div>
+              @if (errorMessage != '') {
+                <span id="errorMsg" style="color: #ff0000; white-space: pre-line;">
+                  {{errorMessage}}
+                </span>
+              }
+            </form>
+          </div>
+          <footer class="dlt-footer">
+            <!-- copyright information should be here -->
+          </footer>
         </div>
-        <div style="padding-top: 6%;">
-          <button [cdsButton]="kind" [size]="md" [disabled]="!this.username.value && this.authMethod !== 'oidc' && this.authMethod !== 'disabled'" class="connect-btn custom-btn">
-            Connect
-          </button>
-        </div>
-      </div>
-      
-      <span id="errorMsg" style="color: #ff0000; white-space: pre-line;" *ngIf="errorMessage != ''">
-        {{errorMessage}}
-      </span>
-
-     
-    </form>
-  </div>
-  <footer class="dlt-footer">
-<!-- copyright information should be here -->
-  </footer>
-</div>
+      }

@@ -17,9 +17,10 @@ import {Component, Input} from '@angular/core';
 import {AbstractTransformation} from '@ibm/applinx-rest-apis';
 
 @Component({
-  selector: 'app-transform-generator',
-  templateUrl: './transform-generator.component.html',
-  styleUrls: ['./transform-generator.component.scss']
+    selector: 'app-transform-generator',
+    templateUrl: './transform-generator.component.html',
+    styleUrls: ['./transform-generator.component.scss'],
+    standalone: false
 })
 export class TransformGeneratorComponent  {
 

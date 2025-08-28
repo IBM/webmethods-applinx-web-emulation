@@ -16,8 +16,8 @@
 import { TestBed, async } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { AppComponent } from './app.component';
-import { ApiModule, SessionService, InfoService } from '@ibm/applinx-rest-apis';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { ApiModule,SessionService,InfoService } from '@ibm/applinx-rest-apis';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { NavigationService } from 'src/app/services/navigation/navigation.service';
 import { LoggerTestingModule } from 'ngx-logger/testing';
 import { ScreenLockerService } from 'src/app/services/screen-locker.service'
@@ -42,15 +42,12 @@ describe('AppComponent', () => {
       updateConfig: jasmine.createSpy('updateConfig')  // Ensure updateConfig is mocked
     };
     TestBed.configureTestingModule({
-      imports: [
-        RouterTestingModule,
-        ApiModule,
-        HttpClientTestingModule
-      ],
-      declarations: [
+    declarations: [
         AppComponent
-      ],
-      providers: [
+    ],
+    imports: [RouterTestingModule,
+        ApiModule],
+    providers: [
         SessionService,
         NavigationService,
         LoggerTestingModule,
@@ -63,11 +60,11 @@ describe('AppComponent', () => {
         ModalService,
         PlaceholderService,
         IconService,
-        { provide: NGXLogger, useValue:mockLogger },
+        { provide: NGXLogger, useValue: { getConfigSnapshot: () => ({}) } },
         { provide: 'IJSFunctionService', useClass: JSFunctionsService },
-
-      ]
-    }).compileComponents();
+        provideHttpClient(withInterceptorsFromDi())
+    ]
+}).compileComponents();
   }));
 
   it('should create the app', () => {

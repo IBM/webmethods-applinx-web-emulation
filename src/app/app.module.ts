@@ -16,7 +16,7 @@
 
 import { BrowserModule } from '@angular/platform-browser';
 import { Injector, NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AppComponent } from './app.component';
 import { ApiModule, Configuration, ConfigurationParameters } from '@ibm/applinx-rest-apis'
 import { ScreenComponent } from './screen/screen.component';
@@ -95,84 +95,73 @@ const routes: Routes = [
   { path: '**', redirectTo: 'instant', pathMatch: 'full' }
 ];
 
-@NgModule({
-  declarations: [
-    AppComponent,
-    ScreenComponent,
-    WebLoginComponent,
-    FieldComponent,
-    ClickableComponent,
-    TableComponent,
-    MultipleOptionsComponent,
-    TextComponent,
-    MenuComponent,
-    ModalpopupComponent,
-    TransformGeneratorComponent,
-    InputFieldComponent,
-    HostKeysTemplateComponent,
-    CalendarComponent,
-    LineComponent,
-    CheckboxComponent,
-    MacroComponent,
-  ].concat(generatedPages),
-  imports: [
-    ApiModule.forRoot(apiConfigFactory),
-    RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' }),
-    BrowserModule,
-    HttpClientModule,
-    FormsModule,
-    ReactiveFormsModule,
-    BrowserAnimationsModule,
-    UIShellModule,
-    IconModule,
-    ButtonModule, 
-    InputModule, 
-    ModalModule, 
-    DropdownModule, 
-    TableModule, 
-    ThemeModule, 
-    DialogModule, 
-    SliderModule, 
-    ToggletipModule, 
-    ContextMenuModule, 
-    CheckboxModule, 
-    RadioModule, 
-    DatePickerModule, 
-    NotificationModule, 
-    TooltipModule,
-    SelectModule, 
-    LoggerModule.forRoot(
-      {
-        serverLoggingUrl: environment.basePath + '/logger',
-        level: NgxLoggerLevel.ERROR,
-        serverLogLevel: NgxLoggerLevel.ERROR,
-      },
-      {
-        serverProvider: {
-          provide: TOKEN_LOGGER_SERVER_SERVICE, useClass: AuthTokenServerService
-        }
-      }
-    )
-  ],
-  providers: [NavigationService,
-    StorageService,
-    TabAndArrowsService,
-    MessagesService,
-    KeyboardMappingService,
-    ScreenLockerService,
-    ScreenHolderService,
-    UserExitsEventThrowerService,
-    JSMethodsService,
-    NGXLogger,
-    OAuth2HandlerService,
-    RouteGuardService,
-    ScreenProcessorService,
-    SharedService,
-    { provide: 'IJSFunctionService', useClass: JSMethodsService }
-  ],
-  exports: [RouterModule],
-  bootstrap: [AppComponent]
-})
+@NgModule({ declarations: [
+        AppComponent,
+        ScreenComponent,
+        WebLoginComponent,
+        FieldComponent,
+        ClickableComponent,
+        TableComponent,
+        MultipleOptionsComponent,
+        TextComponent,
+        MenuComponent,
+        ModalpopupComponent,
+        TransformGeneratorComponent,
+        InputFieldComponent,
+        HostKeysTemplateComponent,
+        CalendarComponent,
+        LineComponent,
+        CheckboxComponent,
+        MacroComponent,
+    ].concat(generatedPages),
+    exports: [RouterModule],
+    bootstrap: [AppComponent], imports: [ApiModule.forRoot(apiConfigFactory),
+        RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' }),
+        BrowserModule,
+        FormsModule,
+        ReactiveFormsModule,
+        BrowserAnimationsModule,
+        UIShellModule,
+        IconModule,
+        ButtonModule,
+        InputModule,
+        ModalModule,
+        DropdownModule,
+        TableModule,
+        ThemeModule,
+        DialogModule,
+        SliderModule,
+        ToggletipModule,
+        ContextMenuModule,
+        CheckboxModule,
+        RadioModule,
+        DatePickerModule,
+        NotificationModule,
+        TooltipModule,
+        SelectModule,
+        LoggerModule.forRoot({
+            serverLoggingUrl: environment.basePath + '/logger',
+            level: NgxLoggerLevel.ERROR,
+            serverLogLevel: NgxLoggerLevel.ERROR,
+        }, {
+            serverProvider: {
+                provide: TOKEN_LOGGER_SERVER_SERVICE, useClass: AuthTokenServerService
+            }
+        })], providers: [NavigationService,
+        StorageService,
+        TabAndArrowsService,
+        MessagesService,
+        KeyboardMappingService,
+        ScreenLockerService,
+        ScreenHolderService,
+        UserExitsEventThrowerService,
+        JSMethodsService,
+        NGXLogger,
+        OAuth2HandlerService,
+        RouteGuardService,
+        ScreenProcessorService,
+        SharedService,
+        { provide: 'IJSFunctionService', useClass: JSMethodsService }, provideHttpClient(withInterceptorsFromDi())] })
 export class AppModule {
   constructor(private injector: Injector, protected iconService: IconService) {
     iconService.registerAll([

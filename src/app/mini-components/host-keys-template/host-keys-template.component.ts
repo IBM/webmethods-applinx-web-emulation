@@ -18,16 +18,16 @@ import { NavigationService } from '../../services/navigation/navigation.service'
 import { HostKeyTransformation } from '@ibm/applinx-rest-apis';
 
 @Component({
-  selector: 'app-host-keys-template',
-  templateUrl: './host-keys-template.component.html',
-  styleUrls: ['./host-keys-template.component.scss']
+    selector: 'app-host-keys-template',
+    templateUrl: './host-keys-template.component.html',
+    styleUrls: ['./host-keys-template.component.scss'],
+    standalone: false
 })
 export class HostKeysTemplateComponent implements OnInit {
 
   @Input() transformations: HostKeyTransformation[];
   @Input() themeColor: string;
-  @Input() multipleHostKeys: boolean;
-
+  
   constructor(public navigationService: NavigationService) { }
   align: string = "left";
   isOpen: boolean = false;

@@ -1,110 +1,124 @@
- <!-- <table cdsTable [striped]="true" [id]="transform.table.name" [ngClass]="transform.style" class="gx_tbl"  -->
- <table [id]="transform.table.name" [ngClass]="transform.style" class="gx_tbl" 
+<!-- <table cdsTable [striped]="true" [id]="transform.table.name" [ngClass]="transform.style" class="gx_tbl"  -->
+<table [id]="transform.table.name" [ngClass]="transform.style" class="gx_tbl"
     [ngStyle]="{'grid-row-start': transform.table.headerCoordinates ? transform.table.headerCoordinates.topLeft.row : transform.table.cornersCoordinates.topLeft.row,
       'grid-column-start': transform.table.headerCoordinates ? transform.table.headerCoordinates.topLeft.column : transform.table.cornersCoordinates.topLeft.column,
       'grid-row-end': transform.table.cornersCoordinates.bottomRight.row,
       'grid-column-end': transform.table.cornersCoordinates.bottomRight.column}">
   <!-- <thead cdsTableHead class="tableHeader" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}"> -->
-    <thead class="tableHeader" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}">
-  <tr>
-    <th title="{{col.tooltip}}" *ngFor="let col of transform.table.cols" name="{{col.name}}">
-      {{col.caption}}
-    </th>
-  </tr>
+  <thead class="tableHeader" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}">
+    <tr>
+      @for (col of transform.table.cols; track i; let i = $index) {
+        <th title="{{col.tooltip}}" name="{{col.name}}">
+          {{col.caption}}
+        </th>
+      }
+    </tr>
   </thead>
 
   <!-- <tbody cdsTableBody class="tableBody" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}"> -->
-    <tbody class="tableBody" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}">
-  <!-- <tr cdsTableRow *ngFor="let row of transform.table.rows; index as i" [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'"> -->
-    <tr *ngFor="let row of transform.table.rows; index as i" [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'">
-    <td *ngFor="let item of row.items; index as j" style="border-style: solid; border-width: thin">
-      
-      <ng-container *ngIf="item.type && item.inTableCell">
-        <ng-container [ngSwitch]="item.type">
-          <app-clickable *ngSwitchCase="'ClickableTransformation'" [transform]="item"></app-clickable> <!--Carbon design compliant-->
-          <!-- <app-hostkey *ngSwitchCase="'HostKeyTransformation'" [transform]="item"></app-hostkey> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
-          <!-- <app-table *ngSwitchCase="'TableTransformation'" [transform]="item"></app-table> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
-          <app-multiple-options *ngSwitchCase="'MultipleOptionsTransformation'" [transform]="item"></app-multiple-options> <!--Carbon design compliant-->
-          <app-text *ngSwitchCase="'TextTransformation'" [transform]="item"></app-text>  <!-- NO need for Carbon design components -->
-          <!-- <app-menu *ngSwitchCase="'MenuTransformation'" [transform]="item"></app-menu> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
-          <ng-container *ngSwitchDefault></ng-container>
-        </ng-container>
-      </ng-container>
-
-      <ng-container *ngIf="!item.type">
-        <app-input-field *ngIf="!item.protected" [field]="item"></app-input-field> <!--Carbon design compliant-->
-        <app-field *ngIf="item.protected" [field]="item"></app-field> <!--Carbon design compliant-->
-      </ng-container>
-
-    </td>
-  </tr>
-  </tbody>
-</table>  
+  <tbody class="tableBody" [ngStyle]="{'border-style': 'solid', 'border-width': 'thin'}">
+    <!-- <tr cdsTableRow *ngFor="let row of transform.table.rows; index as i" [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'"> -->
+    @for (row of transform.table.rows; track i; let i = $index) {
+      <tr [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'">
+        @for (item of row.items; track j; let j = $index) {
+          <td style="border-style: solid; border-width: thin">
+            @if (item.type && item.inTableCell) {
+              @switch (item.type) {
+                @case ('ClickableTransformation') {
+                  <app-clickable [transform]="item"></app-clickable>
+                  } <!--Carbon design compliant-->
+                  <!-- <app-hostkey *ngSwitchCase="'HostKeyTransformation'" [transform]="item"></app-hostkey> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
+                  <!-- <app-table *ngSwitchCase="'TableTransformation'" [transform]="item"></app-table> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
+                  @case ('MultipleOptionsTransformation') {
+                    <app-multiple-options [transform]="item"></app-multiple-options>
+                    } <!--Carbon design compliant-->
+                    @case ('TextTransformation') {
+                      <app-text [transform]="item"></app-text>
+                      }  <!-- NO need for Carbon design components -->
+                      <!-- <app-menu *ngSwitchCase="'MenuTransformation'" [transform]="item"></app-menu> --> <!-- Checked with Idan on 26-Dec-2024 : This transformation is not applicable in table-->
+                      @default {
+                      }
+                    }
+                  }
+                  @if (!item.type) {
+                    @if (!item.protected) {
+                      <app-input-field [field]="item"></app-input-field>
+                      } <!--Carbon design compliant-->
+                      @if (item.protected) {
+                        <app-field [field]="item"></app-field>
+                        } <!--Carbon design compliant-->
+                      }
+                    </td>
+                  }
+                </tr>
+              }
+            </tbody>
+          </table>
 
 
 <!-- <cds-table-container [id]="transform.table.name" [ngClass]="transform.style" class="gx_tbl" [ngStyle]="{'grid-row-start': transform.table.headerCoordinates ? transform.table.headerCoordinates.topLeft.row : transform.table.cornersCoordinates.topLeft.row,
 'grid-column-start': transform.table.headerCoordinates ? transform.table.headerCoordinates.topLeft.column : transform.table.cornersCoordinates.topLeft.column,
 'grid-row-end': transform.table.cornersCoordinates.bottomRight.row,
 'grid-column-end': transform.table.cornersCoordinates.bottomRight.column}"> -->
- <!-- <cds-table-container [id]="transform.table.name">
-  <cds-table  [model]="model" 
-              [striped]="true" 
-              [showSelectionColumn]="false" 
-              [isDataGrid]="true" 
-              [sortable]="false"
-              [enableSingleSelect]="false">
-  </cds-table>
-</cds-table-container> 
--->
+          <!-- <cds-table-container [id]="transform.table.name">
+          <cds-table  [model]="model"
+            [striped]="true"
+            [showSelectionColumn]="false"
+            [isDataGrid]="true"
+            [sortable]="false"
+            [enableSingleSelect]="false">
+          </cds-table>
+        </cds-table-container>
+        -->
 
-<!-- <ng-template #dropdownTemplate let-data="data">
-  <cds-dropdown>             
-    <cds-dropdown-list [items]="entries"></cds-dropdown-list>
-  </cds-dropdown>
-</ng-template> 
+        <!-- <ng-template #dropdownTemplate let-data="data">
+        <cds-dropdown>
+          <cds-dropdown-list [items]="entries"></cds-dropdown-list>
+        </cds-dropdown>
+      </ng-template>
 
 
-<table cdsTable [sortable]="false" 
-      [striped]="true" 
-      [sortable]="false"
-      >
-  <thead cdsTableHead>
-      <tr>
-          <th
+      <table cdsTable [sortable]="false"
+        [striped]="true"
+        [sortable]="false"
+        >
+        <thead cdsTableHead>
+          <tr>
+            <th
               scope="col"
               cdsTableHeadCell
               *ngFor="let column of model.header"
               [column]="column">
-          </th>
-      </tr>
-  </thead>
-  <tbody cdsTableBody>
-      <tr
-          *ngFor="let row of model.data"
-          cdsTableRow
-          [row]="row">
-          <td *ngFor="let item of row; let j = index"
+            </th>
+          </tr>
+        </thead>
+        <tbody cdsTableBody>
+          <tr
+            *ngFor="let row of model.data"
+            cdsTableRow
+            [row]="row">
+            <td *ngFor="let item of row; let j = index"
               cdsTableData
               [item]="item"
               [class]="model.header[j].className"
               [ngStyle]="model.header[j].style">
+            </td>
+          </tr>
+        </tbody>
+      </table> -->
+
+
+      <!-- <table>
+      <thead>
+        <tr>
+          <th *ngFor="let column of model.header">{{column.data}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of model.data">
+          <td *ngFor="let item of row;">
+            {{item}}
           </td>
-      </tr>
-  </tbody>
-</table> -->
-
-
-<!-- <table>
-  <thead>
-    <tr>
-      <th *ngFor="let column of model.header">{{column.data}}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let row of model.data">
-      <td *ngFor="let item of row;">
-          {{item}}
-      </td>
-    </tr>
-  </tbody>
-</table> -->
+        </tr>
+      </tbody>
+    </table> -->

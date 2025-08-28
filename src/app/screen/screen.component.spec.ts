@@ -27,8 +27,8 @@ import { ScreenService } from '@ibm/applinx-rest-apis';
 import { GetScreenRequest, GetScreenResponse ,InputField, InfoService} from '@ibm/applinx-rest-apis';
 import { BehaviorSubject, of } from 'rxjs';
 import { HostListener } from '@angular/core';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { HttpClientXsrfModule } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { ModalService, PlaceholderService } from 'carbon-components-angular';
 import { IJSFunctionService } from 'src/common/js-functions/ijs-functions.service';
 import { JSMethodsService } from 'src/common/js-functions/js-methods.service';
@@ -57,31 +57,29 @@ beforeEach(async () => {
   let keyboardMappingServiceStub={clearJSKeyboardMappings:jasmine.createSpy('clearJSKeyboardMappings')}
   await TestBed.configureTestingModule({
     declarations: [ScreenComponent],
-    imports: [
-      HttpClientTestingModule, // Add this line
-      // other imports...
-    ],
+    imports: [],
     providers: [
-      NavigationService,
-      ScreenService,
-      MessagesService,
-      SharedService,
-      ScreenHolderService,
-      UserExitsEventThrowerService,
-      ScreenProcessorService,
-      ScreenLockerService,
-      ModalService,
-      InfoService,
-      JSMethodsService,
-      PlaceholderService,
-      KeyboardMappingService,
-      { provide: NGXLogger, useValue: {} },
-      {provide:HttpClientXsrfModule, useClass:HttpClientTestingModule},
-      { provide: 'IJSFunctionService', useClass: JSMethodsService },
-      {provide:KeyboardMappingService,useValue:keyboardMappingServiceStub}
-    ],
-    
-  }).compileComponents();
+        NavigationService,
+        ScreenService,
+        MessagesService,
+        SharedService,
+        ScreenHolderService,
+        UserExitsEventThrowerService,
+        ScreenProcessorService,
+        ScreenLockerService,
+        ModalService,
+        InfoService,
+        JSMethodsService,
+        PlaceholderService,
+        KeyboardMappingService,
+        { provide: NGXLogger, useValue: {} },
+        { provide: HttpClientXsrfModule, useClass: HttpClientTestingModule },
+        { provide: 'IJSFunctionService', useClass: JSMethodsService },
+        { provide: KeyboardMappingService, useValue: keyboardMappingServiceStub },
+        provideHttpClient(withInterceptorsFromDi()),
+        provideHttpClientTesting()
+    ]
+}).compileComponents();
   const keyboardMappingService = TestBed.inject(KeyboardMappingService);
   keyboardMappingService.clearJSKeyboardMappings();
 });

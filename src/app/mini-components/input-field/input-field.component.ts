@@ -54,9 +54,10 @@ enum GXDataTypes {
 // }
 
 @Component({
-  selector: 'app-input-field',
-  templateUrl: './input-field.component.html',
-  styleUrls: ['./input-field.component.scss']
+    selector: 'app-input-field',
+    templateUrl: './input-field.component.html',
+    styleUrls: ['./input-field.component.scss'],
+    standalone: false
 })
 export class InputFieldComponent implements OnChanges, OnInit, OnDestroy {
 

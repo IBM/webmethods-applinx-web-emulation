@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MultipleOptionsComponent } from './multiple-options.component';
 import { Field, InfoService, MultipleOptionsTransformation, ScreenService } from '@ibm/applinx-rest-apis';
-import { HttpClient, HttpClientXsrfModule, HttpHandler } from '@angular/common/http';
+import { HttpClient, HttpHandler } from '@angular/common/http';
 import { NavigationService } from 'src/app/services/navigation/navigation.service';
 import { MessagesService } from 'src/app/services/messages.service';
 import { SharedService } from 'src/app/services/shared.service';

@@ -1,13 +1,21 @@
-<button cdsButton="secondary" size="lg" *ngIf="transform.triggerType === 'Button'" (click)="onClick()" class="button-corner btn-width" [ngClass]="transform.style"
-        [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': (transform.position.column+transform.triggerText.length+2), 'line-height': '1rem', 'height': '1.4rem'}">
-  {{transform.triggerText}}
-</button>
+@if (transform.triggerType === 'Button') {
+  <button cdsButton="secondary" size="lg" (click)="onClick()" class="button-corner btn-width" [ngClass]="transform.style"
+    [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': (transform.position.column+transform.triggerText.length+2), 'line-height': '1rem', 'height': '1.4rem'}">
+    {{transform.triggerText}}
+  </button>
+}
 
-<a [ngClass]="transform.style" *ngIf="transform.triggerType === 'Link'" (click)="onClick()"
-   [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': (transform.position.column+transform.triggerText.length+1)}">
-  {{transform.triggerText}}
-</a>
-<img [ngClass]="transform.style" *ngIf="transform.triggerType === 'Image' && transform.triggerImage && transform.triggerImage != ''" [src]="transform.triggerImage" (click)="onClick()"
-     [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column}">
+@if (transform.triggerType === 'Link') {
+  <a [ngClass]="transform.style" (click)="onClick()"
+    [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': (transform.position.column+transform.triggerText.length+1)}">
+    {{transform.triggerText}}
+  </a>
+}
+@if (transform.triggerType === 'Image' && transform.triggerImage && transform.triggerImage != '') {
+  <img [ngClass]="transform.style" [src]="transform.triggerImage" (click)="onClick()"
+    [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column}">
+}
 
-<app-text *ngIf="transform.leadingLabel" [transform]="transform.leadingLabel"></app-text>
+@if (transform.leadingLabel) {
+  <app-text [transform]="transform.leadingLabel"></app-text>
+}

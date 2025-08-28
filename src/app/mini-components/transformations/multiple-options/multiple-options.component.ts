@@ -20,26 +20,23 @@ import { GridPosition } from 'src/app/services/navigation/tab-and-arrows.service
 import {NavigationService} from '../../../services/navigation/navigation.service';
 
 @Component({
-  selector: 'app-multiple-options',
-  templateUrl: './multiple-options.component.html',
-  styleUrls: ['./multiple-options.component.scss']
+    selector: 'app-multiple-options',
+    templateUrl: './multiple-options.component.html',
+    styleUrls: ['./multiple-options.component.scss'],
+    standalone: false
 })
 export class MultipleOptionsComponent implements OnChanges {
 
   @Input() transform: MultipleOptionsTransformation;
   inputField: InputField;
-  manyRadios = ["one", "two", "three", "four", "five", "six"];
   radioValue :string| null = null;
-  entries : any = []; // [{"content":"MODIFY"},{"content":"DELETE"},{"content":"DISPLAY"}]
+  entries : any = [];
   constructor(private navigationService: NavigationService) {
   }
 
   ngOnInit(){
-    // console.log("######## ");
-    // console.log(this.transform);
-    // console.log("######## ")
     if (this.transform.type == "MultipleOptionsTransformation" && this.transform.multipleOptionsType === 'Combobox'){
-      let tempElement = this.transform.items; //JSON.parse(JSON.stringify(element.items));
+      let tempElement = this.transform.items; 
       if (tempElement){
         tempElement.forEach(entry => {
           entry["content"] = entry.key;

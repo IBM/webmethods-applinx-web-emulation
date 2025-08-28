@@ -19,9 +19,10 @@ import { MenuTransformation, Field, Position, InputField } from '@ibm/applinx-re
 import {NavigationService} from '../../../services/navigation/navigation.service';
 
 @Component({
-  selector: 'app-menu',
-  templateUrl: './menu.component.html',
-  styleUrls: ['./menu.component.scss']
+    selector: 'app-menu',
+    templateUrl: './menu.component.html',
+    styleUrls: ['./menu.component.scss'],
+    standalone: false
 })
 export class MenuComponent implements OnChanges {
 

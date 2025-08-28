@@ -1,5 +1,7 @@
 <div class="customer_header {{transform.style}}" style="display: flex; flex-direction: row;" [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column, 'grid-column-end': transform.position.column+transform.text.length}">
-  <span *ngFor="let ch of transform.text.split(''); index as i">
-    {{ch != ' ' ? ch : '&nbsp;'}} 
-  </span>
-</div> 
+  @for (ch of transform.text.split(''); track i; let i = $index) {
+    <span>
+      {{ch != ' ' ? ch : '&nbsp;'}}
+    </span>
+  }
+</div>

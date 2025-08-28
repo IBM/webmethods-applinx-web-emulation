@@ -1,12 +1,13 @@
-<ng-container *ngIf="transform">
-  <!-- <cds-checkbox id="checkbox-1" [disabled]="false" [indeterminate]="false" (checkedChange)="onSelect($event)" class="custom-checkbox" 
-    [hideLabel]="false"
-    [ngClass]="transform.style"
-    [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column}">
-    <app-text *ngIf="transform.leadingLabel" [transform]="transform.leadingLabel"></app-text>
-  </cds-checkbox> -->
-
-  <input type="checkbox" id="checkbox-1" name="checkbox-1" onclick="onSelect($event)" class="custom-checkbox" 
-  [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column,'vertical-align':'middle', 'position':'relative','top':'1px'}">
-  <app-text *ngIf="transform.leadingLabel" [transform]="transform.leadingLabel"></app-text>
-</ng-container>
+@if (transform) {
+  <!-- <cds-checkbox id="checkbox-1" [disabled]="false" [indeterminate]="false" (checkedChange)="onSelect($event)" class="custom-checkbox"
+  [hideLabel]="false"
+  [ngClass]="transform.style"
+  [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column}">
+</cds-checkbox>
+<app-text *ngIf="transform.leadingLabel" [transform]="transform.leadingLabel"></app-text> -->
+<input type="checkbox" id="checkbox-1" name="checkbox-1" onclick="onSelect($event)" class="custom-checkbox"
+  [ngStyle]="{'grid-row-start': transform.position.row, 'grid-column-start': transform.position.column}">
+  @if (transform.leadingLabel) {
+    <app-text [transform]="transform.leadingLabel"></app-text>
+  }
+}
