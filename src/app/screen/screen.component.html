@@ -30,7 +30,7 @@
         }
       </div>
     }
-    @for (field of m_screen.fields; track i; let i = $index)
+    @for (field of m_screen.fields; track field)
  {
       <ng-container #gridContainer >
         @if (field && (field.protected || (!isChildWindow && hasChildWindows()) || (isChildWindow && !isLastChildWindow))) {
