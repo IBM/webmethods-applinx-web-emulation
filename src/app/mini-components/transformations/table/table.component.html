@@ -20,7 +20,7 @@
     <!-- <tr cdsTableRow *ngFor="let row of transform.table.rows; index as i" [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'"> -->
     @for (row of transform.table.rows; track i; let i = $index) {
       <tr [ngClass]="(i%2==0) ? 'gx_tbl_alternating1' : 'gx_tbl_alternating2'">
-        @for (item of row.items; track j; let j = $index) {
+        @for (item of row.items; track item; let j = $index) {
           <td style="border-style: solid; border-width: thin">
             @if (item.type && item.inTableCell) {
               @switch (item.type) {

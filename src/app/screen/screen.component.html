@@ -24,7 +24,7 @@
       <div name="windowTitle"
         style="display: flex; margin-top: -0.7rem; background-color: Hidden; position: relative; top: 10px;"
         [ngStyle]="titlePosition">
-       @for (ch of m_screen.windows[index].title.split(''); track i; let i = $index)
+       @for (ch of m_screen.windows[index].title.split(''); track ch; let i = $index)
  {
           <span>{{ch != ' ' ? ch : '&nbsp;'}}</span>
         }

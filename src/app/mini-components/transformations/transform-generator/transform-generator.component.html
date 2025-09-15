@@ -1,4 +1,4 @@
-@for (transform of transformations; track i; let i = $index) {
+@for (transform of transformations; track transform;) {
   <ng-container name="transformations">
     @if (!transform.inTableCell) {
       @switch (transform.type) {
