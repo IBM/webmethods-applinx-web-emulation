@@ -1,6 +1,6 @@
 @for (item of transform.items; track item) {
   <a [routerLink]="" (click)="onClick(item.actionValue)" [ngClass]="transform.style" [ngStyle]="{'grid-row-start': item.actionPosition.row, 'grid-row-end': item.actionPosition.row, 'grid-column-start': item.actionPosition.column, 'grid-column-end': (item.actionPosition.column+item.text.length)}">
-    @for (ch of item.text.split(''); track ch; let i = $index) {
+    @for (ch of item.text.split(''); track $index) {
       <span [ngStyle]="{'grid-row-start': item.actionPosition.row, 'grid-row-end': item.actionPosition.row, 'grid-column-start': item.actionPosition.column+i, 'display': 'inline-block'}">
         {{ch != ' ' ? ch : '&nbsp;'}}
       </span>

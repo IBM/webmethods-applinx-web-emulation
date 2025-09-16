@@ -9,11 +9,11 @@ input {
   margin-top: -1px;
   // height: 20px;
 }
-input[ng-reflect-size="1"] {
+input[ng-reflect-size="1"], input[maxlength="1"] {
   width: 1rem;
   text-align: center;
 }
-input[ng-reflect-size="2"] {
+input[ng-reflect-size="2"], input[maxlength="2"] {
   width: calc(var(--text-font-size) + 10px);
   text-align: center;
 }
