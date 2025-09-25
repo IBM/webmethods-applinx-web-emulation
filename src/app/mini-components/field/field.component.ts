@@ -33,8 +33,8 @@ export class FieldComponent implements OnChanges {
   content: string[];
 
   constructor(public storageService: StorageService, private doms : DomSanitizer) {
-    this.field?console.log(">>@constructor>>> this.field.content = ", this.field.content):"";
-    this.field?console.log(">>@constructor>>> this.field.visualContent = ", this.field.visualContent):"";
+    // this.field?console.log(">>@constructor>>> this.field.content = ", this.field.content):"";
+    // this.field?console.log(">>@constructor>>> this.field.visualContent = ", this.field.visualContent):"";
   }
 
   ngOnChanges(changes: SimpleChanges): void {

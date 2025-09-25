@@ -74,7 +74,6 @@ export class TableComponent implements OnChanges {
           tempElement.forEach(entry => {
             entry["content"] = entry.key;
             entry["selected"] = (entry.value.trim()!== "")?false: true;
-            console.log(entry)
           });
           this.entries = element.items;
            colDetailObj.push(new TableItem({ data: {}, template: this.dropdownTemplate }));

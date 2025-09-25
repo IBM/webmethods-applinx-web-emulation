@@ -77,7 +77,7 @@ export class CalendarComponent implements OnInit, OnChanges {
     this.calenderFieldCount = changes.transform.currentValue["dateInputFields"].length;
     if (this.calenderFieldCount == 1){
         this.field = changes.transform.currentValue.dateInputFields[0].field;
-        console.log("@ngOnChanges field : ", this.field)
+      //  console.log("@ngOnChanges field : ", this.field)
         this.sendableField = new InputField();
         this.sendableField.setValue(this.field.content);
         this.sendableField.setPosition(this.field.position);
@@ -138,13 +138,13 @@ export class CalendarComponent implements OnInit, OnChanges {
   }
 
   formatDefaultDate(format : string, oldDate : string){
-    console.log("OLD DATE ", oldDate)
+  //  console.log("OLD DATE ", oldDate)
     if(oldDate.trim() != ""){
         let tempDate = new Date(oldDate);
         let formattedYear = 0;
         let formattedMonth = "";
         let formattedDate = "";
-        console.log("Temp Date : ",tempDate);
+  //      console.log("Temp Date : ",tempDate);
         if (format == this.format1){ // eg: Dec. 12, 2024
           formattedYear = tempDate.getFullYear();
           formattedDate = tempDate.getDate() < 10? "0"+tempDate.getDate():tempDate.getDate().toString();
@@ -175,7 +175,7 @@ export class CalendarComponent implements OnInit, OnChanges {
           formattedMonth = (tempMonth < 10)? "0"+tempMonth.toString():tempMonth.toString();
           this.defaultDate = formattedDate +"."+ formattedMonth +"."+ formattedYear 
         }
-        console.log("this.defaultDate : ",this.defaultDate);  
+    //    console.log("this.defaultDate : ",this.defaultDate);  
       }
   }
 

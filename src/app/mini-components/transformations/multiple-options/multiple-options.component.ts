@@ -87,7 +87,6 @@ export class MultipleOptionsComponent implements OnChanges {
   }
 
   onSelect(value: any): void{
-    console.log(">>>>>>>>>>>> Value : ", JSON.stringify(value));
     this.inputField.setValue(value);
     this.navigationService.setSendableField(this.inputField);
   }

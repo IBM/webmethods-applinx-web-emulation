@@ -40,7 +40,6 @@ export class CheckboxComponent implements OnChanges {
   }
 
   onSelect(event: any): void {
-    console.log("@onSelect : ", event)
     if (event) {
       this.inputField.setValue(this.transform.checkedValue);
     } else {

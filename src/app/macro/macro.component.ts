@@ -223,15 +223,15 @@ export class MacroComponent {
     let newMacroName = form.value.txtRecordMacro;
     this.token = this.storageService.getAuthToken();
     let macroNameList = []
-    console.log("newMacroName : ", newMacroName);
+    //console.log("newMacroName : ", newMacroName);
     this.macroFileListSubscription = this.macroService
       .getMacro(this.user, this.applicationName, this.token)
       .subscribe(data => {
-        console.log(data)
+      //  console.log(data)
         data.fileList?.forEach(file => {
           macroNameList.push(file.substring(0, file.length - 5))
         });
-        console.log("macroNameList : ", macroNameList)
+        //console.log("macroNameList : ", macroNameList)
         if (macroNameList.findIndex(item => item == newMacroName) == -1) {
           this.dataService.setMacroRecordFlag(true);
           this.dataService.setMacroDetails(form.value);
