@@ -264,7 +264,6 @@ export class MacroComponent {
         });
       },
         err => {
-          console.log(err);
           this.notificationService.showToast({
             title: 'Save Macro',
             caption: "An Unexpected Error has occured while saving the Macro!",

@@ -94,7 +94,7 @@ export class TableComponent implements OnChanges {
   }
 
   onSelect(event) {
-    console.log('Selected option:', event);
+  //  console.log('Selected option:', event);
   }
 
 }
