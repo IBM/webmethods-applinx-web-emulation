@@ -1,0 +1,69 @@
+version: '2'
+tasks:
+  code-checks:
+    include:
+      - dind
+    runtimeClassName: large
+    steps:
+      - name: detect-secrets
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+        abort_on_failure: true
+        image_pull_policy: IfNotPresent
+        script: |
+          #!/bin/sh
+           "/opt/commons/detect-secrets/run_scan.sh"
+      - name: static-scan
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+        dind: true
+        abort_on_failure: false
+        image_pull_policy: IfNotPresent
+        script: |
+          #!/bin/sh
+          /opt/commons/static-scan/run.sh
+      - name: release
+        when: 'false'
+      - name: acceptance-test
+        when: 'false'
+      - name: peer-review
+        when: 'false'
+      - name: sign-artifact
+        when: 'false'
+      - name: dynamic-scan
+        when: 'false'
+      - name: checks-setup
+        when: 'false'
+      - name: compliance-checks
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+        dind: true
+        abort_on_failure: true
+        image_pull_policy: IfNotPresent
+        script: |
+          #!/usr/bin/env bash
+          "/opt/commons/compliance-checks/run.sh"
+  code-build:
+    include:
+      - docker
+    runtimeClassName: large
+    steps:
+      - name: build-artifact
+        when: 'false'
+      - name: setup
+        when: 'false'
+      - name: sign-artifact
+        when: 'false'
+  deploy-checks:
+    include:
+      - docker
+    steps:
+      - name: deploy
+        when: 'false'
+      - name: dynamic-scan
+        when: 'false'
+      - name: acceptance-test
+        when: 'false'
