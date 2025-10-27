@@ -6,14 +6,11 @@ tasks:
     runtimeClassName: large
     steps:
       - name: npm-install
-        include:
-          - docker-socket
         image: node:18
-        abort_on_failure: true
         script: |
           #!/bin/sh
           echo "Running npm install..."
-          npm ci || npm install
+          npm install
           echo "npm install completed successfully."
       - name: detect-secrets
         include:
@@ -74,6 +71,7 @@ tasks:
           echo "Running npm install..."
           npm install
           echo "npm install completed successfully"
+        when: 'true'
   deploy-checks:
     include:
       - docker
