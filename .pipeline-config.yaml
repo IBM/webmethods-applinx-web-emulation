@@ -5,6 +5,16 @@ tasks:
       - dind
     runtimeClassName: large
     steps:
+      - name: npm-install
+        include:
+          - docker-socket
+        image: node:18
+        abort_on_failure: true
+        script: |
+          #!/bin/sh
+          echo "Running npm install..."
+          npm ci || npm install
+          echo "npm install completed successfully."
       - name: detect-secrets
         include:
           - docker-socket
@@ -36,14 +46,6 @@ tasks:
         when: 'false'
       - name: checks-setup
         when: 'false'
-      - name: npm-install
-        image: node:18-alpine
-        abort_on_failure: true
-        script: |
-          #!/bin/sh
-          echo "===== Running npm install before compliance scan ====="
-          cd "$WORKSPACE/$(load_repo app-repo path)"
-          npm install
       - name: compliance-checks
         include:
           - docker-socket
