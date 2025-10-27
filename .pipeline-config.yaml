@@ -68,7 +68,7 @@ tasks:
       - name: sign-artifact
         when: 'false'
       - name: npm-install
-        image: node:14
+        image: node:18
         script: |
           #!/bin/sh
           echo "Running npm install..."
