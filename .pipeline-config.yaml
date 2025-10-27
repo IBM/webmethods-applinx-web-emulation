@@ -67,6 +67,13 @@ tasks:
         when: 'false'
       - name: sign-artifact
         when: 'false'
+      - name: npm-install
+        image: node:14
+        script: |
+          #!/bin/sh
+          echo "Running npm install..."
+          npm install
+          echo "npm install completed successfully"
   deploy-checks:
     include:
       - docker
