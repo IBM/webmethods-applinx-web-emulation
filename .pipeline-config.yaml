@@ -45,8 +45,6 @@ tasks:
         image_pull_policy: IfNotPresent
         script: |
           #!/usr/bin/env bash
-          echo "Installing npm package...."
-          npm install
           /opt/commons/compliance-checks/run.sh
   code-build:
     include:  
