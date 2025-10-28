@@ -13,7 +13,8 @@ tasks:
         image_pull_policy: IfNotPresent
         script: |
           #!/bin/sh
-           "/opt/commons/detect-secrets/run_scan.sh"
+          npm install
+          "/opt/commons/detect-secrets/run_scan.sh"
       - name: static-scan
         include:
           - docker-socket
@@ -45,7 +46,7 @@ tasks:
         image_pull_policy: IfNotPresent
         script: |
           #!/usr/bin/env bash
-          /opt/commons/compliance-checks/run.sh
+          "/opt/commons/compliance-checks/run.sh"
   code-build:
     include:  
       - docker
