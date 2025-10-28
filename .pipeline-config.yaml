@@ -9,9 +9,16 @@ tasks:
         image: node:18
         script: |
           #!/bin/sh
-          echo "Running npm install..."
-          npm install
-          echo "npm install completed successfully."
+          set -e
+          echo "Installing npm dependencies..."
+          if [ -f package-lock.json ]; then
+            echo "Found package-lock.json, using npm ci"
+            npm ci
+          else
+            echo "No package-lock.json, using npm install"
+            npm install
+          fi
+          echo "npm dependencies installed successfully."
       - name: detect-secrets
         include:
           - docker-socket
