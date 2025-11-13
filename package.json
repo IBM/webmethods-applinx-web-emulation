@@ -33,8 +33,7 @@
     "rbush": "3.0.1",
     "rxjs": "7.5.2",
     "rxjs-compat": "6.6.7",
-    "tslib": "2.3.1",
-    "zone.js": "0.14.4"
+    "tslib": "2.3.1"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "17.3.2",
@@ -65,6 +64,7 @@
     "karma-coverage-istanbul-reporter": "3.0.3",
     "karma-jasmine-html-reporter": "1.7.0",
     "ts-node": "10.4.0",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "zone.js": "^0.15.1"
   }
 }
