@@ -307,12 +307,7 @@ describe('AppComponent', () => {
         hasRoute: cy.stub().as('hasRoute').returns(false)
       })
     };
-    const logger = {
-      getConfigSnapshot: cy.stub().as('getConfigSnapshot').returns({}),
-      updateConfig: cy.stub().as('updateConfig')
-    };
     providersList.push(
-      { provide: NGXLogger, useValue: logger }, 
       {provide: NavigationService, useValue: navigationService },
       { provide: UserExitsEventThrowerService, useValue: userExitsEventThrower },
       { provide: HttpClient, useValue: httpClient });
