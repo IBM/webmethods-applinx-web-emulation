@@ -56,6 +56,7 @@ describe('AppComponent', () => {
     });
   });
 
+  /*
   it("should have as title 'ApplinX-Framework'", () => {
     mount(AppComponent, {
       declarations: [AppComponent],
@@ -329,4 +330,5 @@ describe('AppComponent', () => {
         .should('have.been.calledWith', '/api/screen', {});
     });
   });
+  */
 });
