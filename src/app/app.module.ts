@@ -96,7 +96,9 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  declarations: [
+  imports: [
+    ApiModule.forRoot(apiConfigFactory),
+    RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' }),
     AppComponent,
     ScreenComponent,
     WebLoginComponent,
@@ -114,10 +116,6 @@ const routes: Routes = [
     LineComponent,
     CheckboxComponent,
     MacroComponent,
-  ].concat(generatedPages),
-  imports: [
-    ApiModule.forRoot(apiConfigFactory),
-    RouterModule.forRoot(routes, { onSameUrlNavigation: 'reload' }),
     BrowserModule,
     HttpClientModule,
     FormsModule,
