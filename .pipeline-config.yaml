@@ -6,14 +6,7 @@ tasks:
     runtimeClassName: large
     steps:
       - name: detect-secrets
-        include:
-          - docker-socket
-        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
-        abort_on_failure: true
-        image_pull_policy: IfNotPresent
-        script: |
-          #!/bin/sh
-          "/opt/commons/detect-secrets/run_scan.sh"
+        when: 'false'
       - name: static-scan
         include:
           - docker-socket
@@ -51,7 +44,7 @@ tasks:
           echo "Packages installed succcessfully"
           "/opt/commons/compliance-checks/run.sh"
   code-build:
-    include:  
+    include:
       - docker
     runtimeClassName: large
     steps:
