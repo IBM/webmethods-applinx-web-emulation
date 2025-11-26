@@ -47,7 +47,7 @@ tasks:
           #!/usr/bin/env bash
           echo "Installing npm packages.."
           cd "$WORKSPACE/$(load_repo app-repo path)"
-          npm install
+          npm install --legacy-peer-deps
           echo "Packages installed succcessfully"
           "/opt/commons/compliance-checks/run.sh"
   code-build:
