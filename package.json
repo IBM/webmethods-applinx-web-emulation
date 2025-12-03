@@ -55,7 +55,7 @@
     "@typescript-eslint/eslint-plugin": "8.12.2",
     "@typescript-eslint/parser": "8.12.2",
     "codelyzer": "6.0.2",
-    "cypress": "^15.6.0",
+    "cypress": "14.5.3",
     "eslint": "^9.13.0",
     "eslint-plugin-import": "2.31.0",
     "eslint-plugin-node": "11.1.0",
