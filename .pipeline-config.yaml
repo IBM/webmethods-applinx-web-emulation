@@ -1,0 +1,127 @@
+version: '2'
+tasks:
+  code-checks:
+    include:
+      - dind
+    runtimeClassName: large
+    steps:
+      - name: detect-secrets
+        when: 'false'
+      - name: static-scan
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+        dind: true
+        abort_on_failure: false
+        image_pull_policy: IfNotPresent
+        script: |
+          #!/bin/sh
+          /opt/commons/static-scan/run.sh
+      - name: release
+        when: 'false'
+      - name: acceptance-test
+        when: 'false'
+      - name: peer-review
+        when: 'false'
+      - name: sign-artifact
+        when: 'false'
+      - name: dynamic-scan
+        when: 'false'
+      - name: checks-setup
+        when: 'false'
+      - name: compliance-checks
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+        dind: true
+        abort_on_failure: true
+        image_pull_policy: IfNotPresent
+        script: |
+          #!/usr/bin/env bash
+          echo "Installing npm packages.."
+          cd "$WORKSPACE/$(load_repo app-repo path)"
+          npm install --legacy-peer-deps
+          echo "Packages installed succcessfully"
+          "/opt/commons/compliance-checks/run.sh"
+  code-build:
+    include:
+      - docker
+    runtimeClassName: large
+    steps:
+      - name: build-artifact
+        when: 'false'
+      - name: setup
+        when: 'false'
+      - name: sign-artifact
+        when: 'false'
+deploy-checks:
+    include:
+      - docker
+    steps:
+      - name: dynamic-scan
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/base-images/base:v1.19.0
+        script: |
+          #!/usr/bin/env bash
+          if [[ "$PIPELINE_DEBUG" == 1 ]]; then
+            trap env EXIT
+            env
+            set -x
+          fi
+          echo "dynamic scan triggered"
+ 
+          if [ -z "$(get_env opt-in-dynamic-scan "")" ]; then
+            echo "To enable this stage, add 'opt-in-dynamic-scan' parameter." >&2
+            echo "Also add opt-in-dynamic-api-scan or opt-in-dynamic-ui-scan if needed." >&2
+          else
+            if [[ "$(get_env pipeline_namespace)" == *"cc"* ]]; then
+              repo_key="repo-1"
+              app_url=$(get_env app-url "")
+              if [[ -z "${app_url}" ]]; then
+                echo "Please provide the app-url for stage/test environment." >&2
+                exit 1
+              fi
+            else
+              repo_key="app-repo"
+            fi
+ 
+            echo "===== Running dynamic scan ====="
+            ${COMMONS_PATH}/dynamic-scan/trigger-async-zap.sh \
+              --ui "scripts/zap/uiscripts/run.sh" \
+              --environment-setup "scripts/zap/zap-custom-scripts/.env.dynamic-scan.sh" \
+              --scope "" \
+              --repo-key "$repo_key" \
+              --evidence-type "com.ibm.dynamic_scan"
+          fi
+ 
+      - name: acceptance-test
+        image: icr.io/continuous-delivery/base-images/base:v1.19.0
+        script: |
+          #!/usr/bin/env bash
+          echo "=== Acceptance test stage ==="
+ 
+ 
+  async-stage:
+    include:
+      - dind
+    steps:
+      - name: run-stage
+        include:
+          - docker-socket
+        image: icr.io/continuous-delivery/base-images/base:v1.19.0
+ 
+      - name: owasp-zap
+        script: |
+          #!/usr/bin/env bash
+          echo "Running OWASP-ZAP async scans..."
+          source "${COMMONS_PATH}/dynamic-scan/start-zap-scans.sh"
+ 
+      - name: release
+        when: 'false'
+      - name: peer-review
+        when: 'false'
+      - name: sign-artifact
+        when: 'false'
+      - name: checks-setup
+        when: 'false'
