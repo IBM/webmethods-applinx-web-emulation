@@ -23,7 +23,7 @@
     "@angular/platform-browser-dynamic": "20.0.5",
     "@angular/router": "20.0.5",
     "@carbon/icons": "^11.60.0",
-    "@carbon/styles": "^1.81.0",
+    "@carbon/styles": "^1.97.0",
     "@ibm/applinx-rest-apis": "10.15.7",
     "@types/rbush": "3.0.0",
     "bootstrap": "5.1.3",
