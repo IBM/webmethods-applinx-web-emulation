@@ -65,24 +65,31 @@ tasks:
         script: |
           #!/usr/bin/env bash
           set -e
-          
+      
+          echo "=== Force correct Node.js version ==="
+          node -v || true
+      
+          echo "Installing Node.js 22 explicitly (override pipeline runtime)"
+          curl -fsSL https://rpm.nodesource.com/setup_22.x | bash -
+          dnf install -y nodejs
+      
+          echo "Node version after install:"
+          node -v
+          npm -v
+      
+          echo "=== Install app dependencies ==="
           npm install --legacy-peer-deps
           npm install --save-dev typescript@5.8.2
           npm install -g @angular/cli
-          
+      
+          echo "=== Start Angular app in background ==="
           npm start &
-          sleep 25
-          
+          sleep 30
+      
+          echo "=== Verify app is running ==="
           curl -f http://localhost:4200
-          
-          echo "App is running, triggering ZAP scan..."
-              
-          if [[ "$PIPELINE_DEBUG" == 1 ]]; then
-            trap env EXIT
-            env
-            set -x
-          fi
-          echo "dynamic scan triggered"
+      
+          echo "=== Trigger async dynamic scan ==="
  
           if [ -z "$(get_env opt-in-dynamic-scan "")" ]; then
             echo "To enable this stage, add 'opt-in-dynamic-scan' parameter." >&2
