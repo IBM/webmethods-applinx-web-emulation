@@ -42,6 +42,8 @@ tasks:
           cd "$WORKSPACE/$(load_repo app-repo path)"
           npm install --legacy-peer-deps
           echo "Packages installed succcessfully"
+          npm start
+          echo "angular application started"
           "/opt/commons/compliance-checks/run.sh"
   code-build:
     include:
