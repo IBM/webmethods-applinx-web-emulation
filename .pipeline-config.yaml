@@ -64,6 +64,9 @@ tasks:
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
         script: |
           #!/usr/bin/env bash
+          echo "installing npm packages"
+          npm start
+          echo "application started"
           if [[ "$PIPELINE_DEBUG" == 1 ]]; then
             trap env EXIT
             env
