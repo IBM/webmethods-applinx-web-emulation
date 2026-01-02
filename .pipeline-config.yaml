@@ -64,18 +64,17 @@ tasks:
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
         script: |
           #!/usr/bin/env bash
+          set -e
+
           echo "Installing dependencies"
           npm install --legacy-peer-deps
-          
-          echo "Fixing TypeScript version for Angular"
           npm install --save-dev typescript@5.8.2
-          
-          echo "Installing Angular CLI"
           npm install -g @angular/cli
           
-          echo "Starting Angular app..."
-          ng serve --proxy-config src/proxy.conf.json --host 0.0.0.0
-          
+          echo "Starting Angular app in background"
+          npm start &
+          sleep 30
+    
           if [[ "$PIPELINE_DEBUG" == 1 ]]; then
             trap env EXIT
             env
