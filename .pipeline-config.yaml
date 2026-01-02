@@ -42,8 +42,6 @@ tasks:
           cd "$WORKSPACE/$(load_repo app-repo path)"
           npm install --legacy-peer-deps
           echo "Packages installed succcessfully"
-          npm start
-          echo "angular application started"
           "/opt/commons/compliance-checks/run.sh"
   code-build:
     include:
@@ -67,8 +65,16 @@ tasks:
         script: |
           #!/usr/bin/env bash
           echo "installing npm packages"
-          npm start
+          npm install --legacy-peer-deps
+          
+          # Install Angular CLI globally
+          npm install -g @angular/cli
+          
+          echo "Starting Angular app..."
+          ng serve --proxy-config src/proxy.conf.json
+          
           echo "application started"
+          
           if [[ "$PIPELINE_DEBUG" == 1 ]]; then
             trap env EXIT
             env
