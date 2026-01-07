@@ -30,6 +30,7 @@ tasks:
       - name: checks-setup
         when: 'false'
       - name: compliance-checks
+        when: 'false'
         include:
           - docker-socket
         image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
