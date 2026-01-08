@@ -107,9 +107,6 @@ tasks:
         include:
           - docker-socket
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
-        script: |
-          #!/usr/bin/env bash
-          set -e
 
 
       - name: owasp-zap
