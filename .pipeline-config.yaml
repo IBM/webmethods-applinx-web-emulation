@@ -111,19 +111,22 @@ tasks:
           #!/usr/bin/env bash
           set -e
 
-          echo "Publishing build record for DevOps Insights..."
-          ibmcloud login --apikey "$IBMCLOUD_API_KEY" -r eu-gb
-          ibmcloud doi buildrecord create \
-            --build-number "$PIPELINE_RUN_ID" \
-            --repository "$GIT_URL" \
-            --commit "$GIT_COMMIT"
-
-          echo "Registering app-image artifact (non-image pipeline)..."
-          pipelinectl load_artifact app-image type=other
 
       - name: owasp-zap
         script: |
           #!/usr/bin/env bash
+          docker pull icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
+          IMAGE="icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61"
+          echo "1111111"
+          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61 | awk -F@ '{print $2}')"
+          echo "2222222"
+          echo "save-artifact"
+          save_artifact app-image \
+              type=image \
+              name="icr.io/continuous-delivery/pipeline/pipeline-base-ubi" \
+              "digest=${DIGEST}" \
+              "tags=3.61"
+              
           echo "Running OWASP-ZAP async scans..."
           source "${COMMONS_PATH}/dynamic-scan/start-zap-scans.sh"
 
