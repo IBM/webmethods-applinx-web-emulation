@@ -44,6 +44,7 @@ tasks:
           npm install --legacy-peer-deps
           echo "Packages installed succcessfully"
           "/opt/commons/compliance-checks/run.sh"
+
   code-build:
     include:
       - docker
@@ -55,6 +56,7 @@ tasks:
         when: 'false'
       - name: sign-artifact
         when: 'false'
+
   deploy-checks:
     include:
       - docker
@@ -66,7 +68,7 @@ tasks:
         script: |
           #!/usr/bin/env bash
           echo "=== Trigger async dynamic scan ==="
- 
+
           if [ -z "$(get_env opt-in-dynamic-scan "")" ]; then
             echo "To enable this stage, add 'opt-in-dynamic-scan' parameter." >&2
             echo "Also add opt-in-dynamic-api-scan or opt-in-dynamic-ui-scan if needed." >&2
@@ -81,7 +83,7 @@ tasks:
             else
               repo_key="app-repo"
             fi
- 
+
             echo "===== Running dynamic scan ====="
             ${COMMONS_PATH}/dynamic-scan/trigger-async-zap.sh \
               --ui "scripts/zap/uiscripts/run.sh" \
@@ -90,14 +92,13 @@ tasks:
               --repo-key "$repo_key" \
               --evidence-type "com.ibm.dynamic_scan"
           fi
- 
+
       - name: acceptance-test
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
         script: |
           #!/usr/bin/env bash
           echo "=== Acceptance test stage ==="
- 
- 
+
   async-stage:
     include:
       - dind
@@ -106,13 +107,26 @@ tasks:
         include:
           - docker-socket
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
- 
+        script: |
+          #!/usr/bin/env bash
+          set -e
+
+          echo "Publishing build record for DevOps Insights..."
+          ibmcloud login --apikey "$IBMCLOUD_API_KEY" -r eu-gb
+          ibmcloud doi buildrecord create \
+            --build-number "$PIPELINE_RUN_ID" \
+            --repository "$GIT_URL" \
+            --commit "$GIT_COMMIT"
+
+          echo "Registering app-image artifact (non-image pipeline)..."
+          pipelinectl load_artifact app-image type=other
+
       - name: owasp-zap
         script: |
           #!/usr/bin/env bash
           echo "Running OWASP-ZAP async scans..."
           source "${COMMONS_PATH}/dynamic-scan/start-zap-scans.sh"
- 
+
       - name: release
         when: 'false'
       - name: peer-review
