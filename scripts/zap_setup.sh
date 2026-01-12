@@ -6,7 +6,7 @@ echo "pwd"
 pwd
 
 echo "Login to ICR registry"
-docker login uk.icr.io -u "$(get_env applinx-icrio-docker-user)" -p "$(get_env dastscan-api-key)"
+docker login uk.icr.io/dev-applinx-icr -u "$(get_env applinx-icrio-docker-user)" -p "$(get_env dastscan-api-key)"
 
 BRANCH=main
 
