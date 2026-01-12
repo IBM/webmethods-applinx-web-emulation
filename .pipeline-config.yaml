@@ -50,66 +50,6 @@ tasks:
       - docker
     runtimeClassName: large
     steps:
-      - name: pull-and-save-image-artifact
-        include:
-          - docker-socket
-        image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
-        dind: true
-        script: |
-          #!/usr/bin/env bash
-          set -euo pipefail
-          
-          echo "=== Pulling and Saving Image Artifact ==="
-          
-          # Login to registry
-          echo "Logging into uk.icr.io..."
-          docker login uk.icr.io \
-            -u "$(get_env applinx-icrio-docker-user)" \
-            -p "$(get_env dastscan-api-key)"
-          
-          # Configuration
-          IMAGE="uk.icr.io/dev-applinx-icr/applinx-web-emulation"
-          BRANCH="main"
-          
-          # Pull the image
-          echo "Pulling ${IMAGE}:${BRANCH}..."
-          docker pull ${IMAGE}:${BRANCH}
-          
-          # Extract digest
-          echo "Extracting image digest..."
-          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' ${IMAGE}:${BRANCH} | awk -F@ '{print $2}')"
-          
-          if [ -z "$DIGEST" ]; then
-            echo "ERROR: Failed to extract digest"
-            exit 1
-          fi
-          
-          echo "Image digest: ${DIGEST}"
-          
-          # Save artifact - THIS IS CRITICAL FOR SCAN STAGE
-          echo "Saving artifact for scan stage..."
-          save_artifact app-image \
-            type=image \
-            name="${IMAGE}" \
-            digest="${DIGEST}" \
-            tags="${BRANCH}"
-          
-          # Verify artifact was saved
-          echo "Verifying artifact..."
-          SAVED_NAME=$(load_artifact app-image name 2>/dev/null || echo "")
-          
-          if [ -n "$SAVED_NAME" ]; then
-            echo "✓ SUCCESS: Image artifact saved and verified"
-            echo "  Name: ${SAVED_NAME}"
-            echo "  Digest: ${DIGEST}"
-            echo "  Tags: ${BRANCH}"
-          else
-            echo "✗ ERROR: Artifact verification failed"
-            exit 1
-          fi
-          
-          echo "=== Image Artifact Ready for Scan Stage ==="
-      
       - name: build-artifact
         when: 'false'
       - name: setup
@@ -168,11 +108,15 @@ tasks:
           - docker-socket
         image: icr.io/continuous-delivery/base-images/base:v1.19.0
 
+
       - name: owasp-zap
         script: |
           #!/usr/bin/env bash
+          
+          echo "source scripts/zap_setup.sh........."
+          bash scripts/zap_setup.sh
+          
           echo "Running OWASP-ZAP async scans..."
-          # The app-image artifact is now available here
           source "${COMMONS_PATH}/dynamic-scan/start-zap-scans.sh"
 
       - name: release
