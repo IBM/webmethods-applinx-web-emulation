@@ -112,18 +112,6 @@ tasks:
       - name: owasp-zap
         script: |
           #!/usr/bin/env bash
-          docker pull icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
-          IMAGE="icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61"
-          echo "1111111"
-          DIGEST="$(docker inspect --format='{{index .RepoDigests 0}}' icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61 | awk -F@ '{print $2}')"
-          echo "2222222"
-          echo "save-artifact"
-          save_artifact app-image \
-              type=image \
-              name="icr.io/continuous-delivery/pipeline/pipeline-base-ubi" \
-              "digest=${DIGEST}" \
-              "tags=3.61"
-              
           echo "Running OWASP-ZAP async scans..."
           source "${COMMONS_PATH}/dynamic-scan/start-zap-scans.sh"
 
