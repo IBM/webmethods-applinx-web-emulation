@@ -1,27 +1,24 @@
-@if (field) {
-  @if (content && content.length > 0) {
-    <div class="flexField"
+<ng-container *ngIf="field">
+
+  <div class="flexField" *ngIf="content && content.length > 0" 
       [attr.name]="field.name"
       [id]="field.name"
       [ngStyle]="position"
       [style]="getCss()"
-      [dir]="'ltr'"
-      [ngClass]="[field.blinking ? 'blink_me' : '', fgClass ? fgClass : '', bgClass ? bgClass : '', this.field.isIntensified ? 'gx_intf' : '']"
+      [dir]="'ltr'" 
+      [ngClass]="[field.blinking ? 'blink_me' : '', fgClass ? fgClass : '', bgClass ? bgClass : '', this.field.isIntensified ? 'gx_intf' : '']" 
       [hidden]="!field.visible">
-      @for (ch of this.content; track i; let i = $index) {
-        <span>
-          {{ch != ' ' ? ch : '&nbsp;'}}
-        </span>
-      }
-    </div>
-  }
-  @if (content && content.length === 0) {
-    <div class="flexField"
+    <span *ngFor="let ch of this.content; index as i">
+      {{ch != ' ' ? ch : '&nbsp;'}}
+    </span>
+  </div>
+
+  <div class="flexField" *ngIf="content && content.length === 0" 
       [ngStyle]="position"
-      [style]="getCss()"
+      [style]="getCss()" 
       [ngClass]="bgClass"
       [hidden]="!field.visible">
-      <span>&nbsp;</span>
-    </div>
-  }
-}
+    <span>&nbsp;</span>
+  </div>
+  
+</ng-container>
