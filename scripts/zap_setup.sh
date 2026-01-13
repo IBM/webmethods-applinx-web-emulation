@@ -8,7 +8,7 @@ pwd
 echo "Login to ICR registry"
 docker login uk.icr.io/dev-applinx-icr -u "$(get_env applinx-icrio-docker-user)" -p "$(get_env dastscan-api-key)"
 
-BRANCH=latest
+BRANCH=v1
 
 echo "docker pull uk.icr.io/dev-applinx-icr/applinx-web-emulation:$BRANCH"
 docker pull uk.icr.io/dev-applinx-icr/applinx-web-emulation:$BRANCH
