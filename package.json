@@ -63,5 +63,8 @@
     "karma-jasmine": "4.0.1",
     "ts-node": "10.4.0",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "lodash-es": "^4.17.23"
   }
 }
