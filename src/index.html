@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <title>ApplinX Web Application</title>
   <base href="/">
+  
+  <!-- Security Headers - Anti-clickjacking protection -->
+  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  
   <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
   <meta name="viewport" content="width=device-width" />
