@@ -90,8 +90,15 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "proxyConfig": "src/proxy.conf.json",
-            "buildTarget": "applinx-web-emulation:build"
+            "proxyConfig": "src/proxy.conf.js",
+            "buildTarget": "applinx-web-emulation:build",
+            "headers": {
+              "X-Frame-Options": "SAMEORIGIN",
+              "Content-Security-Policy": "frame-ancestors 'self'",
+              "X-Content-Type-Options": "nosniff",
+              "X-XSS-Protection": "1; mode=block",
+              "Referrer-Policy": "strict-origin-when-cross-origin"
+            }
           },
           "configurations": {
             "development": {
