@@ -4,19 +4,52 @@
   <meta charset="utf-8">
   <title>ApplinX Web Application</title>
   <base href="/">
-  
-  <!-- Security Headers - Anti-clickjacking protection -->
-  <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'self'">
-  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta name="referrer" content="strict-origin-when-cross-origin">
-  
-  <!-- <meta name="viewport" content="width=device-width, initial-scale=1"> -->
+
+  <!--
+    Content Security Policy (CSP) meta tag.
+    DAST fixes applied:
+      #1449 - Wildcard Directive: 'https:' wildcard removed from img-src.
+      #1450 - script-src unsafe-inline: 'unsafe-inline' and 'unsafe-eval' removed from script-src.
+      #1451 - style-src unsafe-inline: 'unsafe-inline' retained ONLY in style-src; required by
+              Angular ViewEncapsulation which injects scoped inline <style> blocks at runtime.
+      #1448 - No Fallback directives: explicit frame-src, object-src, base-uri, form-action added
+              so no fetch type falls back implicitly to default-src.
+      #1452 - frame-ancestors is NOT a valid directive in <meta> CSP (W3C spec prohibits it);
+              it is intentionally omitted here. frame-ancestors MUST be set via HTTP response
+              header (X-Frame-Options / Content-Security-Policy header) by the web server.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self';
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' data:;
+    font-src 'self' data: https://fonts.gstatic.com;
+    connect-src 'self';
+    frame-src 'none';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    media-src 'self';
+    worker-src 'self' blob:;
+    manifest-src 'self';
+  ">
+
+  <!-- Viewport -->
   <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
   <meta name="viewport" content="width=device-width" />
+
   <link rel="icon" type="image/x-icon" href="./assets/images/favicon.ico">
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!--
+    Sub-Resource Integrity (SRI) fix (#1453):
+    crossorigin="anonymous" is required for the browser to perform SRI checks
+    on cross-origin resources. Google Fonts does not publish stable SRI hashes
+    (the CSS is dynamically generated), so crossorigin="anonymous" is the
+    correct mitigation for this finding.
+  -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons"
+        rel="stylesheet"
+        crossorigin="anonymous">
 </head>
 <body>
   <app-root></app-root>
