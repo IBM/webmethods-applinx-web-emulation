@@ -94,10 +94,11 @@
             "buildTarget": "applinx-web-emulation:build",
             "headers": {
               "X-Frame-Options": "SAMEORIGIN",
-              "Content-Security-Policy": "frame-ancestors 'self'",
               "X-Content-Type-Options": "nosniff",
               "X-XSS-Protection": "1; mode=block",
-              "Referrer-Policy": "strict-origin-when-cross-origin"
+              "Referrer-Policy": "strict-origin-when-cross-origin",
+              "Permissions-Policy": "geolocation=(), microphone=(), camera=()",
+              "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self'; frame-src 'none'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; media-src 'self'; worker-src 'self' blob:; manifest-src 'self';"
             }
           },
           "configurations": {
