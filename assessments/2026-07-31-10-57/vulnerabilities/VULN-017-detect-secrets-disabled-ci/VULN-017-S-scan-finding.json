@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-017",
+    "descriptor":  "detect-secrets-disabled-ci",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-L-001",
+                     "task_name":  "CI/CD Pipeline Security",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  ".pipeline-config.yaml",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "medium",
+                    "file":  ".pipeline-config.yaml",
+                    "line":  9,
+                    "function":  null,
+                    "code_snippet":  "- name: detect-secrets\n  when: \u0027false\u0027",
+                    "preliminary_assessment":  "detect-secrets disabled — hardcoded credentials go undetected in CI",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-011"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "detect-secrets when: false",
+                                               "sign-artifact when: false",
+                                               "dynamic-scan when: false"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Remove when: false from detect-secrets",
+                                              "Add npm audit to CI"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-017 to vulnerability-registry.json"
+                                        ]
+                   }
+}

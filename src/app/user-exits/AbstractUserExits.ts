@@ -35,7 +35,8 @@ export abstract class AbstractUserExits implements IUserExits {
 				private logger: NGXLogger ) {
     }
 
-    preConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) {
+    preConnect(createSessionRequest: CreateSessionRequest) {
+        // VULN-005: authHeader parameter removed — credentials must not be distributed to user exits.
         // empty impl. to allow overriding specific methods
     }
     postConnect(createSessionRespose: CreateSessionResponse) {

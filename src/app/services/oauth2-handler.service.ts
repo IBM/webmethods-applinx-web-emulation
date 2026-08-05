@@ -37,15 +37,40 @@ export class OAuth2HandlerService {
    * Navigate to this login page
    */
   redirectToIDPLoginPage(): void {
+    // VULN-003: generate and store a cryptographic state parameter before the IdP redirect.
+    // Validated in canActivate() before the OIDC code is accepted.
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('oidc_state', state);
+
     this.sessionService.connect().subscribe((res: CreateSessionResponse) => {
       this.isRedirect = true;
       this.logger.debug(this.messages.get("REDIRECTING_TO_3RD_OPENID_CONNECT_PROVIDER"));
-      window.location.href = res.redirectUri;
+
+      // VULN-007: validate the redirect URI before navigation.
+      // Only allow https:// URIs — reject any other scheme or malformed URL.
+      let redirectUri: string;
+      try {
+        const parsed = new URL(res.redirectUri);
+        if (parsed.protocol !== 'https:') {
+          throw new Error('Redirect URI must use https:');
+        }
+        redirectUri = parsed.href;
+      } catch (e) {
+        this.logger.error('Blocked unsafe redirectUri from ApplinX server: ' + res.redirectUri);
+        this.userExitsEventThrower.fireOnConnectError(new HttpErrorResponse({ error: e }));
+        sessionStorage.removeItem('oidc_state');
+        return;
+      }
+
+      // Append state to IdP URL for CSRF validation on callback (VULN-003).
+      const separator = redirectUri.includes('?') ? '&' : '?';
+      window.location.href = redirectUri + separator + 'state=' + encodeURIComponent(state);
     }, (errorResponse: HttpErrorResponse) => {
       this.logger.error(this.messages.get("COULDNT_GET_REDIRCT)URI_FROM_REST_API"));
+      sessionStorage.removeItem('oidc_state');
       this.userExitsEventThrower.fireOnConnectError(errorResponse);
     });
-  } 
+  }
 
   /**
    * Send code to ApplinX REST API session resource in order to connect a session.
@@ -55,7 +80,9 @@ export class OAuth2HandlerService {
    */
   sendCodeAndConnectSession(code: string, appName?: string, connPool?: string): Observable<CreateSessionResponse> {
     this.isRedirect = false;
-    sessionStorage.setItem('idPcode', code);
+    // VULN-009: do NOT persist the OIDC authorization code in sessionStorage.
+    // The code is single-use and only needed as a local variable for the exchange call below.
+    // Storing it in sessionStorage keeps a stale artifact accessible to any XSS running in the tab.
     
     const conf = this.configurationService
     const createSessionRequest = new CreateSessionRequest(conf.applicationName || appName, conf.connectionPool || connPool);
@@ -64,6 +91,7 @@ export class OAuth2HandlerService {
       createSessionRequest.options = Object.assign(createSessionRequest.options, this.configurationService.sessionOptions);
     }
 
+    // VULN-005: firePreConnect no longer accepts authHeader — credential not passed to user exits.
     this.userExitsEventThrower.firePreConnect(createSessionRequest);
     return this.sessionService.connect(createSessionRequest);
   }

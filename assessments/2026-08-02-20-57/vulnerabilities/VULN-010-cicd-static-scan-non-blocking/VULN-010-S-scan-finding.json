@@ -1,0 +1,67 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-010",
+  "descriptor": "cicd-static-scan-non-blocking",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-L-002",
+    "task_name": "CI/CD Pipeline Configuration Security",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": ".pipeline-config.yaml",
+    "coverage": "100% — complete YAML file analyzed"
+  },
+  "finding": {
+    "severity": "medium",
+    "file": ".pipeline-config.yaml",
+    "line": 15,
+    "function": null,
+    "tool": "LLM analysis",
+    "code_snippet": "# In code-checks pipeline stage:\n- name: static-scan\n  image: ...\n  image_pull_policy: Always\n  abort_on_failure: false  # LINE 15: scan failure does not block pipeline\n  script: ...\n\n# VERIFIED PRESENT (VULN-014, VULN-017, VULN-018):\n# npm ci  (line 45)\n# npm audit --audit-level=moderate  (line 49)\n# detect-secrets (line 9) - re-enabled\n# image_pull_policy: Always  (lines 17, 40)\n\n# NOT PRESENT: .secrets.baseline file for detect-secrets comparison",
+    "preliminary_assessment": "The CI/CD pipeline configuration correctly implements VULN-014 (npm ci + npm audit), VULN-017 (detect-secrets re-enabled), and VULN-018 (image_pull_policy Always). However, the static-scan step has abort_on_failure:false, allowing the pipeline to continue even when the SAST scan finds vulnerabilities. This means vulnerabilities detected by static analysis do not block code from progressing to artifact signing and deployment. Additionally, detect-secrets step is re-enabled (VULN-017 fix) but .secrets.baseline file does not exist in the repository root — without a baseline file, detect-secrets may generate false positives or fail to properly compare against known safe patterns. Container images use version tags (not SHA256 digests), leaving them vulnerable to tag reassignment attacks.",
+    "threat_model_refs": ["TM-004"],
+    "attack_surface_refs": ["AS-009"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "VULN-014 verified: npm ci (line 45) and npm audit --audit-level=moderate (line 49) present",
+      "VULN-017 verified: detect-secrets step enabled (line 9) but .secrets.baseline missing",
+      "VULN-018 verified: image_pull_policy Always on both image-based steps (lines 17, 40)",
+      "abort_on_failure:false on static-scan — security scan does not block build",
+      "Container image tags not pinned by SHA256 digest",
+      "Multiple steps disabled (when: false) — intentional per code-checks-only pipeline design",
+      "sign-artifact steps re-enabled but key management not visible in YAML"
+    ],
+    "false_positives": [
+      {
+        "pattern": "Disabled steps (when: false)",
+        "rationale": "Steps are intentionally disabled per code-checks-only pipeline architecture; deployment handled separately"
+      },
+      {
+        "pattern": "Hardcoded credentials in YAML",
+        "rationale": "Grep scan found no hardcoded API keys, tokens, or passwords in the pipeline YAML"
+      }
+    ],
+    "coverage_assessment": "Complete — full .pipeline-config.yaml analyzed. All VULN fix annotations verified against implementation. Secret scanning and image pinning gaps identified."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Change abort_on_failure to true on static-scan step — or document exception with risk acceptance sign-off",
+      "Generate and commit .secrets.baseline file: 'detect-secrets scan > .secrets.baseline'",
+      "Pin container images by SHA256 digest instead of version tags",
+      "Verify sign-artifact key management — confirm signing keys are in secure credential store, not inline"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-010 to cicd-static-scan-non-blocking",
+      "Set status: flagged, severity: medium"
+    ]
+  }
+}

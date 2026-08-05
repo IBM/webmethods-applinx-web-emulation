@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-007",
+  "descriptor": "macro-delete-path-traversal",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "Macro Delete Path Traversal via Unvalidated selectedMacro",
+    "severity": "high",
+    "status": "confirmed",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-22", "CWE-20"],
+    "owasp": ["A01:2021-Broken Access Control"],
+    "capec": ["CAPEC-126", "CAPEC-597"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:H",
+      "score": 8.0,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "low",
+        "user_interaction": "required",
+        "scope": "changed",
+        "confidentiality": "high",
+        "integrity": "high",
+        "availability": "high"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/macro/macro.component.ts",
+    "line_start": 200,
+    "line_end": 230,
+    "function": "onDeleteMacro/selected",
+    "class": "MacroComponent",
+    "component": "MacroComponent",
+    "module": "macro"
+  },
+  "data_flow": {
+    "sources": ["sessionStorage macroFileList (populated from ApplinX REST API, persisted across logout)"],
+    "transformations": ["getMacroListDetails() reads macroFileList, splits on comma — no per-item validation", "selected($event) stores event + '.json' into this.selectedMacro — no MACRO_NAME_PATTERN validation", "onDeleteMacro() passes this.selectedMacro to MacroService.deleteMacro()"],
+    "sinks": ["MacroService.deleteMacro(macroName, user, app, token) → ApplinX REST API DELETE endpoint", "URL path construction in @ibm/applinx-rest-apis SDK (URL encoding behavior unknown)"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "medium",
+    "artifact": "VULN-007-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:30:00Z",
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "medium",
+    "privilege_boundary": {
+      "start_privilege": "Authenticated ApplinX user with macro permissions (or XSS executor via VULN-004)",
+      "achieved_privilege": "Arbitrary file deletion/read on ApplinX server filesystem (if server unprotected)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "high",
+      "description": "Arbitrary file read or deletion on ApplinX server filesystem via path traversal in macro name. Impact conditioned on: (1) ApplinX SDK not URL-encoding path params, (2) ApplinX server not validating macro names server-side. Attack chain: VULN-004 XSS → VULN-009 sessionStorage injection → VULN-007 delete."
+    },
+    "artifact": "VULN-007-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": ["Prior XSS (VULN-004) OR physical/malware access to browser console to inject sessionStorage", "ApplinX REST API server not validating macro name server-side", "ApplinX SDK not URL-encoding path parameters"],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["ApplinX SDK may URL-encode path params (unverified — if true, client-side fix sufficient)"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "Apply MACRO_NAME_PATTERN validation (/^[a-zA-Z0-9-]+$/) in MacroComponent.selected() before storing selectedMacro. Filter macroList on load. Fix modal state inconsistency: onDeleteMacro() should use selectedDelMacro. Clear macroFileList in StorageService.setNotConnected() (companion VULN-009 fix).",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-011"],
+    "attack_surface": ["AS-007"],
+    "related_vulnerabilities": ["VULN-004", "VULN-009"],
+    "attack_chains": ["AC-003"],
+    "external_cves": []
+  },
+  "tags": ["path-traversal", "macro", "sessionStorage-injection", "file-delete"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "onDeleteMacro() passes selectedMacro directly to ApplinX REST API without MACRO_NAME_PATTERN validation"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "Confirmed path traversal via sessionStorage injection. Requires prior XSS (VULN-004) or VULN-009 as prerequisite. CVSS HIGH 8.0 reflecting server filesystem impact (conditioned on SDK/server behavior). Part of AC-003 attack chain."
+    }
+  ]
+}

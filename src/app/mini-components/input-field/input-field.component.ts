@@ -24,7 +24,6 @@ import {
   SimpleChanges,
   ViewChild
 } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { Field, InputField, Cursor, Position } from '@ibm/applinx-rest-apis';
 import { Subscription } from 'rxjs/internal/Subscription';
 import { TabAndArrowsService } from 'src/app/services/navigation/tab-and-arrows.service';
@@ -81,7 +80,7 @@ export class InputFieldComponent implements OnChanges, OnInit, OnDestroy {
   }
 
   constructor(private navigationService: NavigationService, public storageService: StorageService,
-    private tabAndArrowsService: TabAndArrowsService, private doms: DomSanitizer,
+    private tabAndArrowsService: TabAndArrowsService,
     private screenHolderService: ScreenHolderService) { }
 
   ngOnInit(): void {
@@ -193,9 +192,39 @@ export class InputFieldComponent implements OnChanges, OnInit, OnDestroy {
     return template;
   }
 
-  getCss() {
-    // console.log("this.field.style : ", this.field.style)
-    return this.doms.bypassSecurityTrustStyle(this.field.style ?? '');
+  /** Allowed CSS properties for server-supplied field.style (terminal presentation only). */
+  private static readonly ALLOWED_CSS_PROPS = new Set([
+    'color', 'background-color', 'font-weight', 'font-style', 'font-size',
+    'text-decoration', 'text-align', 'visibility', 'opacity',
+    'border', 'border-color', 'border-style', 'border-width',
+    'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+  ]);
+
+  /** Parse field.style into an object containing only allowlisted properties. */
+  getCss(): { [key: string]: string } {
+    const raw = this.field.style ?? '';
+    if (!raw) {
+      return {};
+    }
+    const result: { [key: string]: string } = {};
+    for (const declaration of raw.split(';')) {
+      const colon = declaration.indexOf(':');
+      if (colon === -1) {
+        continue;
+      }
+      const prop = declaration.substring(0, colon).trim().toLowerCase();
+      const value = declaration.substring(colon + 1).trim();
+      // VULN-002: block CSS comment injection (url/**/) and hex-escape sequences (\XX)
+      // in addition to the existing url()/expression()/javascript: guards.
+      if (InputFieldComponent.ALLOWED_CSS_PROPS.has(prop) && value &&
+          !/url\s*\(|expression\s*\(|javascript\s*:/i.test(value) &&
+          !/\/\*/.test(value) &&
+          !/\\[0-9a-fA-F]/.test(value)) {
+        result[prop] = value;
+      }
+    }
+    return result;
   }
 
   ngOnDestroy(): void {

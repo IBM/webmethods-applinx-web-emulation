@@ -37,8 +37,9 @@ export class UserExitsEventThrowerService {
     return this._userExitsList ?? [];
   }
 
-  public firePreConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) {
-    this.userExitsList.forEach(u => u.preConnect(createSessionRequest, authHeader));
+  public firePreConnect(createSessionRequest: CreateSessionRequest) {
+    // VULN-005: authHeader parameter removed — do not pass credentials to user-exit implementations.
+    this.userExitsList.forEach(u => u.preConnect(createSessionRequest));
   }
   public firePostConnect(createSessionResponse: CreateSessionResponse) {
     this.userExitsList.forEach(u => u.postConnect(createSessionResponse));

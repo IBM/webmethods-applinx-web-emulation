@@ -35,12 +35,27 @@ export class ConfigurationService {
     this.loadConfig();
   }
 
+  /** VULN-015: allowlist pattern for applicationName and connectionPool — only alphanumeric, hyphens, underscores. */
+  private static readonly APP_NAME_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
   private loadConfig(): void {
     this.httpClient.get<any>(GXUtils.removeEndingSlash(this.url) + "/assets/config/sessionConfig.json")
       .subscribe(
         config => {
-          this._applicationName = config.applicationName;
-          this._connectionPool = config.connectionPool;
+          // VULN-015: validate applicationName and connectionPool against a strict allowlist to prevent
+          // path-traversal characters from reaching ApplinX macro API URL parameters.
+          const rawAppName: string = config.applicationName ?? '';
+          if (rawAppName && !ConfigurationService.APP_NAME_PATTERN.test(rawAppName)) {
+            this.logger.error('sessionConfig.json: invalid applicationName "' + rawAppName + '" — rejected (only alphanumeric, hyphens, underscores allowed)');
+          } else {
+            this._applicationName = rawAppName || undefined;
+          }
+          const rawPool: string = config.connectionPool ?? '';
+          if (rawPool && !ConfigurationService.APP_NAME_PATTERN.test(rawPool)) {
+            this.logger.error('sessionConfig.json: invalid connectionPool "' + rawPool + '" — rejected');
+          } else {
+            this._connectionPool = rawPool || undefined;
+          }
           this._autoLogin = config.autoLoginIfDisabledAuth;
           this.initSessionOptions(config.sessionOptions);
           this.navigationService.setIsAutoLogin(this._autoLogin);

@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-006",
+  "descriptor": "macro-broad-credential-capture-btoa",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "high",
+    "root_cause": "SharedService.recordMacro() (shared.service.ts:88-108) uses document.querySelectorAll(\"input[type='password']\") to capture ALL password-type inputs in the entire DOM (not scoped to ApplinX fields). Password values are encoded with window.btoa() — base64 encoding is reversible (window.atob()) and provides no confidentiality protection. The encoded credentials are stored in the macro object and transmitted to ApplinX server via MacroService.saveMacro(). Additionally, macro.component.ts:49 hardcodes basePath = 'http://localhost:2380/applinx/rest' — macro transmission over HTTP not HTTPS. decryptBeforePlay() (macro.component.ts:202) accesses element.fields without null guard.",
+    "attack_scenario": "Server-Side Recovery: Any entity with access to ApplinX server file system (admin, compromised server, backup access) can read macro JSON files. For each step with type='password' and a base64 value: window.atob(value) → plaintext password. Trivial single-step recovery.\n\nAPI-Level Recovery: The viewMacro REST endpoint (MacroService.viewMacro()) returns macro JSON including base64-encoded password fields. If the API lacks per-user authorization controls, any authenticated user can call viewMacro() for another user's macros and decode credentials.\n\nXSS Recovery: During playback, decryptBeforePlay() decodes passwords into DOM form fields. An XSS vulnerability could read these decoded values from the DOM at playback time.\n\nBroad Capture Risk: document.querySelectorAll(\"input[type='password']\") scans the entire DOM — if any non-ApplinX password fields exist during macro recording (e.g., browser extensions injecting login forms, password manager overlays), those could be captured too.",
+    "prerequisites": [
+      "User must use the macro recording feature during a workflow that involves password entry",
+      "Recovery requires: ApplinX server file access OR macro REST API access (admin or authorization bypass) OR XSS at playback time"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user (any user with macro access)",
+      "achieved_privilege": "Access to plaintext-equivalent passwords for all recorded workflows by that user (or other users if API auth is weak)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "Passwords stored in macro files using base64-only encoding are trivially recoverable. This creates a persistent long-term credential store on the ApplinX server. All users who have ever recorded macros with password fields have their credentials at risk. The broad DOM querySelectorAll captures more than intended (all password inputs, not just ApplinX fields). Combined with VULN-016 (HTTP basePath for macro transmission), credentials may also be interceptable during transmission."
+    },
+    "data_flow": {
+      "sources": [
+        "document.querySelectorAll(\"input[type='password']\") — global DOM query capturing ALL password inputs"
+      ],
+      "transformations": [
+        "pwdField['value'] = window.btoa(pwdField['value']) — base64 encoding (NOT encryption)",
+        "Macro object serialized to JSON: { type: 'password', value: '<base64>' }",
+        "MacroService.saveMacro(macroObj, name, user, applicationName, token) — transmitted to ApplinX server"
+      ],
+      "sinks": [
+        "ApplinX server macro file storage (persistent, server-accessible)",
+        "MacroService REST API viewMacro endpoint (returns macro JSON with base64 values)",
+        "Playback: window.atob(fieldElement.value) in decryptBeforePlay() — decoded into DOM form field"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "SharedService.recordMacro() — src/app/services/shared.service.ts:88-108", "impact": "Global password capture and base64 encoding"},
+      {"component": "MacroComponent.decryptBeforePlay() — src/app/macro/macro.component.ts:202-213", "impact": "Credential decoding at playback + null-deref if element.fields is undefined"},
+      {"component": "MacroComponent basePath — src/app/macro/macro.component.ts:49", "impact": "Hardcoded HTTP URL for macro API — credentials transmitted over HTTP (see VULN-016)"}
+    ],
+    "indirect": [
+      {"component": "ApplinX macro REST API (viewMacro endpoint)", "impact": "Returns base64-encoded passwords — requires proper authorization controls"},
+      {"component": "VULN-016 (hardcoded HTTP basePath)", "impact": "Macro transmission over HTTP enables in-transit credential interception"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Replace window.btoa() with Web Crypto API AES-GCM encryption: generate a per-session key via crypto.subtle.generateKey(), encrypt password values before storage, store key in-memory (not transmitted to server). During playback, use the session key to decrypt. This ensures passwords are never stored in recoverable form on the server. Alternatively, avoid storing passwords in macros entirely — prompt user for re-entry at playback time.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Replace window.btoa() with crypto.subtle.encrypt(AES-GCM) for password values",
+      "Scope document.querySelectorAll to ApplinX container element instead of global DOM",
+      "Fix VULN-016: remove hardcoded HTTP basePath; use relative API path",
+      "Enforce per-user authorization on viewMacro/getMacro API endpoints",
+      "Add null guard in decryptBeforePlay(): check element.fields before accessing",
+      "Consider displaying a warning when recording macros containing password fields"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-006-macro-broad-credential-capture-btoa/VULN-006-S-scan-finding.md",
+    "threat_model": ["TM-007"],
+    "attack_surface": ["AS-008"],
+    "external": [
+      "CWE-312: Cleartext Storage of Sensitive Information",
+      "CWE-522: Insufficiently Protected Credentials",
+      "OWASP A02:2021 — Cryptographic Failures",
+      "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:H/I:N/A:N — Score: 6.5 MEDIUM"
+    ]
+  }
+}

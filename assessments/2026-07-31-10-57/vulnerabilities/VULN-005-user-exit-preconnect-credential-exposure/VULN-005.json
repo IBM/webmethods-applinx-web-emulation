@@ -1,0 +1,150 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-005",
+  "descriptor": "user-exit-preconnect-credential-exposure",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "IUserExits.preConnect() Delivers Plaintext Basic-Auth Credential to All Registered Listeners",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-522",
+      "CWE-200"
+    ],
+    "owasp": [
+      "A02:2021 - Cryptographic Failures",
+      "A07:2021 - Identification and Authentication Failures"
+    ],
+    "capec": [
+      "CAPEC-37"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "score": 5.9,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "Low",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "None",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/user-exits/IUserExits.ts",
+    "line_start": 24,
+    "line_end": 24,
+    "function": "preConnect",
+    "class": "IUserExits",
+    "component": "User-Exit Extensibility System",
+    "module": "user-exits"
+  },
+  "data_flow": {
+    "sources": [
+      "WebLoginComponent.handleSimpleAuth() line 150 — authHeader = 'Basic ' + btoa(u+':'+p)"
+    ],
+    "transformations": [
+      "userExitsEventThrower.firePreConnect(createSessionRequest, authHeader)",
+      "Delivered to each registered IUserExits.preConnect() implementation"
+    ],
+    "sinks": [
+      "Any custom IUserExits implementation's preConnect() method — can log, store, or exfiltrate credential"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-005-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "medium",
+    "privilege_boundary": {
+      "start_privilege": "Registered IUserExits implementation (developer-deployed custom listener)",
+      "achieved_privilege": "Receipt of Basic auth header (plaintext-equivalent username:password) via preConnect callback",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "preConnect() delivers the raw authHeader (Basic base64-encoded credential) to ALL registered user exit listeners. Any IUserExits implementation can log, store, or exfiltrate the credential. This is a design flaw: credentials should not be passed through extensibility hooks in recoverable form."
+    },
+    "artifact": "VULN-005-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: authHeader removed from preConnect() interface and all call sites.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-005-user-exit-preconnect-credential-exposure/VULN-005-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-006"
+    ],
+    "attack_surface": [
+      "AS-012"
+    ],
+    "related_vulnerabilities": [
+      "VULN-004"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "credential-exposure",
+    "user-exits",
+    "basic-auth",
+    "btoa"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "authHeader (Basic base64) passed to all IUserExits.preConnect() listeners — custom implementations receive plaintext-equivalent credential"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED MEDIUM: Design flaw — credentials delivered through extensibility hooks in recoverable form. CVSS 4.4 MEDIUM. Attack chain: VULN-004 + VULN-005 → credential capture."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: authHeader removed from preConnect() interface and all call sites."
+    }
+  ]
+}

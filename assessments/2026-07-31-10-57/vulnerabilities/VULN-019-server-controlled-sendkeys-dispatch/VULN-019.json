@@ -1,0 +1,147 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-019",
+  "descriptor": "server-controlled-sendkeys-dispatch",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "Server-Controlled Key String Sent to Host via sendKeys() Without Allowlist Validation",
+    "severity": "low",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-20"
+    ],
+    "owasp": [
+      "A03:2021 - Injection"
+    ],
+    "capec": [
+      "CAPEC-122"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N",
+      "score": 3.7,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "None",
+        "integrity": "Low",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/keyboard-mapping.service.ts",
+    "line_start": 145,
+    "line_end": 145,
+    "function": "checkKeyboardMappings",
+    "class": "KeyboardMappingService",
+    "component": "KeyboardMappingService",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "targetFunction string from KeyboardMappings.json or server keyboardMapping (no '(' character path)"
+    ],
+    "transformations": [
+      "No allowlist check against valid host key values"
+    ],
+    "sinks": [
+      "navigationService.sendKeys(keyFunc) — arbitrary key sequence sent to ApplinX host"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "medium",
+    "artifact": "VULN-019-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Static asset modification (supply chain) or ApplinX server compromise",
+      "achieved_privilege": "Arbitrary keystroke injection to ApplinX host terminal within victim's session privileges",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Server-controlled keyFunc sent verbatim as host key. Bounded to victim's ApplinX session privileges. Not arbitrary code execution. VULN-002 (parentheses path) is far more severe. CVSS 2.6 LOW."
+    },
+    "artifact": "VULN-019-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: VALID_HOST_KEY allowlist regex validates keyFunc before sendKeys() dispatch.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-019-server-controlled-sendkeys-dispatch/VULN-019-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-003"
+    ],
+    "attack_surface": [
+      "AS-003",
+      "AS-004"
+    ],
+    "related_vulnerabilities": [
+      "VULN-002"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "keyboard-mapping",
+    "sendkeys",
+    "host-injection"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "targetFunction without '(' sent verbatim as host key via sendKeys() — no allowlist of valid host keys"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: Keystroke injection bounded to user's terminal privileges. Requires keyboard mapping tampering. CVSS 2.6 LOW. Fix VULN-002 first (same vector, much higher impact)."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: VALID_HOST_KEY allowlist regex validates keyFunc before sendKeys() dispatch."
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-012",
+  "descriptor": "ngx-logger-bearer-token-remote-logging",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "ngx-logger Ships Bearer Token in Authorization Header with Every Remote Log Request",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-532",
+      "CWE-200"
+    ],
+    "owasp": [
+      "A09:2021 - Security Logging and Monitoring Failures"
+    ],
+    "capec": [
+      "CAPEC-37"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "score": 5.3,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "Low",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "None",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/logger.service.ts",
+    "line_start": 8,
+    "line_end": 20,
+    "function": "alterHttpRequest / getAuthToken",
+    "class": "AuthTokenServerService",
+    "component": "Logger / ngx-logger",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "sessionStorage 'gx_token' — Bearer token"
+    ],
+    "transformations": [
+      "AuthTokenServerService.alterHttpRequest() clones each outbound log HTTP request",
+      "Adds Authorization: Bearer <token> to log shipping request headers"
+    ],
+    "sinks": [
+      "Remote log endpoint (ApplinX /logger) — receives Bearer token with every ERROR-level log message",
+      "Log content includes server error messages, host data, screen data passed to logger.error()"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "medium",
+    "artifact": "VULN-012-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "medium",
+    "privilege_boundary": {
+      "start_privilege": "Log infrastructure attacker or network MITM",
+      "achieved_privilege": "Bearer token extracted from log request Authorization headers — full session hijack",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "AuthTokenServerService unconditionally injects Bearer token into every ngx-logger remote log HTTP request. If serverLoggingUrl is configured, each ERROR log ships the token. Compromise of log endpoint enables full session replay. CVSS 5.3 MEDIUM confirmed."
+    },
+    "artifact": "VULN-012-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T14:00:00Z",
+    "fix_approach": "FULLY FIXED: (1) alterHttpRequest() in logger.service.ts returns request unchanged. (2) setCustomHttpHeaders() call removed from StorageService.setConnected() — second injection point identified in integrity audit. Dead getAuthToken() method removed from AuthTokenServerService.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-012-ngx-logger-bearer-token-remote-logging/VULN-012-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-005"
+    ],
+    "attack_surface": [
+      "AS-013"
+    ],
+    "related_vulnerabilities": [
+      "VULN-008"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "logging",
+    "token-in-logs",
+    "ngx-logger",
+    "information-disclosure"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "AuthTokenServerService attaches Bearer token to all ngx-logger remote log HTTP requests — token exposed to log infrastructure"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED MEDIUM: Bearer token in every ERROR log request header. Requires serverLoggingUrl configured. Compromise of log endpoint → session hijack. CVSS 5.3 MEDIUM."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "PARTIAL FIX: Bearer token header injection removed from alterHttpRequest() in logger.service.ts. Second injection point (storage.service.ts setCustomHttpHeaders) identified but not yet fixed."
+    },
+    {
+      "timestamp": "2026-07-31T14:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "COMPLETE FIX: setCustomHttpHeaders() call removed from StorageService.setConnected(); HttpHeaders import removed from storage.service.ts. Dead getAuthToken() removed from AuthTokenServerService. All Bearer token injection paths now closed."
+    }
+  ]
+}

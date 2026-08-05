@@ -1,0 +1,61 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-016",
+    "descriptor":  "hardcoded-localhost-http-basepath",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-M-004",
+                     "task_name":  "Macro Feature SAST",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  "src/app/macro/macro.component.ts",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "medium",
+                    "file":  "src/app/macro/macro.component.ts",
+                    "line":  49,
+                    "function":  null,
+                    "code_snippet":  "basePath = \u0027http://localhost:2380/applinx/rest\u0027",
+                    "preliminary_assessment":  "Hardcoded HTTP localhost URL — macro API calls use HTTP not HTTPS in production",
+                    "threat_model_refs":  [
+                                              "TM-007"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-008"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "basePath hardcoded overrides environment config",
+                                               "Same in GXUtils.ts:260 and environment.prod.ts:19"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Verify whether MacroService uses basePath via DevTools",
+                                              "Remove class-level basePath fields"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-016 to vulnerability-registry.json"
+                                        ]
+                   }
+}

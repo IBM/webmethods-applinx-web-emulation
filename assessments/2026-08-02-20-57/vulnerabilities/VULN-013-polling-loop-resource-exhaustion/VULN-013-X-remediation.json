@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-013",
+  "descriptor": "polling-loop-resource-exhaustion",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Added stopHostScreenUpdate() calls at the two active logout paths: (1) NavigationService.errorHandler() before storageService.setNotConnected(), (2) AppComponent.logout() disconnectSubscription teardown callback.",
+    "fix_complexity": "low",
+    "root_cause": "stopHostScreenUpdate() was defined and implemented correctly (clears setInterval and nulls intervalId) but had zero call sites in the entire codebase. The VULN-020 fix added the method but never wired it up. The 5-second polling interval continued indefinitely after logout. The isConnected() guard prevented actual API calls, but the interval remained active and wasted event-loop cycles.",
+    "fix_strategy": "resource_management",
+    "changes_made": [
+      "src/app/services/navigation/navigation.service.ts errorHandler(): call this.stopHostScreenUpdate() before this.storageService.setNotConnected() in the redirect-to-webLogin branch",
+      "src/app/app.component.ts logout(): changed disconnectSubscription.add callback to call this.navigationService.stopHostScreenUpdate() then this.storageService.setNotConnected()"
+    ],
+    "files_modified": [
+      "src/app/services/navigation/navigation.service.ts",
+      "src/app/app.component.ts"
+    ],
+    "verification_needed": "After logout, verify no setInterval callbacks fire. Can be checked in DevTools Performance panel or by adding a temporary debug log to checkScreenUpdated() and verifying it stops after logout.",
+    "defense_in_depth": "isConnected() guard in checkScreenUpdated() prevents API calls even if interval somehow survives — belt-and-suspenders approach.",
+    "testing": "1. Login, wait for polling to start. 2. Logout. 3. Verify polling stops (no new checkScreenUpdated calls). 4. Re-login — verify polling restarts correctly.",
+    "residual_risk": "Low. AbstractUserExits error paths (HTTP 410 Gone) also call setNotConnected() without stopHostScreenUpdate() — these are error/disconnect scenarios where the isConnected() guard will already be false, making the interval functionally inert."
+  }
+}

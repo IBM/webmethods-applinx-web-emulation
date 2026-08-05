@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-012",
+  "descriptor": "ngx-logger-bearer-token-remote-logging",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "AuthTokenServerService.alterHttpRequest() (logger.service.ts:8-16) unconditionally clones every ngx-logger remote log HTTP request and adds Authorization: Bearer <token> header. The token is read directly from sessionStorage['gx_token'] (logger.service.ts:19) — bypassing the StorageService abstraction. If serverLoggingUrl is configured in the Angular environment, every ERROR-level log event generates an HTTP request to the remote log endpoint carrying the full Bearer token. This expands the credential attack surface beyond ApplinX REST API to a second, potentially less-secured log infrastructure endpoint.",
+    "attack_scenario": "Log Infrastructure Compromise: Attacker compromises the ngx-logger remote endpoint (e.g., /logger path at the ApplinX server or a separate log aggregation service). The attacker can extract Bearer tokens from all incoming log requests. Each error log during a session includes the user's current token, enabling full session replay.\n\nHTTP Log Endpoint: If serverLoggingUrl uses HTTP (not HTTPS), tokens are transmitted in cleartext and susceptible to network-level interception.\n\nLog File Exposure: Log entries shipped to the remote endpoint may contain raw error messages from ApplinX server (VULN-011) including stack traces, screen names, and session details — compound information disclosure.\n\nDirect sessionStorage Read: logger.service.ts:19 bypasses StorageService, meaning StorageService refactoring (e.g., moving to httpOnly cookie) would not automatically fix this logger — it must be updated independently.",
+    "prerequisites": [
+      "serverLoggingUrl must be configured in Angular environment (log shipping must be active)",
+      "An ERROR-level log event must occur during the session (error, disconnect, failed API call)",
+      "Attacker must intercept HTTP traffic or compromise the log endpoint"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Network attacker or log infrastructure access",
+      "achieved_privilege": "Bearer token extracted from log request headers — full ApplinX session hijack possible",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "If remote logging is active, the Bearer token is transmitted with every log request. Interception or log infrastructure compromise yields a valid session token. Combined with VULN-011 (raw server error messages in logs), the remote log endpoint receives both the authentication credential AND sensitive server internals. This is a conditional vulnerability — severity depends entirely on whether serverLoggingUrl is configured in production."
+    },
+    "data_flow": {
+      "sources": [
+        "sessionStorage['gx_token'] — read directly in logger.service.ts:19"
+      ],
+      "transformations": [
+        "'Bearer ' + sessionStorage.getItem('gx_token') — token with prefix",
+        "httpRequest.clone({ setHeaders: { Authorization: token } }) — injected into every remote log request"
+      ],
+      "sinks": [
+        "Remote log HTTP endpoint (serverLoggingUrl) — receives Bearer token in Authorization header with every log request"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "AuthTokenServerService.alterHttpRequest() — src/app/services/logger.service.ts:8-16", "impact": "Unconditional Bearer token injection into log requests"},
+      {"component": "AuthTokenServerService.getAuthToken() — src/app/services/logger.service.ts:18-20", "impact": "Direct sessionStorage access bypassing StorageService abstraction"}
+    ],
+    "indirect": [
+      {"component": "Remote log endpoint (serverLoggingUrl)", "impact": "Second credential surface — distinct from ApplinX REST API"},
+      {"component": "VULN-011 (raw error messages)", "impact": "Raw server error messages also shipped to log endpoint — compound information disclosure"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove the Authorization header from log requests entirely — log endpoints do not require user session tokens for authentication. If log endpoint authentication is needed, use a dedicated log-specific API key (not the user's session Bearer token). Update getAuthToken() to use StorageService rather than direct sessionStorage access.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Remove Bearer token from log request Authorization header",
+      "Use a separate log-specific authentication credential if log endpoint requires auth",
+      "Update logger.service.ts to use StorageService.getAuthToken() instead of direct sessionStorage read",
+      "Sanitize log message content to remove sensitive data before shipping",
+      "Ensure serverLoggingUrl uses HTTPS only"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-012-ngx-logger-bearer-token-remote-logging/VULN-012-S-scan-finding.md",
+    "threat_model": ["TM-005"],
+    "attack_surface": ["AS-013"],
+    "external": [
+      "CWE-532: Insertion of Sensitive Information into Log File",
+      "CWE-312: Cleartext Storage of Sensitive Information",
+      "OWASP A09:2021 — Security Logging and Monitoring Failures",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:H/I:N/A:N — Score: 5.3 MEDIUM"
+    ]
+  }
+}

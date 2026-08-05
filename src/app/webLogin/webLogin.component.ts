@@ -98,7 +98,8 @@ export class WebLoginComponent implements OnInit {
   }
 
   sessionConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) {
-    this.userExitsEventThrower.firePreConnect(createSessionRequest, authHeader);
+    // VULN-005: do not forward authHeader to user exits — credential not passed.
+    this.userExitsEventThrower.firePreConnect(createSessionRequest);
     this.sessionService.connect(createSessionRequest, authHeader).subscribe((res: CreateSessionResponse)  => {
       this.storageService.setConnected(res.token);
       this.navigationService.isConnectedtoHost.next(true);
@@ -156,7 +157,9 @@ export class WebLoginComponent implements OnInit {
     this.screenLockerService.setLocked(false);
     const msg = errorResponse.error.message || errorResponse.message;
     this.errorMessage = msg;
-    console.error(msg);
+    // VULN-011: removed console.error(msg) — raw ApplinX server error messages may contain
+    // internal IPs, paths, or stack traces. DOM binding via {{ errorMessage }} is XSS-safe
+    // (Angular encodes), and the user already sees the message in the UI.
   }
 
   /* FormGroup's getters */

@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "No lockfile means non-reproducible builds; CI installs deps without npm audit; semver ranges can resolve to unknown versions",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "severity":  "medium",
+                    "function":  null,
+                    "line":  1,
+                    "code_snippet":  "No package-lock.json; npm install --legacy-peer-deps in CI",
+                    "attack_surface_refs":  [
+                                                "AS-011"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "package.json"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-014",
+    "execution":  {
+                      "target":  "package.json",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-006",
+                     "task_name":  "Dependency Vulnerability Scan",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Commit package-lock.json after running npm install",
+                                              "Add npm audit --audit-level=moderate to CI compliance-checks step"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-014 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "missing-lockfile-legacy-peer-deps",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "No package-lock.json in repository",
+                                               "CI compliance-checks runs npm install without npm audit",
+                                               "--legacy-peer-deps bypasses peer dependency conflict detection"
+                                           ]
+                 }
+}

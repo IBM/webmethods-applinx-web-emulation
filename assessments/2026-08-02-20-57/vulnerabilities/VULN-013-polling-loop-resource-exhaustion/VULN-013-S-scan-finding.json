@@ -1,0 +1,62 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-013",
+  "descriptor": "polling-loop-resource-exhaustion",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-L-001",
+    "task_name": "NavigationService Polling Loop Resource Management",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/services/navigation/navigation.service.ts, src/app/app.component.ts",
+    "coverage": "100% — both target files fully analyzed; storage.service.ts and webLogin.component.ts also reviewed for termination paths"
+  },
+  "finding": {
+    "severity": "low",
+    "file": "src/app/services/navigation/navigation.service.ts",
+    "line": 84,
+    "function": "stopHostScreenUpdate",
+    "tool": "LLM analysis",
+    "code_snippet": "// VULN-020 fix: intervalId typed and stored correctly\nprivate intervalId: ReturnType<typeof setInterval> | null = null;\n\nstopHostScreenUpdate(): void {\n  if (this.intervalId !== null) {\n    clearInterval(this.intervalId);\n    this.intervalId = null;\n  }\n}\n// BUT: stopHostScreenUpdate() is NEVER CALLED anywhere in the codebase.\n// app.component.ts onBrowserClose(): calls logout() but NOT stopHostScreenUpdate()\n// storage.service.ts setNotConnected(): clears tokens but NOT stopHostScreenUpdate()\n// NavigationService: no ngOnDestroy() — polling continues for app lifetime",
+    "preliminary_assessment": "The VULN-020 fix is partially implemented: intervalId is correctly typed (ReturnType<typeof setInterval> | null), stored on polling start, and cleared in checkHostScreenUpdate() to prevent duplicate intervals. stopHostScreenUpdate() is correctly defined. However, stopHostScreenUpdate() is never called anywhere in the codebase. The NavigationService is an @Injectable({providedIn: 'root'}) singleton and does not implement OnDestroy, so ngOnDestroy() would never be called during normal navigation. The polling interval continues firing every 5 seconds after logout because setNotConnected() does not call stopHostScreenUpdate(), and the @HostListener('window:beforeunload') in app.component.ts calls logout() without explicitly stopping the interval. While isThereError and !isConnected() guard clauses prevent API calls from being made after logout, the setInterval() callback continues to fire and check these flags repeatedly, wasting CPU cycles and event loop resources.",
+    "threat_model_refs": ["TM-009"],
+    "attack_surface_refs": ["AS-001"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "VULN-020 intervalId storage and clearInterval in checkHostScreenUpdate() — correct but incomplete",
+      "stopHostScreenUpdate() defined correctly but never called — dead method",
+      "NavigationService missing ngOnDestroy() implementation",
+      "setNotConnected() does not call stopHostScreenUpdate()",
+      "app.component.ts onBrowserClose() does not call stopHostScreenUpdate()",
+      "isThereError and !isConnected() guard clauses reduce (but don't eliminate) API pollution after logout"
+    ],
+    "false_positives": [
+      {
+        "pattern": "Unauthenticated API requests after logout",
+        "rationale": "checkScreenUpdated() correctly returns early if !isConnected() — no actual API calls made after logout, but the interval itself keeps firing"
+      }
+    ],
+    "coverage_assessment": "Complete — all NavigationService termination paths traced. All call sites of stopHostScreenUpdate() enumerated (zero found). All paths into setNotConnected() traced."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Add stopHostScreenUpdate() call to storage.service.ts setNotConnected() — minimal fix",
+      "Add stopHostScreenUpdate() to app.component.ts ngOnDestroy() and onBrowserClose()",
+      "Implement ngOnDestroy() in NavigationService as defense-in-depth",
+      "Verify that checkHostScreenUpdate() called from constructor does not cause polling before authentication"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-013 to polling-loop-resource-exhaustion",
+      "Set status: flagged, severity: low"
+    ]
+  }
+}

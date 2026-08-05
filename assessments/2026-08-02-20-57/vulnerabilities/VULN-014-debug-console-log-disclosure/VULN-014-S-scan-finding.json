@@ -1,0 +1,69 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-014",
+  "descriptor": "debug-console-log-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-L-003",
+    "task_name": "Dead Code and Debug Output Cleanup Audit",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/macro/macro.component.ts, src/app/mini-components/field/field.component.ts, src/utils/GXUtils.ts, src/app/services/screen-processor.service.ts",
+    "coverage": "100% — all four primary target files plus shared.service.ts, input-field.component.ts, LifecycleUserExits.ts also analyzed"
+  },
+  "finding": {
+    "severity": "low",
+    "file": "src/app/mini-components/field/field.component.ts",
+    "line": 35,
+    "function": "constructor",
+    "tool": "LLM analysis",
+    "code_snippet": "constructor(public storageService: StorageService) {\n  this.field ? console.log('>>@constructor>>> this.field.content = ', this.field.content) : '';\n  this.field ? console.log('>>@constructor>>> this.field.visualContent = ', this.field.visualContent) : '';\n}\n// These are ACTIVE (not commented) and fire on EVERY FieldComponent construction.\n// Every terminal screen render logs all field content and visualContent to browser console.\n// Terminal fields may contain account numbers, PINs, usernames, host screen PII.",
+    "preliminary_assessment": "FieldComponent constructor contains two active (not commented-out) console.log() calls that output field.content and field.visualContent on every field construction. In a terminal emulation SPA, every screen change triggers FieldComponent construction for all visible fields — meaning all terminal screen data (potentially including account numbers, PINs, passwords in masked/visual form, user names, and session context) is continuously logged to the browser console. This is the highest-risk debug output in the codebase because of frequency (every field render) and sensitivity (all terminal data). Additionally: GXUtils has 7+ global mutable static arrays (typeAheadCharacterArray, pagesArray, etc.) shared without synchronization. screen-processor.service.ts is clean (no debug output or dead code). VULN-016 dead URL constants verified as fully removed.",
+    "threat_model_refs": ["TM-012"],
+    "attack_surface_refs": ["AS-008"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "Two active console.log() in FieldComponent constructor — logs ALL terminal screen field data",
+      "Four active console.log() in MacroComponent (lines 231, 235, 239, 272) — macro names and API responses",
+      "Large blocks of commented-out methods in SharedService (8 methods including sendData, getSharedData)",
+      "Commented-out getPattern() in InputFieldComponent — security-relevant validation logic",
+      "Commented-out enum GXDataTypesAllowedChars in InputFieldComponent — regex patterns",
+      "Commented-out import and example in LifecycleUserExits — cross-file dead-code dependency",
+      "GXUtils global mutable statics: ENABLETYPEAHEADFLAG, typeAheadCharacterArray, pagesArray",
+      "VULN-016 verified: MACRO_BASE_URL, GET_MACROLIST_URL, MACRO_URL fully removed from GXUtils",
+      "screen-processor.service.ts is clean — no debug output or dead code"
+    ],
+    "false_positives": [
+      {
+        "pattern": "VULN- marker comments throughout codebase",
+        "rationale": "These are intentional vulnerability-fix documentation markers, not dead code — must be preserved"
+      },
+      {
+        "pattern": "Optional chaining comments in navigation.service.ts",
+        "rationale": "Inline explanatory comments (// VULN-011) are documentation, not dead code"
+      }
+    ],
+    "coverage_assessment": "Complete — all four primary targets plus 3 additional files. VULN-016 dead URL removal verified. screen-processor.service.ts confirmed clean."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Remove console.log() from FieldComponent constructor immediately — data sensitivity is high",
+      "Remove or gate MacroComponent console.log() calls behind production build flag",
+      "Remove all commented-out dead code blocks in SharedService — reduces regression risk",
+      "Document or deprecate getPattern() removal rationale in InputFieldComponent"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-014 to debug-console-log-disclosure",
+      "Set status: flagged, severity: low"
+    ]
+  }
+}

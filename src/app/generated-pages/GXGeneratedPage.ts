@@ -86,7 +86,10 @@ export abstract class GXGeneratedPage implements AfterViewInit, OnInit {
   }
 
   protected addUserExits(userExits: IUserExits): void {
-    this.userExitsEventThrower.clearEventListeners();
+    // VULN-004: removed clearEventListeners() call — it unconditionally destroyed all globally-registered
+    // security/audit hooks from every other component in the app. Generated pages now append their
+    // user-exit listener rather than replacing all existing ones. To remove a specific listener,
+    // use removeEventListener() (if needed) or rely on component lifecycle cleanup.
     this.userExitsEventThrower.addEventListener(userExits);
   }
 }

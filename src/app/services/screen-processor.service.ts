@@ -88,9 +88,18 @@ export class ScreenProcessorService {
     });
   }
 
+  // VULN-012: cap total field array size to prevent O(n²) memory/CPU DoS from
+  // crafted overlapping transformation rectangles in the ApplinX REST response.
+  private static readonly MAX_FIELDS = 10000;
+
   private filterCollisions(fields: Field[]): Field[] {
     const filtered = new Array<Field>();
-    for (let i=0; i<fields.length; i++) {
+    for (let i = 0; i < fields.length; i++) {
+      // VULN-012: abort if array has grown beyond safe limit.
+      if (fields.length > ScreenProcessorService.MAX_FIELDS) {
+        console.warn(`filterCollisions: MAX_FIELDS (${ScreenProcessorService.MAX_FIELDS}) exceeded — truncating to prevent DoS`);
+        break;
+      }
       let field = fields[i];
       if (field) {
         const pos = this.getFieldPosition(field);
@@ -102,17 +111,20 @@ export class ScreenProcessorService {
           maxY: pos.row
         });
 
-        if (!collisions || collisions.length === 0) filtered.push(field);  
+        if (!collisions || collisions.length === 0) filtered.push(field);
         else {
-          for (let i=0; i<collisions.length && field; i++) {
-            const rect = collisions[i];
+          for (let j = 0; j < collisions.length && field; j++) {
+            const rect = collisions[j];
             if (this.isFieldContainsRect(field, rect)) {
-              fields = fields.concat(this.splitField(field, rect));
+              // VULN-012: use push() instead of concat() to mutate in-place (O(1) amortised
+              // instead of O(n) allocation), and stay within MAX_FIELDS guard above.
+              const split = this.splitField(field, rect);
+              split.forEach(f => fields.push(f));
               field = null;
             } else {
-              field = this.cutField(field, rect); 
+              field = this.cutField(field, rect);
             }
-          }  
+          }
           if (field) filtered.push(field);
         }
       }
@@ -133,8 +145,15 @@ export class ScreenProcessorService {
     const f1 = JSON.parse(JSON.stringify(field));
     const f2 = JSON.parse(JSON.stringify(field));
 
-    f1.content = f1.content.substring(0, rect.minX - 1);
-    f2.content = f2.content.substring(rect.maxX);
+    // VULN-021: clamp rect coordinates to valid string bounds before substring() calls.
+    // Server-supplied rect.minX/maxX may be out of range — JavaScript's substring() is bounds-safe
+    // but returns empty/incorrect content silently. We clamp to produce meaningful results.
+    const contentLen = f1.content?.length ?? 0;
+    const clampedMinX = Math.max(0, Math.min(rect.minX - 1, contentLen));
+    const clampedMaxX = Math.max(0, Math.min(rect.maxX, contentLen));
+    // VULN-006: use optional chaining so null content returns '' instead of throwing TypeError.
+    f1.content = f1.content?.substring(0, clampedMinX) ?? '';
+    f2.content = f2.content?.substring(clampedMaxX) ?? '';
     f1.length = f1.content.length;
     f2.length = f2.content.length;
     f2.name = f2.name + 'split';
@@ -153,11 +172,17 @@ export class ScreenProcessorService {
     if (fieldPos.column >= rect.minX && fieldPos.column + field.length <= rect.maxX) 
       return null;
     
+    // VULN-023: clamp rect coordinates to valid string bounds before substring() calls.
+    // Server-supplied rect.minX/maxX may be out of range — mirrors the fix applied to splitField() for VULN-021.
+    const contentLen = field.content?.length ?? 0;
     if (fieldPos.column <= rect.minX) {
-      field.content = field.content.substring(fieldPos.column, rect.minX+1);
+      const clampedMinX = Math.max(0, Math.min(rect.minX + 1, contentLen));
+      // VULN-006: optional chaining guards null content in cutField — mirrors splitField fix.
+      field.content = field.content?.substring(fieldPos.column, clampedMinX) ?? '';
     } else {
-      field.content = field.content.substring(rect.maxX+1);
-      fieldPos.column = rect.maxX+1;
+      const clampedMaxX = Math.max(0, Math.min(rect.maxX + 1, contentLen));
+      field.content = field.content?.substring(clampedMaxX) ?? '';
+      fieldPos.column = rect.maxX + 1;
     }
     field.length = field.content.length;
 

@@ -1,0 +1,93 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-006",
+  "descriptor": "screen-processor-null-deref",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "splitField() at lines 142-143 and cutField() at lines 167-170 use optional chaining for contentLen guard (f1.content?.length ?? 0) but then call .substring() directly on the same field.content without null propagation. When field.content is null, contentLen correctly becomes 0, clamping passes silently, and the subsequent f1.content.substring() throws TypeError: Cannot read property 'substring' of null. No try-catch surrounds this path and no global Angular ErrorHandler is registered, so the unhandled exception crashes screen rendering.",
+    "attack_scenario": "Compromised ApplinX backend crafts a GetScreenResponse containing a transformation rectangle that overlaps a field with content: null. ScreenProcessorService.processRegionsToHide() calls filterCollisions() which calls splitField()/cutField() on the null-content field. TypeError is thrown, propagates up the call stack, Angular change detection crashes, terminal screen rendering is blocked. User session is frozen (must refresh or re-login). Chained with VULN-012: send 1000 overlapping rects to trigger O(n²) splitting loop + null content at any position = instant crash with lower overhead.",
+    "prerequisites": [
+      "ApplinX REST API backend compromised or server legitimately sends Field with null content property",
+      "At least one transformation rectangle must overlap the null-content field's screen position",
+      "No upstream null-filtering before filterCollisions() receives the field"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX REST API backend",
+      "achieved_privilege": "Client-side session DoS — screen rendering blocked, user frozen",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high",
+      "description": "Terminal screen rendering completely blocked until user refreshes or re-authenticates. Session is destroyed. Repeated attacks prevent sustained sessions. No data exfiltration or modification — purely availability impact."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API GetScreenResponse fields[].content (nullable — server-controlled)"
+      ],
+      "transformations": [
+        "ScreenService.getScreen() deserializes REST response",
+        "ScreenComponent.postGetScreen() → onScreenInit() passes fields to processRegionsToHide()",
+        "ScreenProcessorService.filterCollisions() iterates fields, calls splitField()/cutField() on collisions",
+        "splitField() line 139: contentLen = f1.content?.length ?? 0 — safe (null → 0)",
+        "splitField() line 142: f1.content.substring(0, clampedMinX) — UNSAFE (throws TypeError if null)"
+      ],
+      "sinks": [
+        "Unhandled TypeError propagates through Angular change detection",
+        "Screen rendering cycle crashes — user session frozen"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "ScreenProcessorService.splitField()",
+        "impact": "Null dereference at lines 142-143 crashes rendering"
+      },
+      {
+        "component": "ScreenProcessorService.cutField()",
+        "impact": "Same pattern at lines 167, 170"
+      }
+    ],
+    "indirect": [
+      {
+        "component": "ScreenComponent rendering cycle",
+        "impact": "Entire screen render aborted when exception propagates"
+      },
+      {
+        "component": "User terminal session",
+        "impact": "Session frozen — DoS for the authenticated user"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Propagate the null guard from the contentLen calculation to the substring calls: replace f1.content.substring(x, y) with f1.content?.substring(x, y) ?? '' in all four affected locations (splitField lines 142-143, cutField lines 167 and 170). Alternatively add an early return in splitField/cutField when content is null: if (!field.content) return []; for split or return field for cut.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Add null coalescing to all four substring calls: f1.content?.substring(...) ?? ''",
+      "Add an early guard in splitField(): if (!f1.content || !f2.content) return [f1, f2] as-is",
+      "Register a global Angular ErrorHandler to prevent unhandled exceptions from crashing rendering",
+      "Add server-side validation: ApplinX REST API should not send fields with null content to transformations",
+      "See VULN-012 for companion fix: limit transformation rectangle count to prevent O(n²) amplification"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-006-S-scan-finding.md",
+    "threat_model": ["TM-005"],
+    "attack_surface": ["AS-001"],
+    "external": [
+      "CWE-476: NULL Pointer Dereference",
+      "Attack chain AC-004: VULN-012 O(n²) splitting + VULN-006 null crash = compounded DoS"
+    ]
+  }
+}

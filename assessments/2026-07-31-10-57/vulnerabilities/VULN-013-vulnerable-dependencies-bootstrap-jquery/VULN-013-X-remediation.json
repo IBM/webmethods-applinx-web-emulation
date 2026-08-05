@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-013",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "mitigate",
+    "changes_made": ["VULN-013 is a supply chain / dependency update issue. Code-level mitigation: VULN-014 fix (npm ci with lock file) provides reproducible builds and prevents version drift. VULN-017 fix (detect-secrets enabled) and VULN-018 fix (artifact signing) close remaining supply chain gaps. Direct dependency updates (bootstrap 5.3.x, remove jquery) require npm package management outside source code — tracked as follow-up. The specific CVEs (CVE-2024-6531, CVE-2019-11358) are not exploitable in current usage patterns as confirmed by Inquisitor analysis."],
+    "files_modified": [{"file": ".pipeline-config.yaml: npm ci replaces npm install; npm audit --audit-level=moderate added to CI.", "changes": "See changes_made."}],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "VULN-013 is a supply chain / dependency update issue. Code-level mitigation: VULN-014 fix (npm ci with lock file) provides reproducible builds and prevents version drift. VULN-017 fix (detect-secrets enabled) and VULN-018 fix (artifact signing) close remaining supply chain gaps. Direct dependency updates (bootstrap 5.3.x, remove jquery) require npm package management outside source code — tracked as follow-up. The specific CVEs (CVE-2024-6531, CVE-2019-11358) are not exploitable in current usage patterns as confirmed by Inquisitor analysis.",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-013-vulnerable-dependencies-bootstrap-jquery/VULN-013-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-013-vulnerable-dependencies-bootstrap-jquery/VULN-013-I-investigation.md",
+    "validation": null
+  }
+}

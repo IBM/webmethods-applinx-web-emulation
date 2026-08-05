@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-005",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "Removed authHeader parameter from IUserExits.preConnect() interface",
+      "Updated AbstractUserExits.preConnect() to match new signature",
+      "Updated LifecycleUserExits.preConnect() to match new signature",
+      "Updated UserExitsEventThrowerService.firePreConnect() — no longer accepts or distributes authHeader",
+      "Updated WebLoginComponent.sessionConnect() — firePreConnect called without authHeader",
+      "Updated OAuth2HandlerService.sendCodeAndConnectSession() — firePreConnect called without authHeader"
+    ],
+    "files_modified": [
+      {"file": "src/app/user-exits/IUserExits.ts", "changes": "preConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) → preConnect(createSessionRequest: CreateSessionRequest). Added VULN-005 security rationale comment."},
+      {"file": "src/app/user-exits/AbstractUserExits.ts", "changes": "Removed authHeader parameter from preConnect() signature."},
+      {"file": "src/app/user-exits/LifecycleUserExits.ts", "changes": "Removed authHeader parameter and super call argument from preConnect()."},
+      {"file": "src/app/services/user-exits-event-thrower.service.ts", "changes": "firePreConnect(createSessionRequest, authHeader?) → firePreConnect(createSessionRequest). forEach call no longer passes authHeader."},
+      {"file": "src/app/webLogin/webLogin.component.ts", "changes": "sessionConnect(): firePreConnect call no longer passes authHeader."},
+      {"file": "src/app/services/oauth2-handler.service.ts", "changes": "sendCodeAndConnectSession(): firePreConnect call already had no authHeader; comment added."}
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "API contract change: plaintext-equivalent Basic auth credentials are no longer distributed to any user-exit implementation. The preConnect() interface signature makes it structurally impossible to receive credentials. User exits that need connection context can use createSessionRequest (applicationName, sessionDescription, options) without credentials.",
+      "secondary_controls": [
+        "authHeader is still passed to sessionService.connect() internally — only the user-exit distribution is eliminated",
+        "Recommend: document the security contract in the IUserExits JSDoc — preConnect must not log or transmit connection parameters externally"
+      ],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": [
+        "IUserExits.preConnect() signature has no authHeader parameter",
+        "No call site passes authHeader to firePreConnect()",
+        "ApplinX/LDAP login still works end-to-end (authHeader still sent to sessionService.connect())",
+        "User exits receive preConnect event with createSessionRequest only"
+      ],
+      "test_cases": [
+        {
+          "name": "preConnect signature check",
+          "input": "TypeScript compilation of IUserExits",
+          "expected": "preConnect(createSessionRequest: CreateSessionRequest) — no authHeader",
+          "actual": "Signature updated in interface, abstract class, and concrete implementation",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "ApplinX/LDAP authentication still completes successfully", "passed": true},
+        {"name": "preConnect user exit fires correctly with createSessionRequest", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-005-user-exit-preconnect-credential-exposure/VULN-005-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-005-user-exit-preconnect-credential-exposure/VULN-005-I-investigation.md",
+    "validation": null
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-003",
+  "descriptor": "oidc-open-redirect-scheme-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "OIDC redirectUri Protocol-Relative URL Bypass — False Positive",
+    "severity": "low",
+    "status": "false_positive",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-601"],
+    "owasp": ["A01:2021-Broken Access Control"],
+    "capec": ["CAPEC-194"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      "score": 0.0,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "none",
+        "user_interaction": "none",
+        "scope": "unchanged",
+        "confidentiality": "none",
+        "integrity": "none",
+        "availability": "none"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/oauth2-handler.service.ts",
+    "line_start": 40,
+    "line_end": 65,
+    "function": "redirectToIDPLoginPage",
+    "class": "OAuth2HandlerService",
+    "component": "OAuth2HandlerService",
+    "module": "oauth2"
+  },
+  "data_flow": {
+    "sources": ["CreateSessionResponse.redirectUri from ApplinX REST API"],
+    "transformations": ["new URL(res.redirectUri) — NO base parameter — TypeError on protocol-relative input", "parsed.protocol !== 'https:' scheme check", "catch(e) { return; } — aborts redirect on TypeError"],
+    "sinks": ["window.location.href — only reachable with syntactically valid absolute HTTPS URL"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "high",
+    "artifact": "VULN-003-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": null,
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "theoretical",
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX REST API backend",
+      "achieved_privilege": "None — TypeError thrown for protocol-relative URLs, redirect aborted",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "none",
+      "description": "The protocol-relative bypass is inapplicable: new URL('//evil.com') without a base URL throws TypeError per WHATWG spec. The catch block aborts the redirect. No exploitation is possible via this attack path."
+    },
+    "artifact": "VULN-003-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["new URL() without base throws TypeError for relative URLs (WHATWG spec)", "catch(e) { return; } aborts redirect on any parse failure"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "No fix required for the specific bypass claim. Defense-in-depth: add IdP hostname allowlist validation after URL parsing to guard against full backend compromise.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-002"],
+    "attack_surface": ["AS-001", "AS-002"],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": ["oidc", "open-redirect", "false-positive", "protocol-relative-url"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "redirectUri https: scheme check bypassed by protocol-relative URL '//evil.com' which inherits HTTPS on HTTPS pages"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "false_positive",
+      "mode": "inquisitor",
+      "note": "new URL('//evil.com') without base throws TypeError per WHATWG spec — bypass technique inapplicable. catch(e) { return; } aborts redirect. Protocol-relative bypass does not work in this code path."
+    }
+  ]
+}

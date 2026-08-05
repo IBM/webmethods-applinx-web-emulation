@@ -1,0 +1,64 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "sessionConfig.json consumed without schema validation — applicationName in API paths, autoLogin controls security boundary",
+                    "threat_model_refs":  [
+                                              "TM-010",
+                                              "TM-003"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "loadConfig",
+                    "line":  38,
+                    "code_snippet":  "this._applicationName = config.applicationName; // no validation",
+                    "attack_surface_refs":  [
+                                                "AS-014"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/configuration.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-015",
+    "execution":  {
+                      "target":  "src/app/services/configuration.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-003",
+                     "task_name":  "Configuration Trust Boundary",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Test applicationName with path traversal characters against ApplinX macro API",
+                                              "Assess autoLoginIfDisabledAuth security impact",
+                                              "Add JSON schema validation on sessionConfig.json load"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-015 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "session-config-unsanitized-values",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "applicationName used in macro API calls without sanitization",
+                                               "sessionOptions key prefix validated but value content unrestricted",
+                                               "autoLoginIfDisabledAuth flag controls reauthentication security boundary"
+                                           ]
+                 }
+}

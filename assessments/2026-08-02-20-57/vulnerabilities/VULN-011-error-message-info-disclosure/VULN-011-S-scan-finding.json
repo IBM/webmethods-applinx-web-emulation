@@ -1,0 +1,66 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-011",
+  "descriptor": "error-message-info-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-004",
+    "task_name": "Error Message Disclosure and Debug Logging",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/webLogin/webLogin.component.ts, src/app/services/navigation/navigation.service.ts, src/app/macro/macro.component.ts, src/app/services/logger.service.ts",
+    "coverage": "100% — all four target files plus app.module.ts for logger configuration"
+  },
+  "finding": {
+    "severity": "medium",
+    "file": "src/app/webLogin/webLogin.component.ts",
+    "line": 160,
+    "function": "handleError",
+    "tool": "LLM analysis",
+    "code_snippet": "handleError(errorResponse: HttpErrorResponse): void {\n  this.screenLockerService.setLocked(false);\n  const msg = errorResponse.error.message || errorResponse.message;\n  this.errorMessage = msg;    // bound to DOM via {{ errorMessage }}\n  console.error(msg);         // LINE 160: raw server error message to browser console\n}\n// NOTE: VULN-012 AuthTokenServerService is CORRECTLY implemented:\n// alterHttpRequest() does NOT add Bearer token to remote log requests.",
+    "preliminary_assessment": "WebLoginComponent.handleError() logs raw server error messages via console.error() and binds them directly to the DOM. Server error messages from ApplinX REST API may contain internal server paths, stack traces, database details, or user data that aid reconnaissance. The browser console is accessible to any JavaScript running on the same origin (including XSS payloads) and is captured in browser DevTools. Multiple other console.log() calls were found in MacroComponent (lines 231, 235, 239, 272) logging macro names, API responses, and error objects. Note: VULN-012 (AuthTokenServerService) is CORRECTLY implemented — Bearer token is NOT added to remote NGX Logger HTTP requests. The remote log endpoint is secured. However, local console.error() calls remain and the errorMessage DOM binding allows server error content to be rendered in the UI with style='white-space: pre-line' preserving line breaks.",
+    "threat_model_refs": ["TM-006", "TM-012"],
+    "attack_surface_refs": ["AS-008"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "console.error(msg) in webLogin.handleError() — raw server error message",
+      "console.log() at lines 231, 235, 239, 272 in MacroComponent — macro names and API responses",
+      "errorMessage DOM binding with white-space: pre-line — line breaks preserved in rendered error",
+      "AuthTokenServerService.alterHttpRequest() correctly strips Bearer token — GOOD",
+      "NGX Logger serverLogLevel=ERROR (safe default) but operator-configurable",
+      "AbstractUserExits error handlers log full HttpErrorResponse objects via this.logger.error()"
+    ],
+    "false_positives": [
+      {
+        "pattern": "NGX Logger bearer token leakage",
+        "rationale": "VULN-012 fix correctly implemented — AuthTokenServerService strips Bearer token from all remote log requests"
+      },
+      {
+        "pattern": "Angular {{ errorMessage }} XSS",
+        "rationale": "Angular's {{ }} interpolation provides HTML entity encoding — errorMessage DOM binding is XSS-safe; risk is information disclosure only"
+      }
+    ],
+    "coverage_assessment": "Complete — 31 console.log/error/warn calls identified across src/app/ and assessed for data sensitivity. Logger infrastructure configuration in app.module.ts verified. Remote endpoint security confirmed."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Determine if ApplinX REST API error responses contain server paths, stack traces, or database details",
+      "Verify whether operator-configurable serverLogLevel can be set to TRACE via sessionConfig.json",
+      "Check if CRLF sequences in server error messages cause log injection in log aggregator",
+      "Evaluate whether console.log() calls should be removed in production builds (Angular build optimization flag)"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-011 to error-message-info-disclosure",
+      "Set status: flagged, severity: medium"
+    ]
+  }
+}

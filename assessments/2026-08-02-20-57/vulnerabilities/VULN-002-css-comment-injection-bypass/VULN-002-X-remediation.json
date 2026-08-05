@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-002",
+  "descriptor": "css-comment-injection-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Added CSS comment injection (/*) and hex-escape (\\XX) blocking patterns to the value regex in getCss() in both field.component.ts and input-field.component.ts, alongside the existing url()/expression()/javascript: guards.",
+    "fix_complexity": "low",
+    "root_cause": "The regex /url\\s*\\(|expression\\s*\\(/i validated CSS property values but did not block CSS comment injection (url/**/) or Unicode hex escapes (jav\\61script:). These bypass techniques could defeat the guard if a url()-capable property were ever added to the ALLOWED_CSS_PROPS allowlist.",
+    "fix_strategy": "defense_in_depth",
+    "changes_made": [
+      "src/app/mini-components/field/field.component.ts: added /\\/\\*/ and /\\\\[0-9a-fA-F]/ checks in getCss() value validation",
+      "src/app/mini-components/input-field/input-field.component.ts: same two checks added in getCss() value validation"
+    ],
+    "files_modified": [
+      "src/app/mini-components/field/field.component.ts",
+      "src/app/mini-components/input-field/input-field.component.ts"
+    ],
+    "verification_needed": "Verify that CSS property values containing CSS comments (/* */) or backslash hex escapes (\\61) are now filtered out. Confirm normal color/font/border values still pass through.",
+    "defense_in_depth": "ALLOWED_CSS_PROPS does not include any url()-capable property — this is the primary defense. The regex guards are a defense-in-depth layer protecting against future allowlist expansion.",
+    "testing": "Manual: test field.style containing 'color: jav\\61script:alert(1)' and 'color: red; background-image: url/**/(evil)' — both should be filtered. Normal 'color: red' should pass.",
+    "residual_risk": "Low. Bypass is currently theoretical (allowlist has no url()-capable properties). Fix closes the future-expansion window."
+  }
+}

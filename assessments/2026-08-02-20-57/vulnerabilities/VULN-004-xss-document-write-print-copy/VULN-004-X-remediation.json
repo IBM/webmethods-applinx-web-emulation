@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-004",
+  "descriptor": "xss-document-write-print-copy",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Replaced document.write() string concatenation with safe DOM construction using createElement() + textContent assignment in formatPrintPage(). Content is now rendered as plain text, not parsed as HTML.",
+    "fix_complexity": "low",
+    "root_cause": "formatPrintPage() in AppComponent called popupWindow.document.write('<div>' + element + '</div>') where element is server-supplied ApplinX terminal field content. No HTML encoding was applied, allowing injection of script tags or event handlers that would execute in the same-origin print popup and could steal gx_token from sessionStorage.",
+    "fix_strategy": "safe_api",
+    "changes_made": [
+      "src/app/app.component.ts formatPrintPage(): replaced document.write() with createElement('div') + div.textContent = element. Browser never parses content as HTML."
+    ],
+    "files_modified": [
+      "src/app/app.component.ts"
+    ],
+    "verification_needed": "Manual: trigger Print with a screen containing HTML content like '<img src=x onerror=alert(1)>'. The popup should display the literal text, not execute the script. Confirm normal text content renders correctly.",
+    "defense_in_depth": "textContent assignment is the safe API — no encoding step needed because the browser never interprets the assigned string as markup. Additional: consider adding Content-Security-Policy header at the web server level.",
+    "testing": "Test print functionality with normal ASCII text, special characters (<>&\"), and an XSS payload. All should render as visible text in the popup.",
+    "residual_risk": "Low. Server-controlled field content now reaches only textContent — no HTML injection path. The copy modal was confirmed as a false positive (innerText path already safe)."
+  }
+}

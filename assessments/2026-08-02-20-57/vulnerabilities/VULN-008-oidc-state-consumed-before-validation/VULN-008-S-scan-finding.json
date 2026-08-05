@@ -1,0 +1,61 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-008",
+  "descriptor": "oidc-state-consumed-before-validation",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-H-001",
+    "task_name": "OIDC Auth Flow and Session Token Handling",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/services/oauth2-handler.service.ts, src/app/services/route-guard.service.ts, src/app/services/storage.service.ts, src/app/webLogin/webLogin.component.ts",
+    "coverage": "100% — all four target files read and all OIDC code paths traced"
+  },
+  "finding": {
+    "severity": "medium",
+    "file": "src/app/services/route-guard.service.ts",
+    "line": 54,
+    "function": "canActivate",
+    "tool": "LLM analysis",
+    "code_snippet": "} else if (idPcode) {\n  // VULN-003: validate OIDC state parameter to prevent CSRF authorization code injection.\n  const receivedState = route.queryParams.state;\n  const storedState = sessionStorage.getItem('oidc_state');\n  sessionStorage.removeItem('oidc_state');  // LINE 58: consumed BEFORE validation\n  if (!receivedState || !storedState || receivedState !== storedState) {  // LINE 59: validation AFTER consumption\n    this.logger.error('OIDC state mismatch — possible CSRF attack. Aborting code exchange.');\n    this.router.navigate(['webLogin']);\n    return false;\n  }\n  // ... sendCodeAndConnectSession() at line 72 ...\n  // If this fails (catchError), state already consumed but token never stored",
+    "preliminary_assessment": "The OIDC state parameter (VULN-003 fix) is consumed (removeItem) at line 58 BEFORE the validation comparison at line 59. This creates an ordering issue: if validation fails, the state is already gone — this is actually acceptable behavior (state should be single-use). However, the more significant issue is that if sendCodeAndConnectSession() at line 72 fails after canActivate() returns true, the session is orphaned: state consumed, code exchanged but token never stored, user stranded on /webLogin with broken retry capability. The catchError handler at line 73-76 logs the error and returns of(false) but does not clean up any partial session state. This is a medium-severity issue because it affects reliability of OIDC flow but does not directly enable session hijacking. The primary OIDC open redirect bypass (VULN-003) is the higher-severity finding from this same task.",
+    "threat_model_refs": ["TM-001"],
+    "attack_surface_refs": ["AS-002", "AS-003"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "State nonce consumed at line 58 before validation at line 59 — ordering issue",
+      "Single-use consumption is correct behavior — the issue is post-failure cleanup",
+      "catchError at line 73-76 does not explicitly clean up orphaned session state",
+      "Username stored in sessionStorage as JSON.stringify(value) — unnecessary persistence risk",
+      "setNotConnected() does not explicitly remove oidc_state — relies on constructor clear()"
+    ],
+    "false_positives": [
+      {
+        "pattern": "State not stored — race condition on OIDC redirect",
+        "rationale": "State is stored synchronously at line 43 before the async subscribe callback; actual redirect at line 67 is inside subscribe — state is always stored before redirect"
+      }
+    ],
+    "coverage_assessment": "Complete — full OIDC flow analyzed. Multiple secondary findings noted; primary finding (state ordering) is medium severity."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify what happens when sendCodeAndConnectSession() fails: can user retry OIDC flow successfully?",
+      "Test: OIDC flow → intentionally break code exchange → attempt OIDC retry — verify app recovers",
+      "Evaluate whether state ordering bug creates any CSRF window during the fail-and-retry path",
+      "Confirm whether explicit oidc_state cleanup in setNotConnected() would provide defense-in-depth"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-008 to oidc-state-consumed-before-validation",
+      "Set status: flagged, severity: medium"
+    ]
+  }
+}

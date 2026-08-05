@@ -1,0 +1,152 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-003",
+  "descriptor": "oidc-csrf-missing-state-parameter",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "OIDC Authorization Code Flow — Missing OAuth2 State Parameter (CSRF / Session Fixation)",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-352",
+      "CWE-384"
+    ],
+    "owasp": [
+      "A07:2021 - Identification and Authentication Failures"
+    ],
+    "capec": [
+      "CAPEC-62"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N",
+      "score": 6.8,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "Required",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "High",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/route-guard.service.ts",
+    "line_start": 51,
+    "line_end": 62,
+    "function": "canActivate",
+    "class": "RouteGuardService",
+    "component": "RouteGuardService / OAuth2HandlerService",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "route.queryParams.code (URL query parameter from OIDC callback — attacker-injectable)"
+    ],
+    "transformations": [
+      "No state parameter generated on redirect initiation",
+      "No state parameter validated on callback",
+      "idPcode forwarded directly to OAuth2HandlerService.sendCodeAndConnectSession()"
+    ],
+    "sinks": [
+      "ApplinX REST API session connect endpoint — code injected establishes attacker-chosen session"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-003-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "medium",
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated attacker (network access to OIDC callback URL)",
+      "achieved_privilege": "CSRF session fixation — victim's browser logs into attacker-chosen ApplinX session",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none",
+      "description": "Missing OAuth2 state parameter enables CSRF session fixation. Attacker pre-creates session, tricks victim into authenticating that session. Combined with VULN-009 (code persists in sessionStorage), OIDC code exposure window is extended."
+    },
+    "artifact": "VULN-003-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: OIDC state parameter (crypto.randomUUID) generated before redirect, validated on callback.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-003-oidc-csrf-missing-state-parameter/VULN-003-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-002"
+    ],
+    "attack_surface": [
+      "AS-005",
+      "AS-006"
+    ],
+    "related_vulnerabilities": [
+      "VULN-007"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "oidc",
+    "oauth2",
+    "csrf",
+    "session-fixation",
+    "missing-state-parameter"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "No OAuth2 state parameter generated or validated anywhere in the OIDC flow — RFC 6749 §10.12 CSRF protection absent"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED MEDIUM: CSRF session fixation via missing state parameter. CVSS 6.8. Combined with VULN-009 creates compound OIDC exposure."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: OIDC state parameter (crypto.randomUUID) generated before redirect, validated on callback."
+    }
+  ]
+}

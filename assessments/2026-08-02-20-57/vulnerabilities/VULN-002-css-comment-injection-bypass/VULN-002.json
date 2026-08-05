@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-002",
+  "descriptor": "css-comment-injection-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "getCss() Regex Bypassable via CSS Comment Injection and Hex Escape Encoding",
+    "severity": "medium",
+    "status": "confirmed",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-79", "CWE-116"],
+    "owasp": ["A03:2021-Injection"],
+    "capec": ["CAPEC-86", "CAPEC-198"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:H/UI:R/S:C/C:L/I:N/A:N",
+      "score": 3.4,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "high",
+        "user_interaction": "required",
+        "scope": "changed",
+        "confidentiality": "low",
+        "integrity": "none",
+        "availability": "none"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/mini-components/field/field.component.ts",
+    "line_start": 60,
+    "line_end": 90,
+    "function": "getCss",
+    "class": "FieldComponent",
+    "component": "FieldComponent/InputFieldComponent",
+    "module": "mini-components"
+  },
+  "data_flow": {
+    "sources": ["Field.style string from ApplinX REST API GetScreenResponse (server-controlled)"],
+    "transformations": ["Split by ';' to extract CSS declarations", "ALLOWED_CSS_PROPS allowlist check (effective primary gate)", "Regex filter !/url\\s*\\(|expression\\s*\\(|javascript\\s*:/i (bypassable via CSS comments and hex escapes)"],
+    "sinks": ["Inline style attribute on FieldComponent <div> via Angular [style] binding", "Inline style attribute on InputFieldComponent <input> element"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "medium",
+    "artifact": "VULN-002-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:30:00Z",
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX REST API backend",
+      "achieved_privilege": "Same-origin CSS resource load (data exfiltration via URL parameters only) — LATENT, currently blocked by allowlist",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none",
+      "description": "CSS comment bypass is real but currently blocked by ALLOWED_CSS_PROPS which has no url()-accepting properties. Latent: a future allowlist addition (background-image, cursor) without fixing the regex enables immediate exploitation. CSS-based exfiltration is limited to URL parameters."
+    },
+    "artifact": "VULN-002-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": ["ApplinX backend compromised", "Developer adds url()-accepting property to ALLOWED_CSS_PROPS without fixing regex"],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["ALLOWED_CSS_PROPS allowlist contains no url()-accepting properties (primary defense, currently effective)"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "Pre-normalize CSS values before regex: strip CSS comments (value.replace(/\\/\\*.*?\\*\\//gs, '')) and normalize hex escapes. Consider per-property value validators to replace regex entirely.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-001", "AS-004"],
+    "related_vulnerabilities": [],
+    "attack_chains": ["AC-005"],
+    "external_cves": []
+  },
+  "tags": ["css-injection", "regex-bypass", "css-comments", "latent-vulnerability"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "getCss() value regex does not block CSS comment injection (url/**/) or hex escape encoding"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "Regex bypass confirmed. Currently blocked by ALLOWED_CSS_PROPS (no url()-accepting properties). Latent vulnerability — single allowlist addition enables exploitation. Downgraded from HIGH to MEDIUM; CVSS adjusted from 6.1 to 3.4 reflecting required backend compromise + current blocking by allowlist."
+    }
+  ]
+}

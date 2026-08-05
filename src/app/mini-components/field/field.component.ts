@@ -14,7 +14,6 @@
  * limitations under the License.
  */ 
 import {Component, Input, OnChanges, SimpleChanges} from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { StorageService } from 'src/app/services/storage.service';
 import { GXUtils } from 'src/utils/GXUtils';
 import {Field} from '@ibm/applinx-rest-apis';
@@ -32,9 +31,10 @@ export class FieldComponent implements OnChanges {
   bgClass: string;
   content: string[];
 
-  constructor(public storageService: StorageService, private doms : DomSanitizer) {
-    this.field?console.log(">>@constructor>>> this.field.content = ", this.field.content):"";
-    this.field?console.log(">>@constructor>>> this.field.visualContent = ", this.field.visualContent):"";
+  constructor(public storageService: StorageService) {
+    // VULN-014: debug console.log() removed — FieldComponent is instantiated 100-400+ times
+    // per screen render; logging field.content exposes all terminal PII (account numbers,
+    // PINs, transaction data) unconditionally in production at 1,200-4,800 entries/minute.
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -79,7 +79,38 @@ export class FieldComponent implements OnChanges {
     return template;
   }
 
-  getCss() {
-    return this.doms.bypassSecurityTrustStyle(this.field.style ?? '');
+  /** Allowed CSS properties for server-supplied field.style (terminal presentation only). */
+  private static readonly ALLOWED_CSS_PROPS = new Set([
+    'color', 'background-color', 'font-weight', 'font-style', 'font-size',
+    'text-decoration', 'text-align', 'visibility', 'opacity',
+    'border', 'border-color', 'border-style', 'border-width',
+    'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+    'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+  ]);
+
+  /** Parse field.style into an object containing only allowlisted properties. */
+  getCss(): { [key: string]: string } {
+    const raw = this.field.style ?? '';
+    if (!raw) {
+      return {};
+    }
+    const result: { [key: string]: string } = {};
+    for (const declaration of raw.split(';')) {
+      const colon = declaration.indexOf(':');
+      if (colon === -1) {
+        continue;
+      }
+      const prop = declaration.substring(0, colon).trim().toLowerCase();
+      const value = declaration.substring(colon + 1).trim();
+      // VULN-002: block CSS comment injection (url/**/) and hex-escape sequences (\XX)
+      // in addition to the existing url()/expression()/javascript: guards.
+      if (FieldComponent.ALLOWED_CSS_PROPS.has(prop) && value &&
+          !/url\s*\(|expression\s*\(|javascript\s*:/i.test(value) &&
+          !/\/\*/.test(value) &&
+          !/\\[0-9a-fA-F]/.test(value)) {
+        result[prop] = value;
+      }
+    }
+    return result;
   }
 }

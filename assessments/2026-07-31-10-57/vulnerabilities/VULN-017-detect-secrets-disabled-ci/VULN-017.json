@@ -1,0 +1,145 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-017",
+  "descriptor": "detect-secrets-disabled-ci",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "detect-secrets CI Step Disabled — Hardcoded Credentials Go Undetected",
+    "severity": "low",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-798"
+    ],
+    "owasp": [
+      "A02:2021 - Cryptographic Failures"
+    ],
+    "capec": [
+      "CAPEC-191"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "score": 6.5,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "Low",
+        "privileges_required": "Low",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "None",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": ".pipeline-config.yaml",
+    "line_start": 8,
+    "line_end": 9,
+    "function": null,
+    "class": null,
+    "component": "CI/CD Pipeline",
+    "module": ".pipeline-config.yaml"
+  },
+  "data_flow": {
+    "sources": [
+      "Source code in repository"
+    ],
+    "transformations": [
+      "detect-secrets step disabled — no credential scanning"
+    ],
+    "sinks": [
+      "Any hardcoded credential in source reaches production undetected"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-017-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Developer with repository commit access",
+      "achieved_privilege": "Secret exfiltration if hardcoded credentials accidentally committed",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Governance gap: detect-secrets disabled in CI. Current codebase has no hardcoded credentials (beyond dead HTTP URL). Risk is future exposure. Part of supply chain triad: VULN-014 + VULN-017 + VULN-018. CVSS 3.6 LOW."
+    },
+    "artifact": "VULN-017-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: detect-secrets step re-enabled in CI (when:false removed).",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-017-detect-secrets-disabled-ci/VULN-017-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-003"
+    ],
+    "attack_surface": [
+      "AS-011"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "ci-cd",
+    "detect-secrets",
+    "hardcoded-credentials",
+    "supply-chain"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "detect-secrets step disabled (when: 'false') — VULN-016 localhost URL would have been caught if enabled"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: Governance gap — no automated credential scanning. No current hardcoded secrets found. Part of supply chain triad VULN-014 + VULN-017 + VULN-018. CVSS 3.6 LOW."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: detect-secrets step re-enabled in CI (when:false removed)."
+    }
+  ]
+}

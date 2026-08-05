@@ -1,0 +1,63 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "Bearer token in JS-accessible sessionStorage — any XSS enables full session hijack",
+                    "threat_model_refs":  [
+                                              "TM-001",
+                                              "TM-006"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "setConnected",
+                    "line":  45,
+                    "code_snippet":  "sessionStorage.setItem(\u0027gx_token\u0027, authToken);",
+                    "attack_surface_refs":  [
+                                                "AS-007"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/storage.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-008",
+    "execution":  {
+                      "target":  "src/app/services/storage.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-004",
+                     "task_name":  "Credential and Token Storage",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Assess HttpOnly cookie feasibility for ApplinX REST API",
+                                              "Centralize token access to StorageService only",
+                                              "Evaluate combined attack chain VULN-001 -\u003e VULN-008"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-008 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "bearer-token-sessionStorage",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "gx_token in sessionStorage accessible to all same-origin JS",
+                                               "token also read directly in logger.service.ts:19 outside StorageService"
+                                           ]
+                 }
+}

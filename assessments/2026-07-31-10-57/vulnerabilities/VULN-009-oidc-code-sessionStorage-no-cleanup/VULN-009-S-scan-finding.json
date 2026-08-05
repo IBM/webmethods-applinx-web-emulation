@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "OIDC code stored in sessionStorage before exchange; never removed — persists entire tab lifetime",
+                    "threat_model_refs":  [
+                                              "TM-002"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "sendCodeAndConnectSession",
+                    "line":  58,
+                    "code_snippet":  "sessionStorage.setItem(\u0027idPcode\u0027, code); // never removed",
+                    "attack_surface_refs":  [
+                                                "AS-007"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/oauth2-handler.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-009",
+    "execution":  {
+                      "target":  "src/app/services/oauth2-handler.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-004",
+                     "task_name":  "Credential and Token Storage",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Confirm removeItem(\u0027idPcode\u0027) is absent everywhere (verified)",
+                                              "Remove the setItem call — code already in function parameter",
+                                              "Add removeItem(\u0027idPcode\u0027) to setNotConnected()"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-009 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "oidc-code-sessionStorage-no-cleanup",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "idPcode written to sessionStorage before exchange completes",
+                                               "setNotConnected() only removes gx_token — not idPcode"
+                                           ]
+                 }
+}

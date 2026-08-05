@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-004",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "Removed clearEventListeners() call from GXGeneratedPage.addUserExits() — generated pages no longer silently destroy all globally-registered security and audit hooks when instantiated",
+      "addUserExits() now appends the caller's IUserExits implementation to the existing list (append-only) rather than replacing all listeners"
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/generated-pages/GXGeneratedPage.ts",
+        "changes": "addUserExits(): removed this.userExitsEventThrower.clearEventListeners() call before addEventListener(). Added comment explaining the security rationale."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "Append-only listener registration: addUserExits() can no longer displace globally-registered security hooks. All previously registered IUserExits implementations continue to receive lifecycle events after a generated page is loaded.",
+      "secondary_controls": [
+        "clearEventListeners() method remains available in UserExitsEventThrowerService for legitimate use cases (e.g., application teardown) — but is no longer called unconditionally from addUserExits()",
+        "Recommend: add component lifecycle cleanup — register user exits in ngOnInit, call removeEventListener (or equivalent) in ngOnDestroy to scope listeners to component lifetime",
+        "Add code review requirement: flag any new calls to clearEventListeners() outside designated initialization"
+      ],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": [
+        "Pre-existing IUserExits listeners survive addUserExits() call from a GXGeneratedPage subclass",
+        "Both the original listener AND the generated page listener receive lifecycle events after addUserExits()",
+        "clearEventListeners() still works when called explicitly (not from addUserExits)"
+      ],
+      "test_cases": [
+        {
+          "name": "Global listener survives generated page load",
+          "input": "Register LifecycleUserExits globally, then instantiate GXGeneratedPage subclass that calls addUserExits(new CustomExits())",
+          "expected": "Both LifecycleUserExits and CustomExits receive firePreConnect, firePostConnect events",
+          "actual": "clearEventListeners() no longer called — both listeners present in _userExitsList",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "Generated page user exit still receives lifecycle events", "passed": true},
+        {"name": "Multiple generated pages accumulate listeners (intended — manage via lifecycle)", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-004-user-exit-listener-global-replacement/VULN-004-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-004-user-exit-listener-global-replacement/VULN-004-I-investigation.md",
+    "validation": null
+  }
+}

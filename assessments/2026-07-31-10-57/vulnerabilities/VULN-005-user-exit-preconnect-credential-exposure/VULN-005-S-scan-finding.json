@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "authHeader (plaintext-equivalent Basic auth credential) delivered to all IUserExits.preConnect() implementations",
+                    "threat_model_refs":  [
+                                              "TM-006"
+                                          ],
+                    "severity":  "high",
+                    "function":  "preConnect",
+                    "line":  24,
+                    "code_snippet":  "preConnect(createSessionRequest, authHeader?: string) // authHeader = \u0027Basic \u0027 + btoa(u+\u0027:\u0027+p)",
+                    "attack_surface_refs":  [
+                                                "AS-012"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/user-exits/IUserExits.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-005",
+    "execution":  {
+                      "target":  "src/app/user-exits/IUserExits.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-001",
+                     "task_name":  "User-Exit Extensibility",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Verify no existing user-exit implementation logs or stores authHeader",
+                                              "Recommend masking credential before delivery to user-exit hooks"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-005 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "user-exit-preconnect-credential-exposure",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "authHeader passed as plain string through event bus",
+                                               "AbstractUserExits.preConnect() is a no-op — no protective masking",
+                                               "firePostConnect() also delivers full CreateSessionResponse including token"
+                                           ]
+                 }
+}

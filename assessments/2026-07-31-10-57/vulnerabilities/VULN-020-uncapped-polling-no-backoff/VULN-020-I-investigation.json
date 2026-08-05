@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-020",
+  "descriptor": "uncapped-polling-no-backoff",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "NavigationService.checkHostScreenUpdate() (navigation.service.ts:73-77) calls setInterval() and discards the return value — the interval ID is never stored, so clearInterval() cannot be called. This means the polling interval runs for the entire page lifetime with no way to stop it programmatically. Additionally: (1) CHECK_HOST_SCREEN_UPDATE_INTERVAL and CHECK_HOST_SCREEN_UPDATE_TIMEOUT are public mutable fields — any code can change polling frequency; (2) isThereError only stops polling for 3 hardcoded error message strings — other error conditions continue polling; (3) no exponential backoff on repeated errors. Combined with the null dereference in errorHandler (VULN-011), polling continues silently even after a crash.",
+    "attack_scenario": "Self-Inflicted DoS: Under adverse network conditions, polling generates continuous failed HTTP requests to ApplinX. With no backoff, requests pile up. Combined with null dereference (VULN-011), errorHandler crashes abnormally, isThereError is never set to true for non-matching error strings, and polling continues indefinitely — flooding the ApplinX server with requests from all affected clients simultaneously.\n\nInterval Storm: If NavigationService is instantiated multiple times (e.g., module reloading, navigation events), multiple intervals may be started. Without clearInterval(), each accumulates. The polling rate multiplies with each instance.\n\nNote: An unauthenticated external attacker cannot directly control the polling — this is a client-side issue. The impact is to the ApplinX server load and the client browser experience.",
+    "prerequisites": [
+      "User must be logged in (checkHostScreenUpdate starts in NavigationService constructor)",
+      "Adverse network conditions or ApplinX server issues trigger error responses",
+      "errorHandler crash (VULN-011) allows polling to continue on some error types"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user",
+      "achieved_privilege": "N/A — no privilege escalation",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low",
+      "description": "Polling without backoff can generate excessive requests to ApplinX under error conditions. The discarded setInterval ID prevents programmatic stop. Public mutable interval fields allow unintended external modification. Combined with VULN-011 (errorHandler crash), some error conditions can cause continuous polling without isThereError=true ever being set."
+    },
+    "data_flow": {
+      "sources": [
+        "setInterval() return value — immediately discarded"
+      ],
+      "transformations": [
+        "No clearInterval() call possible — interval runs for page lifetime",
+        "isThereError guards only 3 hardcoded error strings — other errors don't stop polling"
+      ],
+      "sinks": [
+        "ApplinX REST API getScreenNumber() — called every 5 seconds indefinitely",
+        "Browser HTTP connection pool — concurrent requests consume connections"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "NavigationService.checkHostScreenUpdate() — src/app/services/navigation/navigation.service.ts:73-77", "impact": "setInterval ID discarded — no programmatic stop possible"},
+      {"component": "NavigationService.CHECK_HOST_SCREEN_UPDATE_INTERVAL (public)", "impact": "Public mutable field — any code can change polling frequency"}
+    ],
+    "indirect": [
+      {"component": "VULN-011 (errorHandler null deref)", "impact": "When errorHandler crashes, isThereError never set true → polling continues on some error types"},
+      {"component": "ApplinX REST API /info endpoint", "impact": "Polling target — excessive requests under error conditions"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Store the setInterval return value and implement clearInterval in ngOnDestroy. Convert to RxJS interval observable with takeUntil(destroy$) for Angular lifecycle management. Add exponential backoff with jitter: after 3 consecutive errors, increase interval by 2x up to max 60s.",
+    "priority": "low",
+    "defense_in_depth": [
+      "Store interval ID and call clearInterval(this.intervalId) in ngOnDestroy",
+      "Convert to RxJS: interval(5000).pipe(takeUntil(this.destroy$), switchMap(() => this.checkScreenUpdated()))",
+      "Add exponential backoff: double interval after consecutive errors, cap at 60s",
+      "Make CHECK_HOST_SCREEN_UPDATE_INTERVAL private readonly",
+      "Fix VULN-011 null guard to ensure all error paths properly set isThereError"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-020-uncapped-polling-no-backoff/VULN-020-S-scan-finding.md",
+    "threat_model": ["TM-009"],
+    "attack_surface": ["AS-015"],
+    "external": [
+      "CWE-400: Uncontrolled Resource Consumption",
+      "OWASP A04:2021 — Insecure Design",
+      "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L — Score: 4.3 MEDIUM (self-inflicted load amplification)"
+    ]
+  }
+}

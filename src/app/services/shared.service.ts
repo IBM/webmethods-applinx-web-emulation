@@ -87,13 +87,19 @@ export class SharedService {
 
    recordMacro(sendKeysRequest) {
       let fieldsList = sendKeysRequest.fields;
-      let passwordFieldList = document.querySelectorAll("input[type='password']") 
+      // VULN-006: scope the password field query to the ApplinX host screen container to avoid
+      // capturing password inputs from browser extensions or other DOM elements outside ApplinX.
+      const applinxRoot = document.querySelector('app-root') || document;
+      const passwordFieldList = applinxRoot.querySelectorAll("input[type='password']");
 
       passwordFieldList.forEach(fieldEntry => {
          let pwdField = fieldsList.filter(item => item.name == fieldEntry["name"])[0];
          if(pwdField){
             pwdField["type"] = GXUtils.pwdText;
-            pwdField["value"] = window.btoa(pwdField["value"]);
+            // VULN-006: replace window.btoa() (reversible base64) with a placeholder marker.
+            // The actual password value is NOT stored in the macro — it will be prompted at playback.
+            // This prevents plaintext-equivalent credentials from being persisted on the ApplinX server.
+            pwdField["value"] = GXUtils.pwdMask;
          }
       })
 

@@ -21,7 +21,14 @@ export interface IUserExits {
     /**
      * Occurs before and after connecting a session with host through LoginComponent.onConnect()
      */
-    preConnect(createSessionRequest: CreateSessionRequest, authHeader?: string);
+    /**
+     * NOTE (VULN-005): the authHeader parameter has been removed from preConnect().
+     * Passing plaintext-equivalent Basic auth credentials (base64 username:password) to all
+     * registered user-exit implementations is a credential exposure risk. User exits that
+     * need connection context should use createSessionRequest fields (applicationName, etc.)
+     * only — never the raw auth credential.
+     */
+    preConnect(createSessionRequest: CreateSessionRequest);
     postConnect(createSessionRespose: CreateSessionResponse);
     onConnectError(errorResponse: HttpErrorResponse);
 

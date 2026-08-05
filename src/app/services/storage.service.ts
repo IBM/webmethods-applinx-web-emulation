@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */ 
-import { HttpHeaders } from '@angular/common/http';
 import { Injectable, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { NGXLogger } from 'ngx-logger';
@@ -43,14 +42,21 @@ export class StorageService {
   }
   setConnected(authToken: string): void {
     sessionStorage.setItem('gx_token', authToken);
-    this.logger.setCustomHttpHeaders(
-      new HttpHeaders({ "Authorization": this.getAuthToken() })
-    );
+    // VULN-012: Bearer token must NOT be injected into remote log requests.
+    // Header injection is fully blocked at AuthTokenServerService level
+    // (logger.service.ts). No additional header injection is needed here.
     this.router.navigate(['instant']);
   }
   setNotConnected(): void {
     this.logger.debug(this.messages.get("SESSION_DISCONNECTED"));
     sessionStorage.removeItem('gx_token');
+    // VULN-009: remove OIDC authorization code after exchange to prevent stale code in sessionStorage.
+    sessionStorage.removeItem('idPcode');
+    // VULN-010: remove username on logout — prevents username disclosure after session ends.
+    sessionStorage.removeItem('userName');
+    // VULN-009: clear macro file list on logout — prevents cross-session macro name disclosure
+    // in shared-browser scenarios and eliminates the sessionStorage injection vector for VULN-007.
+    sessionStorage.removeItem('macroFileList');
     this.screenHolderService.setRuntimeScreen(null);
     this.router.navigate(['webLogin']);
   }

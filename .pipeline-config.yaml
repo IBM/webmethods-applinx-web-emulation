@@ -5,15 +5,18 @@ tasks:
       - dind
     runtimeClassName: large
     steps:
+      # VULN-017: re-enabled detect-secrets to scan for accidentally committed credentials.
       - name: detect-secrets
-        when: 'false'
       - name: static-scan
         include:
           - docker-socket
         image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
         dind: true
-        abort_on_failure: false
-        image_pull_policy: IfNotPresent
+        # VULN-010: changed abort_on_failure to true so SAST findings block the pipeline.
+        # Previously false — vulnerable code was reaching artifact signing and production.
+        abort_on_failure: true
+        # VULN-018: changed image_pull_policy to Always to prevent cache poisoning attacks.
+        image_pull_policy: Always
         script: |
           #!/bin/sh
           /opt/commons/static-scan/run.sh
@@ -23,8 +26,8 @@ tasks:
         when: 'false'
       - name: peer-review
         when: 'false'
+      # VULN-018: re-enabled sign-artifact to provide cryptographic build integrity attestation.
       - name: sign-artifact
-        when: 'false'
       - name: dynamic-scan
         when: 'false'
       - name: checks-setup
@@ -35,13 +38,19 @@ tasks:
         image: icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61
         dind: true
         abort_on_failure: true
-        image_pull_policy: IfNotPresent
+        # VULN-018: changed image_pull_policy to Always.
+        image_pull_policy: Always
         script: |
           #!/usr/bin/env bash
           echo "Installing npm packages.."
           cd "$WORKSPACE/$(load_repo app-repo path)"
-          npm install --legacy-peer-deps
-          echo "Packages installed succcessfully"
+          # VULN-014: use 'npm ci' (respects package-lock.json) instead of 'npm install'.
+          # Remove --legacy-peer-deps flag: peer dependency conflicts must be resolved explicitly.
+          # package-lock.json must be committed to the repository before this will work.
+          npm ci
+          # VULN-014: add npm audit to fail the build on moderate+ severity CVEs.
+          npm audit --audit-level=moderate
+          echo "Packages installed successfully"
           "/opt/commons/compliance-checks/run.sh"
   code-build:
     include:
@@ -52,8 +61,8 @@ tasks:
         when: 'false'
       - name: setup
         when: 'false'
+      # VULN-018: re-enabled sign-artifact in build stage.
       - name: sign-artifact
-        when: 'false'
   deploy-checks:
     include:
       - docker

@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-009",
+  "descriptor": "macro-storage-format-bug",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-001",
+    "task_name": "Macro Name Validation and sessionStorage Lifecycle",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/macro/macro.component.ts, src/app/macro/macro.component.html, src/app/services/shared.service.ts, src/app/services/storage.service.ts",
+    "coverage": "100% — all four target files read"
+  },
+  "finding": {
+    "severity": "medium",
+    "file": "src/app/app.component.ts",
+    "line": 652,
+    "function": "getMacroListDetails",
+    "tool": "LLM analysis",
+    "code_snippet": "// app.component.ts line 652 — STORES ARRAY WRONG:\nsessionStorage.setItem(\"macroFileList\", JSON.parse(JSON.stringify(this.macroList)));\n// JSON.parse(JSON.stringify(array)) returns an array object.\n// sessionStorage.setItem() coerces object to string: '[object Object]' stored.\n\n// macro.component.ts lines 116-118 — READS BROKEN VALUE:\nthis.tempMacroList = sessionStorage.getItem(\"macroFileList\");\nif(this.tempMacroList) {\n  this.macroList = this.tempMacroList.split(\",\");  // Splits '[object Object]' on comma\n}",
+    "preliminary_assessment": "The macroFileList storage code has a double JSON serialization bug at line 652: JSON.parse(JSON.stringify(array)) first serializes the array to a JSON string then immediately parses it back to an array object. When this array object is passed to sessionStorage.setItem(), JavaScript coerces it to the string '[object Object]'. The macro component then reads '[object Object]' from sessionStorage and splits it on comma, producing a single-element array ['[object Object]'], causing the macro dropdown to show '[object Object]' as the only option and all macro operations to fail with the wrong name. Additionally, macroFileList is NOT cleared in setNotConnected() on logout, meaning macro file list from one session persists into the next session or is readable by XSS after logout.",
+    "threat_model_refs": ["TM-007", "TM-011"],
+    "attack_surface_refs": ["AS-003", "AS-007"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "JSON.parse(JSON.stringify(array)) double serialization bug — array coerced to '[object Object]'",
+      "macroFileList comma-split parsing fragile — any comma in macro name corrupts list",
+      "macroFileList not removed in setNotConnected() — persists across session boundaries",
+      "Inconsistent storage centralization — macroFileList managed in app.component.ts, not StorageService",
+      "JSON.parse(rawUserName) without try-catch in ngOnInit — crash risk on malformed stored value"
+    ],
+    "false_positives": [],
+    "coverage_assessment": "Complete — app.component.ts line 652 and macro.component.ts lines 116-118 directly confirm the type coercion bug. sessionStorage cleanup analysis confirmed from storage.service.ts."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify browser-side: check actual sessionStorage.getItem('macroFileList') value in browser DevTools to confirm '[object Object]' is stored",
+      "Test whether macro UI is completely broken (shows '[object Object]') or if this code path is never reached in current app flow",
+      "Confirm macroFileList is not present in sessionStorage after logout via browser DevTools",
+      "Evaluate: replace JSON.parse(JSON.stringify(array)) with direct JSON.stringify(array) to store as proper JSON string"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-009 to macro-storage-format-bug",
+      "Set status: flagged, severity: medium"
+    ]
+  }
+}

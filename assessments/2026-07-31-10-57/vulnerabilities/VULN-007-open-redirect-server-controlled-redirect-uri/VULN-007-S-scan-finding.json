@@ -1,0 +1,60 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "Open redirect to arbitrary URL from server-supplied redirectUri — phishing redirect possible if ApplinX server is compromised",
+                    "threat_model_refs":  [
+                                              "TM-002"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "redirectToIDPLoginPage",
+                    "line":  43,
+                    "code_snippet":  "window.location.href = res.redirectUri;",
+                    "attack_surface_refs":  [
+                                                "AS-006"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/oauth2-handler.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-007",
+    "execution":  {
+                      "target":  "src/app/services/oauth2-handler.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-003",
+                     "task_name":  "OIDC Flow",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Test with non-HTTPS redirectUri in development ApplinX instance",
+                                              "Add client-side https:// prefix check"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-007 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "open-redirect-server-controlled-redirect-uri",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "window.location.href assigned from API response without scheme/host validation"
+                                           ]
+                 }
+}

@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-011",
+  "descriptor": "error-message-disclosure-null-deref",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "proven",
+    "root_cause": "NavigationService.errorHandler() (navigation.service.ts:102-121) accesses errorResponse.error.message at line 103 without a null guard. Angular's HttpErrorResponse.error is null for network-level errors: connection timeouts, CORS failures, network disconnections, and SSL errors. When checkScreenUpdated() polling (which runs every 5 seconds) encounters such an error, errorHandler() is called with error.error=null, causing TypeError: Cannot read properties of null (reading 'message'). The TypeError propagates up, errorHandler() exits abnormally, and the screenLockerService state is never reset — leaving the UI permanently locked. Additionally, raw server error messages (errorResponse.error.message) are displayed directly in the webLogin error panel (webLogin.component.ts:157) and shipped to ngx-logger remote endpoint without sanitization.",
+    "attack_scenario": "DoS via Network Error: Any network-level disruption (connection reset, TCP timeout, CORS error from misconfigured proxy) during checkScreenUpdated() polling triggers the TypeError. The UI becomes permanently locked (all keyboard input disabled, screen unresponsive) until the user manually refreshes the page. This can be triggered accidentally (flaky network) or maliciously (network-level interference).\n\nError Message Information Disclosure: ApplinX server error messages are displayed directly in the webLogin error panel. If the server includes internal details (stack traces, host connection strings, internal IP addresses, session identifiers), these are exposed to the browser user. The messages are also forwarded to ngx-logger's remote log endpoint where they compound VULN-012's exposure.",
+    "prerequisites": [
+      "Active login session with checkScreenUpdated() polling running (started in NavigationService constructor)",
+      "Network-level HTTP error (not an HTTP error response — a network/transport-level failure that produces HttpErrorResponse with error=null)"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "No authentication required to trigger network error during polling",
+      "achieved_privilege": "Permanent screen lock (DoS) for authenticated user — availability impact",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "low",
+      "description": "Null dereference on network-level error permanently locks the UI for the current session (DoS until page refresh). Error message disclosure exposes ApplinX internal server details (potentially stack traces, connection strings, session IDs) to browser users and log systems. webLogin.component.ts:157 uses the safer `errorResponse.error.message || errorResponse.message` fallback — but navigation.service.ts:103 does not."
+    },
+    "data_flow": {
+      "sources": [
+        "HttpErrorResponse from Angular HTTP client — error.error is null for network-level failures"
+      ],
+      "transformations": [
+        "errorHandler() called with null error.error",
+        "errorResponse.error.message.indexOf() throws TypeError: Cannot read properties of null",
+        "errorHandler() exits abnormally — no cleanup"
+      ],
+      "sinks": [
+        "screenLockerService state — never reset → UI permanently locked",
+        "webLogin error panel — raw server message displayed (information disclosure)",
+        "ngx-logger remote endpoint — raw server message shipped (VULN-012)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "NavigationService.errorHandler() — src/app/services/navigation/navigation.service.ts:102-121", "impact": "Null dereference at line 103 — error.error.message unguarded"},
+      {"component": "NavigationService.checkScreenUpdated() — line 82-100", "impact": "Polling loop calls errorHandler() which can crash on network errors"}
+    ],
+    "indirect": [
+      {"component": "WebLoginComponent.handleError() — webLogin.component.ts:155-159", "impact": "Better pattern (uses || fallback) but still displays raw server messages"},
+      {"component": "ngx-logger (VULN-012)", "impact": "Raw error messages forwarded to remote logging endpoint"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Add null guard: `errorResponse.error?.message?.indexOf('Disconnected by host')` using optional chaining. Wrap errorHandler in try/catch to ensure cleanup even on unexpected errors. Display generic user-facing error messages instead of raw server error text.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Add optional chaining: errorResponse.error?.message?.indexOf(...) > -1",
+      "Wrap errorHandler() in try/catch with guaranteed cleanup (screenLockerService reset) in finally block",
+      "Replace raw server error messages in UI with sanitized user-friendly messages",
+      "Add null-safe error extraction utility used consistently across error handlers"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-011-error-message-disclosure-null-deref/VULN-011-S-scan-finding.md",
+    "threat_model": ["TM-005", "TM-008"],
+    "attack_surface": ["AS-013"],
+    "external": [
+      "CWE-476: NULL Pointer Dereference",
+      "CWE-209: Generation of Error Message Containing Sensitive Information",
+      "OWASP A05:2021 — Security Misconfiguration",
+      "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:L — Score: 6.5 MEDIUM"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "No allowlist — prototype chain traversal enables constructor.(\u0027eval\u0027) — eval-equivalent execution",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "severity":  "high",
+                    "function":  "checkKeyboardMappings",
+                    "line":  140,
+                    "code_snippet":  "result = this.jsFunc[methodName](param);",
+                    "attack_surface_refs":  [
+                                                "AS-003",
+                                                "AS-004"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/keyboard-mapping.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-002",
+    "execution":  {
+                      "target":  "src/app/services/keyboard-mapping.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-002",
+                     "task_name":  "Dynamic Code Dispatch",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Test with targetFunction=\u0027constructor(alert(document.domain))\u0027",
+                                              "Enumerate prototype chain methods accessible via jsFunc"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-002 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "keyboard-dynamic-dispatch-prototype-hijack",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "Bracket-notation dispatch with server-controlled method name",
+                                               "Empty IJSFunctionService interface — no compile-time constraint",
+                                               "cancelMapFunction invoked without typeof check at line 108"
+                                           ]
+                 }
+}

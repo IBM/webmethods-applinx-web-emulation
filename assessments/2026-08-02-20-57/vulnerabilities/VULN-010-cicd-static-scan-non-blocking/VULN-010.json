@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-010",
+  "descriptor": "cicd-static-scan-non-blocking",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "CI/CD Static Scan Non-Blocking and Missing .secrets.baseline",
+    "severity": "medium",
+    "status": "confirmed",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-693", "CWE-1286"],
+    "owasp": ["A05:2021-Security Misconfiguration"],
+    "capec": ["CAPEC-444"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:C/C:H/I:H/A:L",
+      "score": 7.7,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "low",
+        "user_interaction": "none",
+        "scope": "changed",
+        "confidentiality": "high",
+        "integrity": "high",
+        "availability": "low"
+      }
+    }
+  },
+  "location": {
+    "file": ".pipeline-config.yaml",
+    "line_start": 1,
+    "line_end": 1,
+    "function": null,
+    "class": null,
+    "component": "CI/CD-Pipeline",
+    "module": "devops"
+  },
+  "data_flow": {
+    "sources": [".pipeline-config.yaml static-scan step with abort_on_failure: false", "Missing .secrets.baseline file for detect-secrets comparison"],
+    "transformations": ["Developer commits vulnerable code", "SAST detects vulnerability — pipeline continues (abort_on_failure: false)", "npm audit passes (different scope — dependency CVEs only)", "sign-artifact: vulnerable artifact is cryptographically signed"],
+    "sinks": ["Signed artifact with unreviewed SAST findings deployed to production users"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "high",
+    "artifact": "VULN-010-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:30:00Z",
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "high",
+    "privilege_boundary": {
+      "start_privilege": "Developer with commit access",
+      "achieved_privilege": "Code reaches production artifact (signed) without SAST gatekeeping",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "low",
+      "description": "SAST-detected vulnerabilities reach production users. XSS, path traversal, and injection vulnerabilities can be introduced and deployed without automated blocking. Part of AC-002 (CI/CD supply chain bypass with VULN-005)."
+    },
+    "artifact": "VULN-010-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": ["Developer commit access (insider or compromised account)", "Knowledge that static-scan is non-blocking (readable from pipeline YAML)"],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["npm audit compliance-checks step compensates for dependency CVEs (not code flaws)"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "Change abort_on_failure: false to abort_on_failure: true on static-scan step. Generate and commit .secrets.baseline: detect-secrets scan > .secrets.baseline. If blocking SAST deferred, document risk acceptance and add mandatory manual review.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-004"],
+    "attack_surface": ["AS-009"],
+    "related_vulnerabilities": ["VULN-005"],
+    "attack_chains": ["AC-002"],
+    "external_cves": []
+  },
+  "tags": ["cicd", "sast", "non-blocking", "secrets-baseline", "pipeline-security"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "abort_on_failure:false on static-scan step allows vulnerable code past security gate; .secrets.baseline missing for detect-secrets"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "Confirmed. abort_on_failure:false is explicit in pipeline YAML. .secrets.baseline absent from repo. CVSS MEDIUM 7.7 (requires commit access + AC:H for active exploitation). Part of AC-002 supply chain chain."
+    }
+  ]
+}

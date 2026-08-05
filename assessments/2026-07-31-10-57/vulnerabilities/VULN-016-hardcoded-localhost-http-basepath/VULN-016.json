@@ -1,0 +1,147 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-016",
+  "descriptor": "hardcoded-localhost-http-basepath",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "Hardcoded localhost HTTP basePath in MacroComponent and GXUtils — Bypasses Production HTTPS Proxy",
+    "severity": "low",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-319",
+      "CWE-259"
+    ],
+    "owasp": [
+      "A05:2021 - Security Misconfiguration"
+    ],
+    "capec": [
+      "CAPEC-158"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      "score": 6.5,
+      "breakdown": {
+        "attack_vector": "Adjacent",
+        "attack_complexity": "Low",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "None",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/macro/macro.component.ts",
+    "line_start": 49,
+    "line_end": 49,
+    "function": null,
+    "class": "MacroComponent",
+    "component": "MacroComponent / GXUtils",
+    "module": "macro"
+  },
+  "data_flow": {
+    "sources": [
+      "Hardcoded string 'http://localhost:2380/applinx/rest'"
+    ],
+    "transformations": [
+      "Used as basePath for MacroService HTTP calls"
+    ],
+    "sinks": [
+      "MacroService.saveMacro() / deleteMacro() / viewMacro() — sent over HTTP, not HTTPS",
+      "Credential (Bearer token) included in Authorization header of HTTP requests to localhost"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-016-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Network attacker on same network as client",
+      "achieved_privilege": "Dead code — NOT used in production API calls",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none",
+      "description": "MacroComponent.basePath is DEAD CODE — MacroService from ApplinX SDK handles actual API calls using environment URL. The field is a leftover and should be removed to eliminate future code debt. CVSS refined 3.1 LOW."
+    },
+    "artifact": "VULN-016-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: Dead-code HTTP localhost basePath and GXUtils URL constants removed.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-016-hardcoded-localhost-http-basepath/VULN-016-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-007"
+    ],
+    "attack_surface": [
+      "AS-008"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "hardcoded-url",
+    "http-not-https",
+    "macro",
+    "credential-transmission"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "basePath hardcoded to http://localhost:2380/ in macro.component.ts:49 — macro API calls use HTTP not HTTPS in production"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: basePath is DEAD CODE — MacroService from SDK uses environment URL. CVSS downgraded to 3.1 LOW. Remove dead field to eliminate future risk."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: Dead-code HTTP localhost basePath and GXUtils URL constants removed."
+    }
+  ]
+}

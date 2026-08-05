@@ -1,0 +1,147 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-014",
+  "descriptor": "missing-lockfile-legacy-peer-deps",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "No package-lock.json and npm install --legacy-peer-deps in CI — Non-Reproducible Dependency Tree",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-354"
+    ],
+    "owasp": [
+      "A06:2021 - Vulnerable and Outdated Components"
+    ],
+    "capec": [
+      "CAPEC-310"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N",
+      "score": 4.8,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "Low",
+        "integrity": "Low",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "package.json",
+    "line_start": 1,
+    "line_end": 70,
+    "function": null,
+    "class": null,
+    "component": "Build / Supply Chain",
+    "module": "package.json / .pipeline-config.yaml"
+  },
+  "data_flow": {
+    "sources": [
+      "npm registry — resolved at install time using semver ranges"
+    ],
+    "transformations": [
+      "No lockfile to pin exact versions; --legacy-peer-deps bypasses conflict detection"
+    ],
+    "sinks": [
+      "Build artifacts — may include untested dependency versions"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-014-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "npm registry attacker (supply chain threat actor)",
+      "achieved_privilege": "Malicious code included in build artifacts delivered to all users",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "No package-lock.json + --legacy-peer-deps = non-reproducible builds with no gate for malicious dependencies. No npm audit in CI. Combined with VULN-018 = complete supply chain security gap. CVSS 4.8 MEDIUM."
+    },
+    "artifact": "VULN-014-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: CI updated to npm ci + npm audit. package-lock.json commit required.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-014-missing-lockfile-legacy-peer-deps/VULN-014-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-003"
+    ],
+    "attack_surface": [
+      "AS-011"
+    ],
+    "related_vulnerabilities": [
+      "VULN-013"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "supply-chain",
+    "lockfile",
+    "reproducible-build",
+    "dependency"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "No package-lock.json; CI uses --legacy-peer-deps without npm audit; build is non-reproducible"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED MEDIUM: Supply chain attack vector. No lock file + no npm audit + no signing (VULN-018) = three-part supply chain gap. CVSS 4.8 MEDIUM."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: CI updated to npm ci + npm audit. package-lock.json commit required."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-012",
+  "descriptor": "filter-collisions-unbounded-growth",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Added MAX_FIELDS = 10000 constant to ScreenProcessorService. filterCollisions() checks fields.length against MAX_FIELDS at the start of each iteration and breaks if exceeded. Replaced fields.concat([f1, f2]) with split.forEach(f => fields.push(f)) for O(1) amortized append instead of O(n) allocation per split.",
+    "fix_complexity": "low",
+    "root_cause": "filterCollisions() used fields = fields.concat(this.splitField(field, rect)) which allocates a new array on every split, causing O(n) allocation per collision and O(n²) total. A crafted ApplinX REST response with 1000 overlapping transformation rectangles could cause ~500K iterations and ~1GB memory allocation, freezing the browser tab for 10-60 seconds.",
+    "fix_strategy": "input_validation",
+    "changes_made": [
+      "src/app/services/screen-processor.service.ts: added private static readonly MAX_FIELDS = 10000",
+      "src/app/services/screen-processor.service.ts filterCollisions(): added fields.length > MAX_FIELDS guard with break and console.warn",
+      "src/app/services/screen-processor.service.ts filterCollisions(): replaced fields.concat() with split.forEach(f => fields.push(f))",
+      "src/app/services/screen-processor.service.ts filterCollisions(): renamed inner loop variable from i to j to avoid shadowing"
+    ],
+    "files_modified": [
+      "src/app/services/screen-processor.service.ts"
+    ],
+    "verification_needed": "Test screen rendering with a normal screen (< 100 fields). Verify truncation console.warn appears when a malformed test response exceeds 10000 fields.",
+    "defense_in_depth": "VULN-006 optional chaining fix also applied — even if MAX_FIELDS is reached with a null-content field, the crash is avoided.",
+    "testing": "Unit test: generate fields array with 10001 elements — verify filterCollisions returns without hanging. Verify normal 100-field screen renders correctly.",
+    "residual_risk": "Low. 10000 fields is approximately 100x the maximum seen in real ApplinX screens (typical: 50-300 fields). The limit can be raised if legitimate screens approach it."
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-018",
+  "descriptor": "sign-artifact-disabled-ci",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": ".pipeline-config.yaml disables the sign-artifact step in both code-checks (line 26-27) and code-build (line 55-56) with `when: 'false'`. The pipeline uses `dind: true` (Docker-in-Docker) with docker-socket access and `image_pull_policy: IfNotPresent` — meaning cached Docker images are reused without freshness checks. Without artifact signing, there is no cryptographic guarantee that the build output was produced by the legitimate build pipeline from the declared source code. A compromised CI environment, cache poisoning attack, or build artifact substitution would be undetectable.",
+    "attack_scenario": "Cache Poisoning via IfNotPresent: `image_pull_policy: IfNotPresent` allows CI to use a cached Docker image. If a prior run cached a malicious/outdated image, subsequent runs use it without re-pulling. Combined with dind:true, a malicious build image could inject code into the build process.\n\nBuild Artifact Substitution: Without signed artifacts, an attacker who compromises build output storage (S3, Artifactory, container registry) can replace legitimate artifacts with malicious ones. Downstream deployments install the malicious artifact with no integrity check to detect tampering.\n\nSupply Chain Combined Risk: VULN-014 (no lock file) + VULN-017 (no detect-secrets) + VULN-018 (no signing) = comprehensive supply chain security gaps: arbitrary dependency versions → no secret scanning → no integrity attestation.",
+    "prerequisites": [
+      "Attacker must compromise CI environment, build output storage, or Docker image cache",
+      "No artifact signing means tampering is undetectable by downstream consumers"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "CI environment access or build artifact storage access",
+      "achieved_privilege": "Malicious code delivered to all production deployments — arbitrary code execution in all user browsers",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Artifact signing provides integrity attestation — without it, the provenance chain from source code to deployed artifact cannot be verified. The risk is currently theoretical (no evidence of active tampering) but the governance gap is confirmed and significant given dind:true and IfNotPresent image policy."
+    },
+    "data_flow": {
+      "sources": [
+        "Build pipeline output — ng build production artifacts (JavaScript bundles)"
+      ],
+      "transformations": [
+        "sign-artifact step disabled (when: false)",
+        "No cryptographic signature generated for build output"
+      ],
+      "sinks": [
+        "Deployed production build — no integrity verification available to consumers"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": ".pipeline-config.yaml:26-27 — sign-artifact when: false (code-checks)", "impact": "No artifact signing in code check stage"},
+      {"component": ".pipeline-config.yaml:55-56 — sign-artifact when: false (code-build)", "impact": "No artifact signing in build stage"},
+      {"component": ".pipeline-config.yaml — image_pull_policy: IfNotPresent", "impact": "Cached Docker images reused without freshness verification"}
+    ],
+    "indirect": [
+      {"component": "VULN-014 (no lock file) + VULN-017 (no detect-secrets)", "impact": "Three combined supply chain gaps: no reproducibility + no secret scanning + no signing"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove `when: 'false'` from sign-artifact steps. Configure IBM Continuous Delivery artifact signing per IBM Cloud documentation. Change image_pull_policy to 'Always' to prevent cache poisoning.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Re-enable sign-artifact step in both code-checks and code-build",
+      "Change image_pull_policy: IfNotPresent to image_pull_policy: Always",
+      "Implement SLSA (Supply-chain Levels for Software Artifacts) provenance attestation",
+      "Use npm ci (not npm install) with package-lock.json for reproducible builds (VULN-014)",
+      "Add detect-secrets scanning (VULN-017)"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-018-sign-artifact-disabled-ci/VULN-018-S-scan-finding.md",
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-011"],
+    "external": [
+      "CWE-494: Download of Code Without Integrity Check",
+      "CWE-345: Insufficient Verification of Data Authenticity",
+      "OWASP A08:2021 — Software and Data Integrity Failures",
+      "SLSA Supply Chain Security: https://slsa.dev",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:L/I:L/A:N — Score: 4.2 MEDIUM"
+    ]
+  }
+}

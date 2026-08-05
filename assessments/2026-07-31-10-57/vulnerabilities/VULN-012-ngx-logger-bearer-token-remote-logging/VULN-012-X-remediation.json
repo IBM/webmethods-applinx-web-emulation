@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-012",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation",
+    "note": "Fix was initially incomplete — setCustomHttpHeaders() in storage.service.ts was a second injection point not addressed in the first pass. Both injection points now fixed (2026-07-31T14:00:00Z)."
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "1. src/app/services/logger.service.ts — AuthTokenServerService.alterHttpRequest(): removed the Authorization: Bearer token header injection. Method now returns the unmodified httpRequest directly. Dead getAuthToken() method (unreachable after fix) also removed.",
+      "2. src/app/services/storage.service.ts — StorageService.setConnected(): removed the secondary setCustomHttpHeaders(new HttpHeaders({Authorization: Bearer token})) call that also forwarded the session token to the ngx-logger interceptor chain. Unused HttpHeaders import removed."
+    ],
+    "files_modified": [
+      {"file": "src/app/services/logger.service.ts", "changes": "alterHttpRequest() returns httpRequest unchanged; dead getAuthToken() removed."},
+      {"file": "src/app/services/storage.service.ts", "changes": "setCustomHttpHeaders() call removed from setConnected(); HttpHeaders import removed."}
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "Bearer token header injection fully removed from both injection points: alterHttpRequest() in AuthTokenServerService and setCustomHttpHeaders() in StorageService.setConnected(). The credential is now strictly scoped to the ApplinX API session and cannot reach the log infrastructure.",
+      "secondary_controls": [
+        "Dead getAuthToken() method removed from AuthTokenServerService to eliminate any possibility of future re-introduction."
+      ],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": [
+        "No Authorization header present in ngx-logger remote log HTTP requests after login.",
+        "setConnected() navigates to 'instant' without calling setCustomHttpHeaders().",
+        "AuthTokenServerService has no getAuthToken() method.",
+        "HttpHeaders is not imported in storage.service.ts."
+      ],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-012-ngx-logger-bearer-token-remote-logging/VULN-012-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-012-ngx-logger-bearer-token-remote-logging/VULN-012-I-investigation.md",
+    "validation": null
+  }
+}

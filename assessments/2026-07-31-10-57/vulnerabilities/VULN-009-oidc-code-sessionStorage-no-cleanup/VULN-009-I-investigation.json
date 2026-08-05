@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-009",
+  "descriptor": "oidc-code-sessionStorage-no-cleanup",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "OAuth2HandlerService.sendCodeAndConnectSession() (oauth2-handler.service.ts:58) stores the OIDC authorization code in sessionStorage['idPcode'] before forwarding it to ApplinX REST API for exchange. StorageService.setNotConnected() (storage.service.ts:51-56) only removes 'gx_token' from sessionStorage — it does NOT remove 'idPcode'. The authorization code therefore persists in sessionStorage for the entire browser tab lifetime after successful exchange.",
+    "attack_scenario": "Timing-Sensitive Attack: XSS triggered in the narrow window between sessionStorage.setItem('idPcode', code) and the backend exchange completes. Attacker reads the valid code. Attacker races to exchange the code themselves. OIDC codes are single-use — first exchange wins. In practice this window is milliseconds to a few seconds, making reliable exploitation extremely difficult.\n\nPost-Exchange Stale Code: XSS triggered after exchange. Attacker reads stale code from sessionStorage. Code has already been invalidated by IdP — cannot be replayed. Zero practical value.\n\nConclusion: The primary risk is security hygiene (persistent stale sensitive data) rather than practical exploitability. The code should be removed after exchange per security best practices.",
+    "prerequisites": [
+      "OIDC authentication mode must be active",
+      "XSS vulnerability must be exploitable (VULN-001 or VULN-002) within the brief pre-exchange window for meaningful risk",
+      "For post-exchange: reading stale code has no practical attack value (codes are single-use and IdP invalidates them)"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "XSS execution context during OIDC callback flow",
+      "achieved_privilege": "Read single-use authorization code (already invalidated after exchange — near-zero replay value)",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none",
+      "description": "OIDC authorization codes are single-use and invalidated by the IdP after the first exchange. The persisted code in sessionStorage is effectively a stale artifact. Reading it post-exchange has no meaningful value. The brief pre-exchange window is a theoretical risk but extremely difficult to time reliably. The main concern is security hygiene and the principle of least privilege (data should be removed when no longer needed)."
+    },
+    "data_flow": {
+      "sources": [
+        "OIDC authorization code from IdP — delivered via URL query parameter ?code="
+      ],
+      "transformations": [
+        "sessionStorage.setItem('idPcode', code) — stored at oauth2-handler.service.ts:58",
+        "code forwarded to ApplinX REST API for exchange",
+        "IdP invalidates code after first successful exchange",
+        "code remains in sessionStorage: never removed"
+      ],
+      "sinks": [
+        "sessionStorage['idPcode'] — persists indefinitely until tab close"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "OAuth2HandlerService.sendCodeAndConnectSession() — src/app/services/oauth2-handler.service.ts:58", "impact": "Authorization code stored before exchange, never cleaned up"},
+      {"component": "StorageService.setNotConnected() — src/app/services/storage.service.ts:51-56", "impact": "Incomplete cleanup — removes gx_token but not idPcode"}
+    ],
+    "indirect": [
+      {"component": "VULN-003 (missing state parameter)", "impact": "Combined: missing state makes code injection easier; lingering stale code in sessionStorage also visible to XSS"},
+      {"component": "VULN-008 (token in sessionStorage)", "impact": "Both gx_token and idPcode coexist in sessionStorage — holistic cleanup needed"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove the sessionStorage.setItem('idPcode', code) call entirely — the code is already available as a local variable and doesn't need to be persisted. If persistence is required for error recovery, remove it immediately after the exchange completes (success or failure): sessionStorage.removeItem('idPcode'). Also add 'idPcode' to the StorageService.setNotConnected() cleanup.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Remove sessionStorage.setItem('idPcode', code) — use local variable only",
+      "Add sessionStorage.removeItem('idPcode') to setNotConnected()",
+      "Fix VULN-003 (state parameter) — state parameter would prevent most CSRF attack scenarios that make code exposure dangerous"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-009-oidc-code-sessionStorage-no-cleanup/VULN-009-S-scan-finding.md",
+    "threat_model": ["TM-002"],
+    "attack_surface": ["AS-007"],
+    "external": [
+      "CWE-922: Insecure Storage of Sensitive Information",
+      "OWASP A02:2021 — Cryptographic Failures",
+      "RFC 6749 Section 4.1.2 — Authorization Code must be single-use",
+      "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N — Score: 3.1 LOW"
+    ]
+  }
+}

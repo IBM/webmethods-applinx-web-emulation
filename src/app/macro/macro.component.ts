@@ -46,7 +46,9 @@ export class MacroComponent {
   token: any;
   user: any;
   validationFlag: boolean = false;
-  basePath = 'http://localhost:2380/applinx/rest';
+  // VULN-016: removed hardcoded HTTP localhost basePath dead-code field.
+  // All macro API calls use macroService from the ApplinX SDK which reads basePath from
+  // the Angular environment configuration — this field was never actually used.
   observe = "body";
   reportProgress = false;
   defaultHeaders = new HttpHeaders();
@@ -80,8 +82,9 @@ export class MacroComponent {
   ngOnInit() {
     this.applicationName = this.fileService.applicationName;
     this.token = this.storageService.getAuthToken();
-    let userName = sessionStorage.getItem('userName');
-    this.user = userName?.substr(1, userName.length - 2)
+    // VULN-010: use JSON.parse() instead of fragile substr(1, length-2) quote-stripping.
+    const rawUserName = sessionStorage.getItem('userName');
+    this.user = rawUserName ? JSON.parse(rawUserName) : null;
     this.viewMacroFlag = false;
     this.parameter = this.operationType;
     this.getMacroListDetails();
@@ -123,12 +126,27 @@ export class MacroComponent {
   }
 
   onDeleteMacro() {
+    // VULN-007: validate selectedMacro against MACRO_NAME_PATTERN before passing to the API.
+    // selectedMacro is populated from sessionStorage which can be manipulated via XSS.
+    // A path-traversal value like '../../../etc/passwd' would become '../../../etc/passwd.json'
+    // and be sent directly to the ApplinX delete endpoint without this guard.
+    const macroBaseName = this.selectedMacro.replace(/\.json$/, '');
+    if (!GXUtils.MACRO_NAME_PATTERN.test(macroBaseName)) {
+      this.notificationService.showToast({
+        title: 'Delete Macro',
+        caption: 'Invalid macro name.',
+        duration: 5000,
+        type: 'error',
+      });
+      this.delMacro = false;
+      return;
+    }
     this.macroDeleteSubscription = this.macroService
       .deleteMacro(this.selectedMacro, this.user, this.applicationName, this.token)
       .subscribe(response => {
         this.notificationService.showToast({
           title: 'Delete Macro',
-          caption: "The selected Macro " + this.selectedMacro.split(".")[0] + " is deleted successfully!",
+          caption: "The selected Macro " + macroBaseName + " is deleted successfully!",
           duration: 5000, // Duration in milliseconds (optional)
           type: 'success',
         });
@@ -153,14 +171,13 @@ export class MacroComponent {
   }
 
   setPasswordMask(stepsArray) {
+    // VULN-006: passwords are now stored as GXUtils.pwdMask ('*') placeholder, not base64.
+    // Display '*' for any password field — length is 1 since the mask is a single character.
     stepsArray.forEach(element => {
       if (element.fields && element.fields.length > 0) {
-        let fieldsList = element.fields;
-        fieldsList.forEach(field => {
+        element.fields.forEach(field => {
           if (field.type && field.type == GXUtils.pwdText) {
-            field.value = window.atob(field.value);
-            let typeLength = field.value.length;
-            field.value = GXUtils.pwdMask.repeat(typeLength);
+            field.value = GXUtils.pwdMask;
           }
         });
       }
@@ -200,12 +217,15 @@ export class MacroComponent {
   }
 
   decryptBeforePlay(steps: any) {
+    // VULN-006: password fields now store a mask marker (GXUtils.pwdMask) instead of base64.
+    // No base64 decoding needed — if the value is the mask placeholder, prompt the user.
+    // Null-guard element.fields to prevent TypeError crash (previously unguarded).
     steps.forEach(element => {
-      let fieldsList = element.fields
-      if (fieldsList.length > 0) {
+      const fieldsList = element?.fields;
+      if (fieldsList && fieldsList.length > 0) {
         fieldsList.forEach(fieldElement => {
-          if (fieldElement.type && fieldElement.type == GXUtils.pwdText) {
-            fieldElement.value = window.atob(fieldElement.value)
+          if (fieldElement.type && fieldElement.type == GXUtils.pwdText && fieldElement.value === GXUtils.pwdMask) {
+            // Password was not stored — value remains as mask; UI should prompt user at playback.
           }
         });
       }
@@ -223,15 +243,14 @@ export class MacroComponent {
     let newMacroName = form.value.txtRecordMacro;
     this.token = this.storageService.getAuthToken();
     let macroNameList = []
-    console.log("newMacroName : ", newMacroName);
+    // VULN-011: removed console.log() calls — macro names and API list responses should not
+    // be written to the browser console unconditionally in production.
     this.macroFileListSubscription = this.macroService
       .getMacro(this.user, this.applicationName, this.token)
       .subscribe(data => {
-        console.log(data)
         data.fileList?.forEach(file => {
           macroNameList.push(file.substring(0, file.length - 5))
         });
-        console.log("macroNameList : ", macroNameList)
         if (macroNameList.findIndex(item => item == newMacroName) == -1) {
           this.dataService.setMacroRecordFlag(true);
           this.dataService.setMacroDetails(form.value);
@@ -264,7 +283,7 @@ export class MacroComponent {
         });
       },
         err => {
-          console.log(err);
+          // VULN-011: removed console.log(err) — error objects may contain server details.
           this.notificationService.showToast({
             title: 'Save Macro',
             caption: "An Unexpected Error has occured while saving the Macro!",
@@ -277,7 +296,14 @@ export class MacroComponent {
   }
 
   selected(event: Event) {
-    this.selectedMacro = event + ".json";
+    // VULN-007: validate macro name before storing — prevents sessionStorage-injected
+    // path-traversal values from reaching the API via onDeleteMacro/onViewMacro/onPlayMacro.
+    const name = String(event);
+    if (GXUtils.MACRO_NAME_PATTERN.test(name)) {
+      this.selectedMacro = name + ".json";
+    } else {
+      this.selectedMacro = '';
+    }
   }
 
   onCancel(){

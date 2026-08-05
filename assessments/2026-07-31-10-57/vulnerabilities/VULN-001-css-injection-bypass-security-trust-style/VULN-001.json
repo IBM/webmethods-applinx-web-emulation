@@ -1,0 +1,129 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-001",
+  "descriptor": "css-injection-bypass-security-trust-style",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "CSS Injection via bypassSecurityTrustStyle on Server-Supplied field.style",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-83", "CWE-693"],
+    "owasp": ["A03:2021 - Injection"],
+    "capec": ["CAPEC-86", "CAPEC-588"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:L/A:N",
+      "score": 5.9,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "Required",
+        "scope": "Unchanged",
+        "confidentiality": "High",
+        "integrity": "Low",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/mini-components/input-field/input-field.component.ts",
+    "line_start": 196,
+    "line_end": 199,
+    "function": "getCss",
+    "class": "InputFieldComponent",
+    "component": "InputFieldComponent / FieldComponent",
+    "module": "mini-components"
+  },
+  "data_flow": {
+    "sources": [
+      "ApplinX REST API GetScreenResponse.fields[].style (server-controlled)"
+    ],
+    "transformations": [
+      "field.style passed to DomSanitizer.bypassSecurityTrustStyle() with no validation"
+    ],
+    "sinks": [
+      "[style] property binding on <input> element (input-field.component.html:14)",
+      "[style] property binding on <div> element (field.component.html:7,18)"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": ["LLM-static-analysis"],
+    "confidence": "high",
+    "artifact": "VULN-001-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "medium",
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated attacker (requires compromised ApplinX server)",
+      "achieved_privilege": "CSS injection into user browser — data exfiltration via CSS url() trick",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "low",
+      "availability": "none",
+      "description": "CSS injection via bypassSecurityTrustStyle allows server to inject arbitrary CSS including url() exfiltration via CSS-based data theft. Scope changed to Unchanged as injection stays in user context. Both InputFieldComponent and FieldComponent affected."
+    },
+    "artifact": "VULN-001-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "Removed bypassSecurityTrustStyle() from both InputFieldComponent.getCss() and FieldComponent.getCss(). Replaced with a CSS property allowlist parser returning a plain {[key:string]:string} object. Angular [style] binding applies this safely without any security bypass. Added value-level url()/expression()/javascript: guard as defense-in-depth.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-001-css-injection-bypass-security-trust-style/VULN-001-X-remediation.md"
+  },
+  "references": {
+    "threat_model": ["TM-001", "TM-004"],
+    "attack_surface": ["AS-001", "AS-002"],
+    "related_vulnerabilities": ["VULN-008"],
+    "attack_chains": ["VULN-001 → VULN-008: CSS injection enables XSS token exfil"],
+    "external_cves": []
+  },
+  "tags": ["xss", "css-injection", "angular-security-bypass", "server-controlled-data"],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "bypassSecurityTrustStyle used on server-supplied field.style in InputFieldComponent.getCss() and FieldComponent.getCss() — CSS injection via url() exfiltration possible"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED: CSS injection via bypassSecurityTrustStyle in both InputFieldComponent and FieldComponent. CVSS refined to 5.9 MEDIUM (Scope Unchanged). Attack chain: VULN-001 → VULN-008 for session token exfil."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: bypassSecurityTrustStyle() removed from both components. getCss() now returns a plain CSS property object filtered through an 18-property allowlist with additional url()/expression()/javascript: value guard. DomSanitizer import and injection removed entirely. Zero bypassSecurityTrust* calls remain in codebase. Pending rescan and manual testing verification."
+    }
+  ]
+}

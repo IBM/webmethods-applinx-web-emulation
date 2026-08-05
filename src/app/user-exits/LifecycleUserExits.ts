@@ -20,8 +20,9 @@ import { AbstractUserExits } from './AbstractUserExits';
 
 export class LifecycleUserExits extends AbstractUserExits {
         
-    preConnect(createSessionRequest: CreateSessionRequest, authHeader?: string) {
-        super.preConnect(createSessionRequest, authHeader);
+    preConnect(createSessionRequest: CreateSessionRequest) {
+        // VULN-005: authHeader parameter removed.
+        super.preConnect(createSessionRequest);
     }
     postConnect(createSessionRespose: CreateSessionResponse) {
         super.postConnect(createSessionRespose);

@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-004",
+  "descriptor": "user-exit-listener-global-replacement",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "GXGeneratedPage.addUserExits() (GXGeneratedPage.ts:88-91) calls this.userExitsEventThrower.clearEventListeners() unconditionally before adding the caller's user-exit implementation. clearEventListeners() (user-exits-event-thrower.service.ts:29) destructively empties the _userExitsList array — removing ALL previously registered listeners from the root-scoped singleton. Since UserExitsEventThrowerService is application-wide, any GXGeneratedPage subclass that calls addUserExits() silently removes all security and audit hooks registered by other parts of the application. There is no per-component scoping, no restore mechanism, and no notification of displaced listeners.",
+    "attack_scenario": "Insider Threat (Malicious Developer): Attacker creates a GXGeneratedPage subclass that calls addUserExits(new MaliciousUserExits()). The MaliciousUserExits implementation captures preConnect authHeader (credential), postConnect token, and all sendKey data. Upon component activation, all legitimate security hooks (e.g., LifecycleUserExits audit hooks) are silently cleared and replaced. For the remainder of the session, all lifecycle events go exclusively to the malicious implementation. Credentials and terminal data are exfiltrated.\n\nAccidental Displacement: A legitimate developer creates a generated page component and calls addUserExits() not realizing it clears global state. Security monitoring stops working for all users who navigate to that page, without any error or warning.",
+    "prerequisites": [
+      "Attacker must have source code access and ability to deploy a custom GXGeneratedPage subclass",
+      "The malicious generated page component must be loaded/instantiated during a user session",
+      "Knowledge of the IUserExits interface and the generated page extensibility mechanism"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Developer with code repository and deployment access",
+      "achieved_privilege": "Ability to disable all security lifecycle hooks and capture session credentials + terminal data",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Security lifecycle hook displacement allows: (1) silent removal of all audit/monitoring user exits, (2) installation of credential-capturing hooks via VULN-005 (preConnect receives authHeader). The confidentiality impact is low-medium as it requires developer-level deployment access; the risk is more architectural — security controls can be silently removed by any generated page component."
+    },
+    "data_flow": {
+      "sources": [
+        "GXGeneratedPage subclass (customer-written or ApplinX-generated code component)"
+      ],
+      "transformations": [
+        "addUserExits(maliciousImpl) calls clearEventListeners() — empties _userExitsList globally",
+        "addEventListener(maliciousImpl) adds single malicious implementation",
+        "All subsequent firePreConnect, firePostConnect, firePreSendKey events go to malicious impl"
+      ],
+      "sinks": [
+        "Malicious IUserExits.preConnect() — receives authHeader credential (VULN-005)",
+        "Malicious IUserExits.postConnect() — receives CreateSessionResponse including Bearer token",
+        "Malicious IUserExits.preSendKey/postSendKey — receives all keystrokes and screen responses"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "GXGeneratedPage.addUserExits() — src/app/generated-pages/GXGeneratedPage.ts:88-91", "impact": "Unconditional global listener clear — attack vector"},
+      {"component": "UserExitsEventThrowerService.clearEventListeners() — src/app/services/user-exits-event-thrower.service.ts:28-30", "impact": "Destructive global operation — should be scoped to component lifecycle"}
+    ],
+    "indirect": [
+      {"component": "LifecycleUserExits / any security monitoring user exit", "impact": "Silently displaced; security audit events stop being processed"},
+      {"component": "VULN-005 (authHeader in preConnect)", "impact": "Malicious displacement enables credential capture via preConnect authHeader"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove the clearEventListeners() call from addUserExits(). Implement component-lifecycle-scoped user-exit registration: listeners added by a GXGeneratedPage component should be automatically unregistered when the component is destroyed (ngOnDestroy). Use a Map<component_id, IUserExits[]> instead of a flat list to scope listeners per component.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Remove clearEventListeners() from addUserExits() — change to append-only",
+      "Tie user-exit registration to component lifecycle (add in ngOnInit, remove in ngOnDestroy)",
+      "Log all clearEventListeners() calls with stack trace for audit purposes",
+      "Require code review of all GXGeneratedPage subclasses that call addUserExits()",
+      "Add CI lint rule: flag any direct calls to clearEventListeners() outside of designated initialization"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-004-user-exit-listener-global-replacement/VULN-004-S-scan-finding.md",
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-012"],
+    "external": [
+      "CWE-269: Improper Privilege Management",
+      "CWE-284: Improper Access Control",
+      "OWASP A01:2021 — Broken Access Control",
+      "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:L/I:L/A:N — Score: 3.8 LOW"
+    ]
+  }
+}

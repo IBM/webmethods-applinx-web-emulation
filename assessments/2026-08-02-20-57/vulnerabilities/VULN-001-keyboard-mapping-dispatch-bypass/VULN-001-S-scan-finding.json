@@ -1,0 +1,70 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-001",
+  "descriptor": "keyboard-mapping-dispatch-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-H-003",
+    "task_name": "Keyboard Mapping Dispatch and sendKey Validation",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/services/keyboard-mapping.service.ts, src/assets/config/KeyboardMappings.json, src/common/js-functions/js-functions.service.ts",
+    "coverage": "100% — all keyboard mapping code paths analyzed including dispatch, allowlist, and parameter extraction"
+  },
+  "finding": {
+    "severity": "high",
+    "file": "src/app/services/keyboard-mapping.service.ts",
+    "line": 139,
+    "function": "dispatchKeyboardMapping",
+    "tool": "LLM analysis",
+    "code_snippet": "if (Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) && typeof (this.jsFunc as any)[methodName] === 'function') {\n    let param = keyFunc.substring(beginBracket+1, keyFunc.length-1);\n    result = (this.jsFunc as any)[methodName](param);\n}\n// CRITICAL: 'constructor' IS an own property on class instances.\n// If methodName='constructor', hasOwnProperty.call() returns TRUE.\n// this.jsFunc['constructor'](param) would execute the constructor function.\n\n// SEPARATE ISSUE at line 159-161:\nif (keyFunc != null && typeof(keyFunc) == GXObjectTypes.FUNCTION) {\n    keyFunc(gx_event);  // No restriction on which functions can be called\n}",
+    "preliminary_assessment": "Two distinct vulnerabilities in keyboard mapping dispatch: (1) VULN-002 own-property guard is incomplete — 'constructor' IS an own property on class instances in V8/SpiderMonkey. If server supplies targetFunction='constructor(param)', hasOwnProperty.call() returns TRUE and this.jsFunc['constructor'](param) executes, potentially invoking a dangerous constructor. (2) Function-type targetFunction dispatch at line 159 is entirely unrestricted — if server can supply a function object (not just a string), any callable can be invoked including window.eval, Function(), or other dangerous references. A compromised ApplinX backend supplying malicious keyboardMapping data could achieve arbitrary code execution in the browser. This represents a failed partial fix for server-supplied function dispatch.",
+    "threat_model_refs": ["TM-004"],
+    "attack_surface_refs": ["AS-001", "AS-005"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "hasOwnProperty.call() guard present (VULN-002 fix) but incomplete — does not blacklist 'constructor'",
+      "VALID_HOST_KEY regex has correct anchors and /i flag and covers pf1-36, pa1-3, common keys",
+      "Function-type targetFunction dispatch is entirely unrestricted (no origin/identity check)",
+      "cancelMapFunction invoked with null-check only, no typeof validation",
+      "Parameter extraction uses naive substring parsing — no regex validation of well-formed function(param) syntax",
+      "KeyboardMappings.json loaded without schema validation"
+    ],
+    "false_positives": [
+      {
+        "pattern": "__proto__ as methodName",
+        "rationale": "Object.prototype.hasOwnProperty.call(obj, '__proto__') correctly returns FALSE — __proto__ is not an own property on instances"
+      },
+      {
+        "pattern": "toString/valueOf as methodName",
+        "rationale": "These are inherited prototype methods, not own properties — correctly blocked by hasOwnProperty check"
+      },
+      {
+        "pattern": "cancelMapFunction from server mappings",
+        "rationale": "Line 60 hardcodes cancelMapFunction=null for server-loaded mappings, so only user code (addKeyboardMapping) can set it"
+      }
+    ],
+    "coverage_assessment": "Complete analysis of keyboard-mapping.service.ts dispatch mechanism, VALID_HOST_KEY regex, parameter extraction, and js-functions service. All dispatch paths traced."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify if JSFunctionsService or IJSFunctionService implementations expose a weaponizable constructor",
+      "Test: keyboardMapping.targetFunction = 'constructor(param)' — trace what this.jsFunc['constructor'](param) returns",
+      "Determine if targetFunction can be a function object in server REST API responses (would make unrestricted dispatch CRITICAL)",
+      "Test VALID_HOST_KEY against official ApplinX host key documentation for completeness"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-001 to keyboard-mapping-dispatch-bypass",
+      "Set status: flagged, severity: high"
+    ]
+  }
+}

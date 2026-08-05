@@ -1,0 +1,88 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-011",
+  "descriptor": "error-message-info-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "WebLoginComponent.handleError() logs raw ApplinX REST API error messages (errorResponse.error.message) via console.error() and binds them to the DOM. ApplinX error messages include system-level details (internal connection strings visible in NavigationService patterns: 'Not connected to Server (Software caused connection abort: recv failed)'). No environment.production guard, no error message sanitization or mapping to user-friendly strings. MacroComponent has 4 additional unconditional console.log() calls logging API responses. The DOM binding uses Angular {{ }} interpolation (XSS-safe HTML encoding) — the risk is information disclosure only, not XSS.",
+    "attack_scenario": "Attacker establishes XSS (via VULN-004 or supply chain VULN-005). XSS code reads browser console history, collecting server error messages that include internal IPs, stack traces, and connection details. Attacker builds a network topology map from harvested error messages. In a simpler scenario: user opens browser DevTools and sees full ApplinX server error messages including internal paths and connection abort details — relevant for insider threat scenarios.",
+    "prerequisites": [
+      "For reconnaissance: authenticated user session, browser DevTools access",
+      "For post-XSS amplification: prior XSS exploitation (VULN-004 or other)",
+      "ApplinX REST API must return error messages containing internal details"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user (login page or post-auth)",
+      "achieved_privilege": "Server topology information (internal IPs, connection strings, error patterns)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "Server internal details (connection strings, IPs, paths) exposed to browser console accessible to users and XSS code. The {{ errorMessage }} DOM binding is XSS-safe (Angular entity-encoding) — only information disclosure risk. Post-XSS amplification: harvested server details enable targeted reconnaissance for subsequent attacks."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API HttpErrorResponse.error.message (may contain internal server details)"
+      ],
+      "transformations": [
+        "WebLoginComponent.handleError(): const msg = errorResponse.error.message || errorResponse.message",
+        "No sanitization or mapping to generic messages",
+        "this.errorMessage = msg (DOM binding — HTML encoded by Angular {{ }}, XSS-safe)",
+        "console.error(msg) (no sanitization — raw error to browser console)"
+      ],
+      "sinks": [
+        "Browser console (console.error) — accessible to DevTools and XSS",
+        "DOM {{ errorMessage }} binding — HTML encoded, info disclosure only",
+        "MacroComponent console.log() calls (lines 231, 235, 239, 272) — API responses"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "WebLoginComponent.handleError()",
+        "impact": "Raw server error messages logged to console and bound to DOM"
+      },
+      {
+        "component": "MacroComponent (lines 231, 235, 239, 272)",
+        "impact": "Macro names and API responses logged to browser console"
+      }
+    ],
+    "indirect": [
+      {
+        "component": "AbstractUserExits error handlers",
+        "impact": "Full HttpErrorResponse objects logged via NGXLogger (remote endpoint security depends on configuration)"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Map ApplinX error messages to generic user-friendly strings in handleError() — do not expose raw server error details. Remove or gate all console.error() and console.log() debug calls behind !environment.production flag. For the DOM error message, the current {{ errorMessage }} binding is XSS-safe but should show generic text ('Connection error — please try again') rather than server details.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Map raw server errors to generic user-friendly messages in handleError()",
+      "Remove or gate all console.log/error calls behind if (!environment.production) check",
+      "Add Angular build optimization for production: terserOptions.compress.drop_console = true",
+      "Verify NGXLogger serverLogLevel is ERROR (current) and not configurable to TRACE via sessionConfig.json"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-011-error-message-info-disclosure/VULN-011-S-scan-finding.md",
+    "threat_model": ["TM-006", "TM-012"],
+    "attack_surface": ["AS-008"],
+    "external": [
+      "CWE-209: Generation of Error Message Containing Sensitive Information",
+      "OWASP Testing Guide: Information Leakage via Error Messages"
+    ]
+  }
+}

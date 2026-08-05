@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-011",
+  "descriptor": "error-message-info-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Removed console.error(msg) from webLogin.component.ts handleError(). Removed 4 active console.log() calls from macro.component.ts (onRecordMacro and onStopRecordMacro). Error messages still shown to users via DOM binding ({{ errorMessage }}) and toast notifications.",
+    "fix_complexity": "low",
+    "root_cause": "handleError() called console.error() with raw ApplinX server error messages which may contain internal IPs, paths, and session state. MacroComponent called console.log() with macro names and full API responses unconditionally in production code with no environment guard.",
+    "fix_strategy": "information_disclosure_prevention",
+    "changes_made": [
+      "src/app/webLogin/webLogin.component.ts handleError(): removed console.error(msg)",
+      "src/app/macro/macro.component.ts onRecordMacro(): removed console.log('newMacroName'), console.log(data), console.log('macroNameList')",
+      "src/app/macro/macro.component.ts onStopRecordMacro(): removed console.log(err) in error handler"
+    ],
+    "files_modified": [
+      "src/app/webLogin/webLogin.component.ts",
+      "src/app/macro/macro.component.ts"
+    ],
+    "verification_needed": "Open browser DevTools during login failure and macro operations. Verify no server error messages or macro names appear in console. Verify error messages are still displayed in the UI.",
+    "defense_in_depth": "VULN-014 (console.log in FieldComponent) fixed simultaneously — both are the same root cause (unconditional debug output).",
+    "testing": "1. Trigger a login error — verify console is clean but errorMessage is shown in UI. 2. Record/save a macro — verify console is clean but toast notifications work.",
+    "residual_risk": "Low. Other console.log() calls exist in the codebase but are already commented out or behind inactive code paths. A future build optimization (Terser drop_console: true in angular.json) would provide a systematic build-time guarantee."
+  }
+}

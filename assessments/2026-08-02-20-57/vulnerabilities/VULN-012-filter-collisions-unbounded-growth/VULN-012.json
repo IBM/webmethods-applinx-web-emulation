@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-012",
+  "descriptor": "filter-collisions-unbounded-growth",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "filterCollisions() O(n²) Unbounded Array Growth — Browser DoS via Crafted Screen Response",
+    "severity": "high",
+    "status": "confirmed",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-400", "CWE-770"],
+    "owasp": ["A04:2021-Insecure Design"],
+    "capec": ["CAPEC-25", "CAPEC-469"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:H/UI:N/S:U/C:N/I:N/A:H",
+      "score": 4.4,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "high",
+        "user_interaction": "none",
+        "scope": "unchanged",
+        "confidentiality": "none",
+        "integrity": "none",
+        "availability": "high"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/screen-processor.service.ts",
+    "line_start": 100,
+    "line_end": 140,
+    "function": "filterCollisions",
+    "class": "ScreenProcessorService",
+    "component": "ScreenProcessorService",
+    "module": "screen-processor"
+  },
+  "data_flow": {
+    "sources": ["ApplinX REST API GetScreenResponse transformations[].regionsToHide[] (server-controlled rectangle coordinates)"],
+    "transformations": ["initTree() — all rectangles inserted into RBush spatial index", "filterCollisions() — outer loop reads dynamic fields.length", "splitField() returns [f1, f2] — two new fields with updated column positions", "fields.concat([f1, f2]) — grows fields array, queues new fields for O(n²) cascade"],
+    "sinks": ["JavaScript event loop — blocked by 500,000+ iterations for 1000 rectangles", "Browser memory — ~1GB+ Field object allocations at scale", "Browser tab — unresponsive/frozen for 10-60 seconds"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "medium",
+    "artifact": "VULN-012-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:30:00Z",
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "high",
+    "privilege_boundary": {
+      "start_privilege": "ApplinX backend (compromised) or MITM on REST channel",
+      "achieved_privilege": "Client-side resource exhaustion (browser tab DoS)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "high",
+      "description": "Browser tab freeze for 10-60 seconds with ~500K iterations for 1000 rectangles. Scanner stated 'linear' growth — investigation confirms O(n²) (~250x underestimate). In critical business workflows (banking, healthcare terminals), tab freeze has significant operational impact. Chains with VULN-006 (null crash) in AC-004."
+    },
+    "artifact": "VULN-012-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": ["Compromised ApplinX REST backend or MITM on unencrypted REST channel", "Craft GetScreenResponse with many overlapping transformation rectangles"],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "Add MAX_FIELDS guard in filterCollisions() (e.g., 10000 fields). Replace fields.concat([f1, f2]) with fields.push(f1, f2) for O(1) append. Add MAX_RECTS limit in initTree() to reject pathologically large inputs.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-005"],
+    "attack_surface": ["AS-001"],
+    "related_vulnerabilities": ["VULN-006", "VULN-014"],
+    "attack_chains": ["AC-004"],
+    "external_cves": []
+  },
+  "tags": ["dos", "unbounded-growth", "filter-collisions", "algorithmic-complexity", "screen-processor"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "filterCollisions() appends split results to array during iteration; server-sent overlapping rectangles cause linear array growth (DoS)"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "Confirmed O(n²) growth — Scanner's 'linear' claim was wrong (~250x underestimate). ~500K iterations for 1000 rectangles. Upgraded from MEDIUM to HIGH. Part of AC-004 DoS chain with VULN-006."
+    }
+  ]
+}

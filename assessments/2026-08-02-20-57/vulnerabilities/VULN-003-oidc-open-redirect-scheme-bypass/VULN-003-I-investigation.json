@@ -1,0 +1,81 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-003",
+  "descriptor": "oidc-open-redirect-scheme-bypass",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "false_positive"
+  },
+  "investigation": {
+    "confirmed_at": null,
+    "exploitability": "theoretical",
+    "root_cause": "Scanner claimed protocol-relative URLs (//evil.com) bypass the https: scheme check by inheriting the page protocol. This is only true when a base URL is supplied: new URL('//evil.com', baseURI). The actual code calls new URL(res.redirectUri) with NO base parameter. Per WHATWG URL Standard, new URL('//evil.com') without a base throws TypeError. This TypeError is caught by the existing catch(e) { return; } block, which aborts the redirect. The bypass technique is inapplicable to this code.",
+    "attack_scenario": "ApplinX backend (compromised) returns redirectUri='//evil.com/callback'. Code executes new URL('//evil.com/callback') with no base → TypeError thrown → catch block executes → return; → redirect does NOT occur. Attack fails. Residual risk: if backend returns 'https://evil.com/callback' (absolute HTTPS), the scheme check passes and redirect proceeds to attacker IdP. This is a server-requires-compromise scenario with no client-side bypass.",
+    "prerequisites": [
+      "ApplinX REST API backend fully compromised (required for any redirect manipulation)",
+      "Attacker must supply a syntactically valid absolute HTTPS URL (for residual risk scenario)",
+      "Protocol-relative bypass specifically: not applicable — no base URL in constructor call"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX REST API backend",
+      "achieved_privilege": "None for protocol-relative bypass (TypeError thrown). Residual: OIDC code redirect to attacker IdP (requires full backend compromise — no privilege escalation beyond what attacker already has).",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "none",
+      "description": "The specific protocol-relative bypass does not work. The code is safe against the claimed attack. Residual risk (absolute HTTPS to attacker IdP) requires full backend compromise and does not represent a client-side escalation."
+    },
+    "data_flow": {
+      "sources": [
+        "CreateSessionResponse.redirectUri from ApplinX REST API (@ibm/applinx-rest-apis SDK)"
+      ],
+      "transformations": [
+        "new URL(res.redirectUri) — no base parameter — TypeError on protocol-relative input",
+        "parsed.protocol !== 'https:' — scheme validation (only reached for valid absolute URLs)",
+        "catch(e) { return; } — aborts redirect on any URL parsing error"
+      ],
+      "sinks": [
+        "window.location.href — only reachable with syntactically valid absolute HTTPS URL"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "OAuth2HandlerService.redirectToIDPLoginPage()",
+        "impact": "No impact from protocol-relative bypass. Residual: lacks hostname allowlist validation."
+      }
+    ],
+    "indirect": [
+      {
+        "component": "OIDC authorization code flow",
+        "impact": "Residual: if backend is fully compromised and supplies valid HTTPS attacker URL, authorization code could be redirected to attacker IdP (requires backend compromise, not a client bypass)"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "The protocol-relative bypass finding is a false positive — no code change required for that specific claim. For defense-in-depth against the residual risk (absolute HTTPS to attacker domain): add hostname allowlist validation. Pre-register the expected IdP hostname(s) in sessionConfig.json and verify parsed.hostname matches an allowlist entry before proceeding with the redirect.",
+    "priority": "low",
+    "defense_in_depth": [
+      "Add IdP hostname allowlist to sessionConfig.json: { 'allowedIdpHosts': ['idp.example.com'] }",
+      "Validate parsed.hostname against allowlist after URL construction: if (!allowedHosts.includes(parsed.hostname)) return;",
+      "Consider adding CSP form-action 'self' header to prevent unexpected navigation targets",
+      "Document that redirectUri origin validation requires server-side configuration"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-003-S-scan-finding.md",
+    "threat_model": ["TM-002"],
+    "attack_surface": ["AS-001", "AS-002"],
+    "external": [
+      "WHATWG URL Standard §4.1: new URL(url, base) — base required for relative URLs",
+      "MDN URL constructor: TypeError thrown when input is not absolute and no base is provided"
+    ]
+  }
+}

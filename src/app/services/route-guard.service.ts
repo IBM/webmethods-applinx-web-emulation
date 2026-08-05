@@ -52,6 +52,16 @@ export class RouteGuardService  {
     if (isLoggedIn && (url === 'instant' || url === screenName)) {
       return true;
     } else if (idPcode) {
+      // VULN-003: validate OIDC state parameter to prevent CSRF authorization code injection.
+      const receivedState = route.queryParams.state;
+      const storedState = sessionStorage.getItem('oidc_state');
+      sessionStorage.removeItem('oidc_state'); // consume state — single use
+      if (!receivedState || !storedState || receivedState !== storedState) {
+        this.logger.error('OIDC state mismatch — possible CSRF attack. Aborting code exchange.');
+        this.router.navigate(['webLogin']);
+        return false;
+      }
+
       if (url === 'webLogin') {
         this.router.navigate(['instant', { queryParams: route.queryParams }]);
         return true;

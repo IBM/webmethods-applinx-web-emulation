@@ -1,0 +1,63 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "Username persists in sessionStorage across sessions — never removed; app.component.ts:639 has no null guard",
+                    "threat_model_refs":  [
+                                              "TM-006"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "handleSimpleAuth",
+                    "line":  137,
+                    "code_snippet":  "sessionStorage.setItem(\u0027userName\u0027, JSON.stringify(username.toLowerCase()));",
+                    "attack_surface_refs":  [
+                                                "AS-007"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/webLogin/webLogin.component.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-010",
+    "execution":  {
+                      "target":  "src/app/webLogin/webLogin.component.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-004",
+                     "task_name":  "Credential and Token Storage",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Add removeItem(\u0027userName\u0027) to setNotConnected()",
+                                              "Fix null guard in app.component.ts:639",
+                                              "Use JSON.parse() instead of substr for quote stripping"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-010 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "username-sessionStorage-no-cleanup",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "userName never removed from sessionStorage on setNotConnected()",
+                                               "Fragile substr(1, length-2) quote stripping in macro.component.ts and app.component.ts",
+                                               "app.component.ts:639 uses no optional chaining — TypeError if null"
+                                           ]
+                 }
+}

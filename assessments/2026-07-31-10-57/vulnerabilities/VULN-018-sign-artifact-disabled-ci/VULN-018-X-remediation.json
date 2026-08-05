@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-018",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [".pipeline-config.yaml: (1) removed 'when: false' from sign-artifact step in code-checks stage; (2) removed 'when: false' from sign-artifact step in code-build stage; (3) changed image_pull_policy from 'IfNotPresent' to 'Always' in both code-checks steps to prevent Docker image cache poisoning."],
+    "files_modified": [{"file": ".pipeline-config.yaml: sign-artifact steps re-enabled in code-checks and code-build; image_pull_policy: Always.", "changes": "See changes_made."}],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": ".pipeline-config.yaml: (1) removed 'when: false' from sign-artifact step in code-checks stage; (2) removed 'when: false' from sign-artifact step in code-build stage; (3) changed image_pull_policy from 'IfNotPresent' to 'Always' in both code-checks steps to prevent Docker image cache poisoning.",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-018-sign-artifact-disabled-ci/VULN-018-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-018-sign-artifact-disabled-ci/VULN-018-I-investigation.md",
+    "validation": null
+  }
+}

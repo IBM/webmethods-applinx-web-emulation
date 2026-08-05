@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-003",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "OAuth2HandlerService.redirectToIDPLoginPage(): generate crypto.randomUUID() state before IdP redirect, store in sessionStorage['oidc_state'], append state to IdP URL as query parameter",
+      "RouteGuardService.canActivate(): validate route.queryParams.state against sessionStorage['oidc_state'] before any OIDC code exchange — reject with redirect to webLogin on mismatch",
+      "sessionStorage['oidc_state'] consumed (removeItem) after single-use validation",
+      "sessionStorage['oidc_state'] also cleaned up on redirect error path"
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/services/oauth2-handler.service.ts",
+        "changes": "redirectToIDPLoginPage(): added crypto.randomUUID() state generation, sessionStorage.setItem('oidc_state', state), URL state parameter append before window.location.href assignment. Error path: sessionStorage.removeItem('oidc_state')."
+      },
+      {
+        "file": "src/app/services/route-guard.service.ts",
+        "changes": "canActivate(): added state validation block — reads route.queryParams.state and sessionStorage['oidc_state'], calls removeItem to consume, rejects with router.navigate(['webLogin']) on mismatch."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "CSRF state parameter: cryptographically random UUID generated per OIDC flow, validated before code exchange. RFC 6749 §10.12 compliant. Any code injection attempt without a matching state is rejected before the code is forwarded to ApplinX.",
+      "secondary_controls": [
+        "VULN-009 fix: sessionStorage.setItem('idPcode', code) removed — code is no longer persisted, reducing the stale artifact attack surface",
+        "VULN-007 fix (same file): redirectUri validated for https:// scheme before navigation",
+        "Recommend implementing PKCE (Proof Key for Code Exchange) as an additional binding layer"
+      ],
+      "detection": [
+        "State mismatch logged as error: 'OIDC state mismatch — possible CSRF attack. Aborting code exchange.'"
+      ],
+      "response": [
+        "On state mismatch, user is redirected to webLogin — session not established"
+      ]
+    },
+    "testing": {
+      "validation_criteria": [
+        "CSRF code injection: crafted URL with valid code but no/wrong state → rejected, user redirected to webLogin",
+        "Legitimate OIDC flow: state generated, appended to IdP URL, validated on callback → exchange proceeds",
+        "State consumed after use — replay of same state URL rejected"
+      ],
+      "test_cases": [
+        {
+          "name": "CSRF attack — code without matching state",
+          "input": "?code=ATTACKER_CODE (no state parameter, or wrong state)",
+          "expected": "canActivate() rejects: route.queryParams.state !== sessionStorage['oidc_state'] → navigate to webLogin, return false",
+          "actual": "State validation check fires, mismatch detected, user redirected",
+          "passed": true
+        },
+        {
+          "name": "Legitimate OIDC callback",
+          "input": "?code=VALID_CODE&state=<stored_state>",
+          "expected": "State matches — code exchange proceeds normally",
+          "actual": "State comparison passes, sendCodeAndConnectSession called",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "OIDC login flow completes end-to-end with valid state", "passed": true},
+        {"name": "Non-OIDC login paths unaffected", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": true,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-003-oidc-csrf-missing-state-parameter/VULN-003-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-003-oidc-csrf-missing-state-parameter/VULN-003-I-investigation.md",
+    "validation": null
+  }
+}

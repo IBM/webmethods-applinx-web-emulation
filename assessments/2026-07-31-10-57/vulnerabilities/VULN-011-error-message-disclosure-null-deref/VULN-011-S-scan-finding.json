@@ -1,0 +1,64 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "Null dereference on errorResponse.error.message in polling hot path — can lock screen permanently; raw server errors exposed in UI",
+                    "threat_model_refs":  [
+                                              "TM-005",
+                                              "TM-008"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "errorHandler",
+                    "line":  103,
+                    "code_snippet":  "errorResponse.error.message.indexOf(\u0027Disconnected by host\u0027)",
+                    "attack_surface_refs":  [
+                                                "AS-013"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/navigation/navigation.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-011",
+    "execution":  {
+                      "target":  "src/app/services/navigation/navigation.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-002",
+                     "task_name":  "Error Message Information Disclosure",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Verify HttpErrorResponse.error can be null in Angular for network errors",
+                                              "Test: simulate network timeout during sendKeys and observe screen locker state",
+                                              "Sanitize server error messages before UI display"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-011 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "error-message-disclosure-null-deref",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "errorResponse.error.message accessed without null guard in navigation.service.ts:103",
+                                               "webLogin handleError() correctly uses error.message || errorResponse.message",
+                                               "errorMessage displayed in {{ }} interpolation — no XSS"
+                                           ]
+                 }
+}

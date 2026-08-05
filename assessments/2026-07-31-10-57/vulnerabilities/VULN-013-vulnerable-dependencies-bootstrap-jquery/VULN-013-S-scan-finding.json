@@ -1,0 +1,65 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "bootstrap 5.1.3: CVE-2024-6531 XSS tooltip; jquery 3.6.0: CVE-2019-11358 prototype pollution",
+                    "threat_model_refs":  [
+                                              "TM-001",
+                                              "TM-003"
+                                          ],
+                    "severity":  "medium",
+                    "function":  null,
+                    "line":  29,
+                    "code_snippet":  "bootstrap: 5.1.3, jquery: 3.6.0",
+                    "attack_surface_refs":  [
+                                                "AS-011"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "package.json"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-013",
+    "execution":  {
+                      "target":  "package.json",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-006",
+                     "task_name":  "Dependency Vulnerability Scan",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Upgrade bootstrap to 5.3.x",
+                                              "Run npm install \u0026\u0026 npm audit --json",
+                                              "Assess whether jquery can be removed (single usage in webLogin.component.ts:117)"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-013 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "vulnerable-dependencies-bootstrap-jquery",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "bootstrap 5.1.3 predates 5.3.x security fixes",
+                                               "jquery 3.6.0 prototype pollution via $.extend",
+                                               "rxjs-compat 6.6.7 deprecated with no security fix path",
+                                               "No package-lock.json — non-reproducible dependency resolution"
+                                           ]
+                 }
+}

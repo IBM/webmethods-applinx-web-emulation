@@ -1,0 +1,146 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-020",
+  "descriptor": "uncapped-polling-no-backoff",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "Session Polling Interval Never Cleared, No Backoff — DoS Against ApplinX REST API",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-400"
+    ],
+    "owasp": [
+      "A04:2021 - Insecure Design"
+    ],
+    "capec": [
+      "CAPEC-469"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+      "score": 5.3,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "Low",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "None",
+        "integrity": "None",
+        "availability": "Low"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/navigation/navigation.service.ts",
+    "line_start": 73,
+    "line_end": 77,
+    "function": "checkHostScreenUpdate",
+    "class": "NavigationService",
+    "component": "NavigationService",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "setInterval() return value discarded — no clearInterval() reference stored"
+    ],
+    "transformations": [
+      "Fires checkScreenUpdated() every 5s; extra 500ms fire on each sendKeys via checkForIntermidateScreen()"
+    ],
+    "sinks": [
+      "ApplinX REST API getHostScreenNumber endpoint — indefinite polling"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-020-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user session",
+      "achieved_privilege": "N/A — no privilege escalation; self-inflicted DoS",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low",
+      "description": "setInterval ID discarded — no clearInterval() possible. No backoff on errors. Combined with VULN-011 (errorHandler crash), polling continues indefinitely under error conditions flooding ApplinX. CVSS 4.3 MEDIUM."
+    },
+    "artifact": "VULN-020-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: setInterval ID stored, stopHostScreenUpdate() added, try/catch in errorHandler stops polling.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-020-uncapped-polling-no-backoff/VULN-020-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-009"
+    ],
+    "attack_surface": [
+      "AS-015"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "polling",
+    "dos",
+    "no-backoff",
+    "setInterval",
+    "resource-exhaustion"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "setInterval return discarded — no clearInterval(); CHECK_HOST_SCREEN_UPDATE_INTERVAL public mutable; polling continues after disconnect for non-hardcoded error strings"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED MEDIUM: setInterval ID discarded → no stop. Combined with VULN-011 null deref → infinite polling under errors. CVSS 4.3 MEDIUM."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: setInterval ID stored, stopHostScreenUpdate() added, try/catch in errorHandler stops polling."
+    }
+  ]
+}

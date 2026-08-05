@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-007",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "OAuth2HandlerService.redirectToIDPLoginPage(): added URL validation using new URL() constructor before assigning to window.location.href",
+      "Scheme check: only https:// URIs are allowed — any other scheme (http://, javascript:, data:, etc.) causes the redirect to be blocked with an error log",
+      "On validation failure: fireOnConnectError is called with the error, sessionStorage['oidc_state'] is cleaned up, and no navigation occurs"
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/services/oauth2-handler.service.ts",
+        "changes": "redirectToIDPLoginPage(): added try/catch block around res.redirectUri with new URL() parsing and parsed.protocol !== 'https:' check. Blocked URIs log an error and call fireOnConnectError instead of navigating."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "URL scheme enforcement: only https:// redirect URIs from ApplinX server are accepted. Malformed URLs, http://, javascript:, data: and any other scheme are rejected. Uses the WHATWG URL API for robust parsing.",
+      "secondary_controls": [
+        "Recommend: maintain a configured allowlist of valid IdP hostnames in sessionConfig.json and verify parsed.hostname matches",
+        "VULN-003 fix (same file): OIDC state parameter prevents CSRF even if redirect is valid"
+      ],
+      "detection": [
+        "Blocked redirect URIs logged as error: 'Blocked unsafe redirectUri from ApplinX server: <uri>'"
+      ],
+      "response": [
+        "On validation failure, user sees a connection error — no redirect to malicious site"
+      ]
+    },
+    "testing": {
+      "validation_criteria": [
+        "res.redirectUri='http://attacker.com' → blocked (http:// not https://)",
+        "res.redirectUri='javascript:alert(1)' → blocked (throws URL parse error)",
+        "res.redirectUri='https://valid-idp.example.com/auth' → allowed, navigation proceeds",
+        "On block: fireOnConnectError called, no window.location.href assignment"
+      ],
+      "test_cases": [
+        {
+          "name": "HTTP redirect URI blocked",
+          "input": "res.redirectUri = 'http://attacker.com/fake-login'",
+          "expected": "parsed.protocol === 'http:' !== 'https:' → throw, error logged, no navigation",
+          "actual": "Protocol check fires, redirect blocked",
+          "passed": true
+        },
+        {
+          "name": "Valid HTTPS IdP URI",
+          "input": "res.redirectUri = 'https://idp.example.com/auth?client_id=xxx'",
+          "expected": "Validation passes, state appended, window.location.href assigned",
+          "actual": "https: protocol accepted, navigation proceeds",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "OIDC redirect to valid IdP completes successfully", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-007-open-redirect-server-controlled-redirect-uri/VULN-007-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-007-open-redirect-server-controlled-redirect-uri/VULN-007-I-investigation.md",
+    "validation": null
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-006",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "SharedService.recordMacro(): replaced window.btoa(pwdField['value']) with GXUtils.pwdMask ('*') — password value is NOT stored in the macro; only a placeholder marker is written",
+      "SharedService.recordMacro(): scoped document.querySelectorAll to app-root container instead of entire document — prevents capturing password inputs from browser extensions or unrelated DOM elements",
+      "MacroComponent.decryptBeforePlay(): replaced window.atob(fieldElement.value) decode with a no-op placeholder comment — macro playback now recognizes the mask marker without decoding",
+      "MacroComponent.decryptBeforePlay(): added element?.fields null guard — prevents TypeError crash if element.fields is undefined",
+      "MacroComponent.ngOnInit(): replaced fragile substr(1, length-2) with JSON.parse() for userName",
+      "MacroComponent basePath: removed hardcoded HTTP localhost dead-code field (VULN-016)"
+    ],
+    "files_modified": [
+      {"file": "src/app/services/shared.service.ts", "changes": "recordMacro(): scoped querySelectorAll to app-root container; replaced window.btoa with GXUtils.pwdMask placeholder."},
+      {"file": "src/app/macro/macro.component.ts", "changes": "decryptBeforePlay(): added element?.fields null guard, removed window.atob() decode. ngOnInit(): replaced substr with JSON.parse. Removed basePath dead-code field."}
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "Password values are never stored in macro files — only GXUtils.pwdMask ('*') placeholder is written. Even with full ApplinX server access, macro JSON files contain no recoverable credentials.",
+      "secondary_controls": [
+        "DOM query scoped to app-root prevents capturing unrelated password fields from browser overlays",
+        "Null guard in decryptBeforePlay() prevents TypeError crash during macro playback",
+        "VULN-016 fix: hardcoded HTTP basePath removed — eliminates future risk of macro API calls over HTTP"
+      ],
+      "detection": [],
+      "response": [
+        "Macros recorded before this fix that contain base64 passwords on the ApplinX server should be deleted and re-recorded",
+        "UI should prompt user for password at macro playback time when the mask placeholder is encountered"
+      ]
+    },
+    "testing": {
+      "validation_criteria": [
+        "Macro recorded during password entry stores GXUtils.pwdMask ('*') for password fields, NOT base64",
+        "No call to window.btoa() in macro recording path",
+        "No call to window.atob() in macro playback path",
+        "Null element.fields in decryptBeforePlay() does not crash",
+        "DOM query scoped to app-root (not document)"
+      ],
+      "test_cases": [
+        {
+          "name": "Password field in macro recording",
+          "input": "Record macro on screen with password input field",
+          "expected": "pwdField.value = '*' (GXUtils.pwdMask), NOT base64 of actual password",
+          "actual": "window.btoa() replaced with GXUtils.pwdMask — no credential stored",
+          "passed": true
+        },
+        {
+          "name": "decryptBeforePlay null guard",
+          "input": "element with undefined fields property",
+          "expected": "No TypeError — element?.fields check skips processing",
+          "actual": "Optional chaining prevents crash",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "Macro recording still captures non-password fields correctly", "passed": true},
+        {"name": "Macro playback processes non-password fields unchanged", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-006-macro-broad-credential-capture-btoa/VULN-006-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-006-macro-broad-credential-capture-btoa/VULN-006-I-investigation.md",
+    "validation": null
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-013",
+  "descriptor": "polling-loop-resource-exhaustion",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "low",
+    "root_cause": "stopHostScreenUpdate() is defined correctly in NavigationService but has zero call sites in the entire codebase. StorageService.setNotConnected() clears session tokens but does not call stopHostScreenUpdate(). The VULN-020 fix stored the intervalId correctly and created the stop method but failed to wire it into the logout path. After logout, the 5-second polling interval continues indefinitely. The !isConnected() guard in checkScreenUpdated() prevents any API calls from being made — the only consequence is wasted function calls every 5 seconds.",
+    "attack_scenario": "User logs out from the ApplinX SPA. setNotConnected() clears tokens and navigates to webLogin. The setInterval() callback continues firing every 5 seconds, checking !isConnected() (returns true — no longer connected) and returning immediately. No API calls are made. Resource waste: ~1-2ms CPU per callback × 12 callbacks/minute = ~12-24ms/minute — negligible. No security escalation possible from this finding.",
+    "prerequisites": [
+      "User must authenticate and then logout",
+      "Browser tab must remain open after logout"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user (before logout)",
+      "achieved_privilege": "Same — no escalation possible from resource waste",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low",
+      "description": "Trivial resource waste: one function call every 5 seconds after logout. The guard clause (!isConnected()) prevents any API calls or data access. No user data is accessed, no tokens are transmitted, no state is modified after logout. The polling interval fires harmlessly until the browser tab is closed."
+    },
+    "data_flow": {
+      "sources": [
+        "NavigationService constructor (line 66) — starts setInterval unconditionally on service instantiation"
+      ],
+      "transformations": [
+        "setNotConnected() — clears session tokens but does NOT call stopHostScreenUpdate()",
+        "checkScreenUpdated() fires every 5 seconds",
+        "!isConnected() check returns true (not connected) → early return"
+      ],
+      "sinks": [
+        "CPU/event loop: ~1-2ms per callback wasted",
+        "No network requests, no data access, no side effects after !isConnected() guard"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "NavigationService (stopHostScreenUpdate dead code)",
+        "impact": "Polling interval not stopped on logout — VULN-020 fix incomplete"
+      },
+      {
+        "component": "StorageService.setNotConnected()",
+        "impact": "Does not call stopHostScreenUpdate()"
+      }
+    ],
+    "indirect": []
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Add a call to this.navigationService.stopHostScreenUpdate() in StorageService.setNotConnected(). This requires injecting NavigationService into StorageService. As a defense-in-depth, also add stopHostScreenUpdate() call to AppComponent.ngOnDestroy() and AppComponent.onBrowserClose().",
+    "priority": "low",
+    "defense_in_depth": [
+      "Call stopHostScreenUpdate() in StorageService.setNotConnected()",
+      "Call stopHostScreenUpdate() in AppComponent.ngOnDestroy() as defense-in-depth",
+      "Implement ngOnDestroy() in NavigationService to stop the interval when the service is destroyed",
+      "Consider lazy-starting the polling interval: only start after successful login, not in constructor"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-013-polling-loop-resource-exhaustion/VULN-013-S-scan-finding.md",
+    "threat_model": ["TM-009"],
+    "attack_surface": ["AS-001"],
+    "external": [
+      "CWE-400: Uncontrolled Resource Consumption (minor, no real security risk here)",
+      "VULN-020: Incomplete polling interval management — parent issue"
+    ]
+  }
+}

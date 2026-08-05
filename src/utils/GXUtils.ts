@@ -257,9 +257,8 @@ export class GXUtils {
     public static pwdMask = "*";
     public static pwdText = "password";
   
-  public static MACRO_BASE_URL = "http://localhost:2380/";
-  public static GET_MACROLIST_URL = "applinx/rest/macro/list";
-  public static MACRO_URL = "applinx/rest/macro";
+  // VULN-016: removed hardcoded HTTP localhost URL constants (MACRO_BASE_URL, GET_MACROLIST_URL, MACRO_URL).
+  // These were dead code — macro API calls use the ApplinX SDK MacroService with environment-configured URL.
 
   public static MACRO = {
     play : "Play Macro",
@@ -271,6 +270,9 @@ export class GXUtils {
   public static MACRO_FILE_ALREADY_EXISTS = "File already exists";
   public static MACRO_NAME_IS_MANDATORY_MSG = "Macro name is mandatory."
   public static MACRO_NAME_PATTERN_MSG = "Macro name can have alpha-numeric characters \"A-Z, a-z, 0-9\" and hypen \"-\" only."
+  // VULN-007: allowlist pattern for macro names — must match the HTML template pattern attribute.
+  // Only alphanumeric + hyphen allowed; blocks path traversal (../, /) and null-byte injection.
+  public static MACRO_NAME_PATTERN = /^[a-zA-Z0-9-]+$/;
   public static MACRO_NAME_DUPLICATE_MSG = "The Macro name already exists, Please enter a new Macro name."
   public static MACRO_NOT_AVAILABLE = "No Macros Available."
   public static ENTER = "Enter";

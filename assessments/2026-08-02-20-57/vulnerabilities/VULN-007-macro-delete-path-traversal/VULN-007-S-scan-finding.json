@@ -1,0 +1,63 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-007",
+  "descriptor": "macro-delete-path-traversal",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-001",
+    "task_name": "Macro Name Validation and sessionStorage Lifecycle",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/macro/macro.component.ts, src/app/macro/macro.component.html, src/app/services/shared.service.ts, src/app/services/storage.service.ts",
+    "coverage": "100% — all four target files read plus GXUtils.ts for pattern definition"
+  },
+  "finding": {
+    "severity": "high",
+    "file": "src/app/macro/macro.component.ts",
+    "line": 128,
+    "function": "onDeleteMacro",
+    "tool": "LLM analysis",
+    "code_snippet": "onDeleteMacro() {\n  this.macroDeleteSubscription = this.macroService\n    .deleteMacro(this.selectedMacro, this.user, this.applicationName, this.token)\n    .subscribe(response => {\n      // ...\n    });\n}\n// this.selectedMacro is from dropdown populated via getMacroListDetails() from sessionStorage.\n// NO validation pattern applied to selectedMacro before passing to deleteMacro() API.",
+    "preliminary_assessment": "MacroComponent.onDeleteMacro() passes this.selectedMacro directly to the ApplinX REST MacroService.deleteMacro() API without any validation against the MACRO_NAME_PATTERN regex defined in GXUtils. The HTML template does enforce a pattern on the RECORD macro input field (line 40: pattern='^[a-zA-Z0-9-]*$'), but the DELETE, VIEW, and PLAY operations use dropdown selects populated from macroFileList sessionStorage, with no client-side pattern validation applied to selectedMacro, selectedViewMacro, or selectedPlayMacro values. If macroFileList in sessionStorage contains manipulated values (possible via prior XSS or direct sessionStorage manipulation), or if a macro file exists on the server with a path-traversal name created through a different mechanism, the macro name could contain '../' sequences that are forwarded to server-side file operations without sanitization. Impact depends on whether the ApplinX REST API server validates macro names server-side. Additionally, a modal state inconsistency was found: delete modal binds to selectedDelMacro but onDeleteMacro() reads this.selectedMacro — could cause wrong macro to be deleted.",
+    "threat_model_refs": ["TM-011"],
+    "attack_surface_refs": ["AS-007"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "Record macro input has pattern validation in HTML template (line 40)",
+      "Delete/view/play operations have NO pattern validation on selectedMacro",
+      "macroFileList comma-split: comma in macro name would corrupt the list",
+      "macroFileList NOT cleared on logout in setNotConnected() — TM-007 gap",
+      "JSON.parse(rawUserName) in ngOnInit without try-catch — crash on malformed JSON",
+      "Modal state variables inconsistency: selectedDelMacro vs this.selectedMacro in onDeleteMacro()",
+      "console.log() statements at lines 231, 235, 239, 272 log macro names and API responses"
+    ],
+    "false_positives": [
+      {
+        "pattern": "Macro name pattern in HTML template",
+        "rationale": "Pattern validation IS present for the record macro input (line 40 of HTML) — only missing for delete/view/play operations which use dropdown selects"
+      }
+    ],
+    "coverage_assessment": "Complete — macro.component.ts, macro.component.html, shared.service.ts, storage.service.ts, and GXUtils.ts all analyzed. All macro lifecycle operations traced."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify if ApplinX REST MacroService.deleteMacro() validates/sanitizes macro name on server side",
+      "Test: manually set sessionStorage macroFileList to '../../../evil' and trigger delete — does server reject or execute?",
+      "Confirm modal state bug: select macro A in delete modal, cancel, select macro B in view modal, reopen delete — verify which macro is deleted",
+      "Verify macroFileList cleanup: confirm it is NOT in sessionStorage after setNotConnected() is called"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-007 to macro-delete-path-traversal",
+      "Set status: flagged, severity: high"
+    ]
+  }
+}

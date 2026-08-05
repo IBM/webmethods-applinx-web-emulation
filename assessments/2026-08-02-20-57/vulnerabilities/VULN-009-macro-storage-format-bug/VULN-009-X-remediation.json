@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-009",
+  "descriptor": "macro-storage-format-bug",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Added sessionStorage.removeItem('macroFileList') to StorageService.setNotConnected() so macro file list is cleared on logout, preventing cross-session disclosure and eliminating the sessionStorage injection vector for VULN-007.",
+    "fix_complexity": "low",
+    "root_cause": "setNotConnected() removed gx_token, idPcode, and userName but not macroFileList. In shared-browser scenarios (kiosk, shared workstation), User A's macro names were visible to User B after User A logged out in the same tab. Also provided a sessionStorage injection vector: XSS could inject malicious macro names before logout without cleanup.",
+    "fix_strategy": "input_validation",
+    "changes_made": [
+      "src/app/services/storage.service.ts setNotConnected(): added sessionStorage.removeItem('macroFileList')"
+    ],
+    "files_modified": [
+      "src/app/services/storage.service.ts"
+    ],
+    "verification_needed": "After logout, verify sessionStorage has no 'macroFileList' key. Log in as User A, use macros, log out — log in as User B and confirm macro list is empty.",
+    "defense_in_depth": "VULN-007 selected() validation means even if macroFileList contained traversal sequences, they would be rejected at the UI entry point.",
+    "testing": "1. Login, load macros (macroFileList populated), logout. 2. Verify sessionStorage.getItem('macroFileList') returns null after logout.",
+    "residual_risk": "Low. Macro names are still stored in sessionStorage during an active session. The fragile comma-split storage format is a code quality issue (not a security fix target for this round)."
+  }
+}

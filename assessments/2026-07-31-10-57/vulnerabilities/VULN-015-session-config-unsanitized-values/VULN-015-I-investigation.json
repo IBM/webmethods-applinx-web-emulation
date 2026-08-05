@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-015",
+  "descriptor": "session-config-unsanitized-values",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "ConfigurationService.loadConfig() (configuration.service.ts:38-52) reads sessionConfig.json via HTTP GET and stores config.applicationName, config.connectionPool, and config.autoLoginIfDisabledAuth without schema validation. applicationName is used in macro API calls (macro.component.ts:127, 144, 178, 228, 253) as a path parameter. autoLoginIfDisabledAuth is a boolean flag that, when true combined with server returning auth=DISABLED, bypasses all authentication. sessionOptions values pass through isValidVariable() which validates key prefix (GX_VAR*) and non-empty string — but does not validate value content.",
+    "attack_scenario": "Path Traversal in applicationName: If sessionConfig.json is tampered (supply chain attack) and applicationName is set to '../../../sensitive-path', the macro API call becomes: /applinx/rest/macro?applicationName=../../../sensitive-path — potential path traversal in ApplinX server macro file access. ApplinX server may or may not sanitize this server-side.\n\nautoLoginIfDisabledAuth Abuse: If sessionConfig.json is modified (tampered static asset) to set autoLoginIfDisabledAuth=true AND the ApplinX server reports auth=DISABLED, the application auto-logs in without any credentials. This could allow unauthorized host sessions if the server is in a maintenance/test mode with auth disabled.\n\nThis attack requires sessionConfig.json tampering — effectively a supply chain attack on the static assets. Combined with VULN-014/018, static assets can be tampered.",
+    "prerequisites": [
+      "sessionConfig.json must be tampered with malicious applicationName or autoLoginIfDisabledAuth=true",
+      "Tampered sessionConfig.json must be deployed (requires build pipeline access or static asset replacement)",
+      "For autoLogin bypass: ApplinX server must report auth=DISABLED"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Static asset tampering capability (supply chain threat)",
+      "achieved_privilege": "Path traversal in ApplinX macro API (if applicationName contains traversal chars) OR unauthenticated session creation (if autoLogin enabled and server reports DISABLED auth)",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "applicationName path traversal risk is conditional on ApplinX server's sanitization — client-side validation is absent, server-side mitigation unverified. autoLoginIfDisabledAuth risk is conditional on server configuration. Without sessionConfig.json tampering, this is not directly exploitable by an unauthenticated attacker."
+    },
+    "data_flow": {
+      "sources": [
+        "assets/config/sessionConfig.json — HTTP GET at startup (served as static asset)"
+      ],
+      "transformations": [
+        "config.applicationName stored without validation",
+        "config.autoLoginIfDisabledAuth stored as boolean control flag",
+        "sessionOptions filtered by GX_VAR* key prefix (value not validated)"
+      ],
+      "sinks": [
+        "MacroService API calls: macroService.getMacro(user, applicationName, token) — applicationName as URL parameter",
+        "WebLoginComponent.autoLogin() — gated by autoLoginIfDisabledAuth flag",
+        "CreateSessionRequest.options — sessionOptions passed to ApplinX REST API"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "ConfigurationService.loadConfig() — src/app/services/configuration.service.ts:38-52", "impact": "Consumes sessionConfig.json without schema validation"},
+      {"component": "MacroComponent — applicationName in API calls", "impact": "applicationName used as URL parameter in macro CRUD operations without sanitization"},
+      {"component": "WebLoginComponent.autoLogin() — conditional on autoLoginIfDisabledAuth", "impact": "Authentication bypass when autoLogin enabled and server reports auth=DISABLED"}
+    ],
+    "indirect": [
+      {"component": "VULN-014 (no lock file), VULN-018 (no artifact signing)", "impact": "Supply chain attacks that modify sessionConfig.json go undetected"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Implement JSON schema validation for sessionConfig.json on load. Validate applicationName against a strict allowlist pattern (alphanumeric, hyphens, underscores only). Reject configs that don't match schema. Add explicit security review for autoLoginIfDisabledAuth feature — document intended use cases.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Add JSON schema validation for sessionConfig.json (Ajv or similar)",
+      "Validate applicationName: /^[a-zA-Z0-9_-]+$/ — reject path traversal characters",
+      "Validate connectionPool similarly",
+      "Document and restrict autoLoginIfDisabledAuth to explicit test/admin deployments only",
+      "Enable artifact signing (VULN-018) to detect sessionConfig.json tampering"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-015-session-config-unsanitized-values/VULN-015-S-scan-finding.md",
+    "threat_model": ["TM-010", "TM-003"],
+    "attack_surface": ["AS-014"],
+    "external": [
+      "CWE-20: Improper Input Validation",
+      "CWE-22: Improper Limitation of a Pathname to a Restricted Directory (Path Traversal)",
+      "OWASP A05:2021 — Security Misconfiguration",
+      "CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:U/C:L/I:L/A:N — Score: 2.9 LOW (requires static asset tampering)"
+    ]
+  }
+}

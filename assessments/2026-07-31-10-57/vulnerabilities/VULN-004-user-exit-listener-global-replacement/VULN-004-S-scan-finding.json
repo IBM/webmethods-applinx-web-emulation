@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "clearEventListeners() replaces all global security hooks — any generated page can exfiltrate tokens and credentials",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "severity":  "high",
+                    "function":  "addUserExits",
+                    "line":  89,
+                    "code_snippet":  "this.userExitsEventThrower.clearEventListeners(); // clears ALL listeners globally",
+                    "attack_surface_refs":  [
+                                                "AS-012"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/generated-pages/GXGeneratedPage.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-004",
+    "execution":  {
+                      "target":  "src/app/generated-pages/GXGeneratedPage.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-001",
+                     "task_name":  "User-Exit Extensibility",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Confirm whether clearEventListeners is called elsewhere in security-critical paths",
+                                              "Assess malicious generated-page threat model",
+                                              "Recommend append-only addEventListener pattern"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-004 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "user-exit-listener-global-replacement",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "clearEventListeners() unconditionally replaces root-singleton UserExitsEventThrowerService listeners",
+                                               "No reset path for GXGeneratedPage activation unlike ScreenComponent activation"
+                                           ]
+                 }
+}

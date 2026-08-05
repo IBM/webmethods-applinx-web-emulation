@@ -44,8 +44,9 @@ export class NavigationService {
   private screenSize: Size;
   private sendableFields: Map<string, InputField>;
   private cursorPosition: Cursor;
-  CHECK_HOST_SCREEN_UPDATE_INTERVAL:number = 5000;
+  private CHECK_HOST_SCREEN_UPDATE_INTERVAL:number = 5000;
   CHECK_HOST_SCREEN_UPDATE_TIMEOUT:number = 500;
+  private intervalId: ReturnType<typeof setInterval> | null = null;
   isConnectedtoHost: BehaviorSubject<boolean> = new BehaviorSubject(true); // if false - shows disconnection message or redirects to login page
   isScreenUpdated: BehaviorSubject<boolean> = new BehaviorSubject(false);
   screenObjectUpdated: BehaviorSubject<GetScreenResponse> = new BehaviorSubject(null);
@@ -71,9 +72,20 @@ export class NavigationService {
   }
 
   checkHostScreenUpdate (): void {
-    setInterval( () => { 
+    // VULN-020: store interval ID so clearInterval() can be called in ngOnDestroy.
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+    }
+    this.intervalId = setInterval( () => {
       this.checkScreenUpdated();
-   }, this.CHECK_HOST_SCREEN_UPDATE_INTERVAL);
+    }, this.CHECK_HOST_SCREEN_UPDATE_INTERVAL);
+  }
+
+  stopHostScreenUpdate(): void {
+    if (this.intervalId !== null) {
+      clearInterval(this.intervalId);
+      this.intervalId = null;
+    }
   }
 
 
@@ -100,25 +112,37 @@ export class NavigationService {
   }
 
   errorHandler(errorResponse: HttpErrorResponse, nonActivityFlow: boolean) {
-    if (errorResponse.error.message.indexOf("Disconnected by host") > -1 ||
-      errorResponse.error.message.indexOf("Session was disconnected by Host") > -1 ||
-      errorResponse.error.message.indexOf("Not connected to Server (Software caused connection abort: recv failed)") > -1) {
-        if (nonActivityFlow) {
-          this.errorMessage = 'The session has timed out due to inactivity.';
-          this.isConnectedtoHost.next(false);
-          this.isThereError = true;
-          this.sharedService.isSnackBarPresent()?this.sharedService.closeSnackBar():"";
+    try {
+      // VULN-011: use optional chaining — errorResponse.error is null for network-level errors
+      // (connection timeout, CORS failure, SSL error) and must not be dereferenced directly.
+      const msg: string = errorResponse?.error?.message ?? '';
+      if (msg.indexOf("Disconnected by host") > -1 ||
+        msg.indexOf("Session was disconnected by Host") > -1 ||
+        msg.indexOf("Not connected to Server (Software caused connection abort: recv failed)") > -1) {
+          if (nonActivityFlow) {
+            this.errorMessage = 'The session has timed out due to inactivity.';
+            this.isConnectedtoHost.next(false);
+            this.isThereError = true;
+            this.sharedService.isSnackBarPresent()?this.sharedService.closeSnackBar():"";
+          }
+          else if ((this.isAuthDisabled() && this.isAutoLogin) ) { // show disconnect message
+            this.errorMessage = 'The session has been disconnected from the host.';
+            this.isConnectedtoHost.next(false);
+            this.isThereError = true;
+          }
+          else { // redirect to webLogin
+            // VULN-013: stop polling loop before navigating away — prevents orphaned setInterval.
+            this.stopHostScreenUpdate();
+            this.storageService.setNotConnected();
+          }
         }
-        else if ((this.isAuthDisabled() && this.isAutoLogin) ) { // show disconnect message                
-          this.errorMessage = 'The session has been disconnected from the host.';          
-          this.isConnectedtoHost.next(false);
-          this.isThereError = true;
-        }
-        else { // redirect to webLogin
-          this.storageService.setNotConnected();
-        }  
-      }
+    } catch (e) {
+      // VULN-011 / VULN-020: ensure isThereError is never left false after an unexpected error
+      // during polling — prevents the polling loop from continuing to flood ApplinX.
+      this.logger.error('errorHandler: unexpected error during error processing', e);
+      this.isThereError = true;
     }
+  }
 
   getHostScreenNumber (): Observable<GetScreenNumberResponse>{  
     let token = this.storageService.getAuthToken();     

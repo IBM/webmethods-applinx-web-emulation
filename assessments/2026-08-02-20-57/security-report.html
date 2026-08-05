@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Security Report — webmethods-applinx-web-emulation — 2026-08-02-20-57</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --surface2: #21262d; --border: #30363d;
+    --text: #e6edf3; --text-muted: #8b949e; --accent: #58a6ff; --accent2: #79c0ff;
+    --critical: #ff7b72; --high: #f0883e; --medium: #e3b341; --low: #3fb950;
+    --info: #58a6ff; --verified: #3fb950; --fp: #8b949e; --fixed: #58a6ff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; font-size: 14px; line-height: 1.6; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .header { background: linear-gradient(135deg, #161b22 0%, #1c2128 100%); border: 1px solid var(--border); border-radius: 12px; padding: 32px; margin-bottom: 24px; }
+  .header h1 { font-size: 24px; color: var(--accent2); margin-bottom: 8px; }
+  .header .meta { color: var(--text-muted); font-size: 13px; display: flex; gap: 24px; flex-wrap: wrap; margin-top: 12px; }
+  .header .meta span { display: flex; align-items: center; gap: 6px; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+  .badge-high { background: rgba(240,136,62,.2); color: var(--high); border: 1px solid rgba(240,136,62,.4); }
+  .badge-medium { background: rgba(227,179,65,.2); color: var(--medium); border: 1px solid rgba(227,179,65,.4); }
+  .badge-low { background: rgba(63,185,80,.2); color: var(--low); border: 1px solid rgba(63,185,80,.4); }
+  .badge-info { background: rgba(88,166,255,.2); color: var(--info); border: 1px solid rgba(88,166,255,.4); }
+  .badge-fixed { background: rgba(88,166,255,.15); color: var(--fixed); border: 1px solid rgba(88,166,255,.3); }
+  .badge-fp { background: rgba(139,148,158,.15); color: var(--fp); border: 1px solid rgba(139,148,158,.3); }
+  .badge-verified { background: rgba(63,185,80,.15); color: var(--verified); border: 1px solid rgba(63,185,80,.3); }
+  .scorecard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .scorecard { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; text-align: center; }
+  .scorecard .num { font-size: 36px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .scorecard .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+  .scorecard.high .num { color: var(--high); }
+  .scorecard.medium .num { color: var(--medium); }
+  .scorecard.low .num { color: var(--low); }
+  .scorecard.fixed .num { color: var(--fixed); }
+  .scorecard.fp .num { color: var(--fp); }
+  .section { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  .section-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+  .section-header h2 { font-size: 16px; color: var(--accent2); }
+  .section-body { padding: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 10px 14px; text-align: left; background: var(--surface2); color: var(--text-muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+  .vuln-id { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; color: var(--accent); font-weight: 600; }
+  .chain-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .chain-item h4 { color: var(--accent2); margin-bottom: 6px; font-size: 13px; }
+  .chain-item p { color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+  .chain-item.closed { border-left: 3px solid var(--low); }
+  .chain-item.mitigated { border-left: 3px solid var(--medium); }
+  .fix-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 80px 1fr; gap: 12px; }
+  .fix-item .vid { font-family: monospace; color: var(--accent); font-weight: 700; padding-top: 2px; }
+  .fix-item .desc h4 { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .fix-item .desc p { font-size: 12px; color: var(--text-muted); }
+  code { font-family: 'SF Mono', Consolas, monospace; font-size: 12px; background: rgba(110,118,129,.15); padding: 1px 6px; border-radius: 4px; color: var(--accent2); }
+  .tag { display: inline-block; font-size: 11px; padding: 1px 8px; border-radius: 4px; background: rgba(110,118,129,.15); color: var(--text-muted); margin: 1px; }
+  .action-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .action-item:last-child { border-bottom: none; }
+  .action-item .priority { width: 28px; height: 28px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .action-item .content { flex: 1; }
+  .action-item .content strong { color: var(--text); font-size: 13px; }
+  .action-item .content p { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .footer { text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px 0; }
+  .progress-bar { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; margin-top: 10px; }
+  .progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--fixed), var(--low)); border-radius: 3px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot-fixed { background: var(--fixed); }
+  .dot-fp { background: var(--fp); }
+  .dot-high { background: var(--high); }
+  .dot-medium { background: var(--medium); }
+  .alert-box { border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; border-left: 4px solid; }
+  .alert-warning { background: rgba(227,179,65,.08); border-color: var(--medium); }
+  .alert-warning p { color: var(--medium); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <h1>🛡️ Security Assessment Report</h1>
+    <div style="font-size:15px; color:var(--text); margin-top:6px;">webmethods-applinx-web-emulation</div>
+    <div class="meta">
+      <span>📋 Assessment <strong>2026-08-02-20-57</strong></span>
+      <span>📅 Completed <strong>2026-08-02</strong></span>
+      <span>🔁 Full Re-Scan (3rd assessment)</span>
+      <span>🌿 Branch: <strong>main</strong></span>
+      <span>🔖 Commit: <code>422f763</code></span>
+    </div>
+    <div style="margin-top:16px; padding:14px; background:rgba(63,185,80,.06); border:1px solid rgba(63,185,80,.2); border-radius:8px;">
+      <span style="color:var(--low); font-weight:600;">✅ Rectifier Phase Complete</span>
+      <span style="color:var(--text-muted); font-size:13px; margin-left:12px;">10 vulnerabilities fixed · 3 false positives dismissed · 5 attack chains closed</span>
+    </div>
+  </div>
+
+  <!-- SCORECARDS -->
+  <div class="scorecard-grid">
+    <div class="scorecard"><div class="num" style="color:var(--text);">14</div><div class="label">Total Findings</div></div>
+    <div class="scorecard fixed"><div class="num">10</div><div class="label">Fixed Pending Validation</div></div>
+    <div class="scorecard fp"><div class="num">3</div><div class="label">False Positives</div></div>
+    <div class="scorecard high"><div class="num">4</div><div class="label">HIGH Severity</div></div>
+    <div class="scorecard medium"><div class="num">5</div><div class="label">MEDIUM Severity</div></div>
+    <div class="scorecard low"><div class="num">1</div><div class="label">LOW Severity</div></div>
+  </div>
+
+  <!-- OUTSTANDING ACTIONS -->
+  <div class="alert-box alert-warning">
+    <p><strong>⚠️ 2 Actions Required Before Full Closure:</strong><br>
+    1. <code>git add package-lock.json &amp;&amp; git commit</code> — lockfile exists in working tree but is untracked (VULN-005)<br>
+    2. <code>npm install jquery@^3.7.0</code> — jQuery 3.6.0 carries CVE-2020-11022/11023/CVE-2019-11358 (VULN-005)</p>
+  </div>
+
+  <!-- ATTACK CHAINS -->
+  <div class="section">
+    <div class="section-header">
+      <span>⛓️</span><h2>Attack Chain Status</h2>
+    </div>
+    <div class="section-body">
+      <div class="chain-item closed">
+        <h4>AC-001 — CRITICAL: XSS → Session Token Theft <span class="badge badge-verified">CLOSED</span></h4>
+        <p><strong>VULN-004:</strong> <code>document.write()</code> in print popup replaced with <code>createElement() + textContent</code>. Server-controlled terminal content can no longer inject scripts into the same-origin popup to steal <code>gx_token</code> from sessionStorage.</p>
+      </div>
+      <div class="chain-item mitigated">
+        <h4>AC-002 — HIGH: CI/CD Supply Chain Gate Bypass <span class="badge badge-medium">PARTIAL — ACTION REQUIRED</span></h4>
+        <p><strong>VULN-010:</strong> <code>abort_on_failure: true</code> set on static-scan — SAST findings now block pipeline.<br>
+        <strong>VULN-005 partial:</strong> <code>.secrets.baseline</code> created. <strong>User action needed:</strong> commit <code>package-lock.json</code> + upgrade jQuery ≥3.7.x.</p>
+      </div>
+      <div class="chain-item closed">
+        <h4>AC-003 — HIGH: sessionStorage Injection → Path Traversal Delete <span class="badge badge-verified">CLOSED</span></h4>
+        <p><strong>VULN-009:</strong> <code>removeItem('macroFileList')</code> added to <code>setNotConnected()</code> — cross-session macro name leakage eliminated.<br>
+        <strong>VULN-007:</strong> <code>MACRO_NAME_PATTERN</code> validation in <code>selected()</code> and <code>onDeleteMacro()</code> — path traversal values rejected with error toast.</p>
+      </div>
+      <div class="chain-item closed">
+        <h4>AC-004 — HIGH: O(n²) Field Growth + Null Crash DoS <span class="badge badge-verified">CLOSED</span></h4>
+        <p><strong>VULN-012:</strong> <code>MAX_FIELDS = 10000</code> guard + <code>fields.push()</code> replace O(n²) <code>concat()</code> — 1000-rect payload capped before memory exhaustion.<br>
+        <strong>VULN-006:</strong> All 4 <code>f.content.substring()</code> calls use <code>?.</code> + <code>?? ''</code> — null content → empty string, no TypeError crash.</p>
+      </div>
+      <div class="chain-item closed">
+        <h4>AC-005 — MEDIUM: XSS + Unbounded PII Console Logging <span class="badge badge-verified">CLOSED</span></h4>
+        <p><strong>VULN-014:</strong> Both <code>console.log()</code> calls removed from <code>FieldComponent</code> constructor — terminal PII (account numbers, PINs) no longer logged at 1,200–4,800 entries/min.<br>
+        <strong>VULN-011:</strong> <code>console.error(msg)</code> removed from <code>webLogin.handleError()</code>; 4 <code>console.log()</code> calls removed from <code>MacroComponent</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FULL VULN TABLE -->
+  <div class="section">
+    <div class="section-header">
+      <span>📊</span><h2>Full Findings Table</h2>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Descriptor</th>
+          <th>Sev</th>
+          <th>Status</th>
+          <th>Fix / Disposition</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="vuln-id">VULN-001</td>
+          <td>keyboard-mapping-dispatch-bypass</td>
+          <td><span class="badge badge-info">INFO</span></td>
+          <td><span class="badge badge-fp">FALSE POSITIVE</span></td>
+          <td><code>constructor</code> is not an own property — <code>hasOwnProperty</code> guard correctly blocks prototype chain traversal. <em>API_MISUSE_RISK</em> noted if integrators add callable methods to JSFunctionsService.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-002</td>
+          <td>css-comment-injection-bypass</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td>Added <code>/\/\*/</code> and <code>/\\[0-9a-fA-F]/</code> guards to <code>getCss()</code> value regex in both <code>FieldComponent</code> and <code>InputFieldComponent</code>.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-003</td>
+          <td>oidc-open-redirect-scheme-bypass</td>
+          <td><span class="badge badge-info">INFO</span></td>
+          <td><span class="badge badge-fp">FALSE POSITIVE</span></td>
+          <td><code>new URL('//evil.com')</code> without base throws <code>TypeError</code> per WHATWG spec. <code>catch(e) { return; }</code> aborts redirect. Protocol-relative bypass inapplicable.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-004</td>
+          <td>xss-document-write-print-copy</td>
+          <td><span class="badge badge-high">HIGH</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>document.write("&lt;div&gt;" + element + "&lt;/div&gt;")</code> → <code>div.textContent = element</code>. HTML injection path fully eliminated from print popup.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-005</td>
+          <td>jquery-cve-package-lockfile</td>
+          <td><span class="badge badge-high">HIGH</span></td>
+          <td><span class="badge badge-medium">PARTIAL</span></td>
+          <td><code>.secrets.baseline</code> created; CI <code>abort_on_failure:true</code>. <strong>⚠️ User action required:</strong> <code>git add package-lock.json</code> + upgrade jQuery to ≥3.7.x.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-006</td>
+          <td>screen-processor-null-deref</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td>All 4 <code>f.content.substring()</code> calls in <code>splitField()</code> and <code>cutField()</code> now use <code>f.content?.substring(...) ?? ''</code>.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-007</td>
+          <td>macro-delete-path-traversal</td>
+          <td><span class="badge badge-high">HIGH</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>GXUtils.MACRO_NAME_PATTERN = /^[a-zA-Z0-9-]+$/</code> added. <code>selected()</code> and <code>onDeleteMacro()</code> validate name before use. Invalid values rejected with error toast.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-008</td>
+          <td>oidc-state-consumed-before-validation</td>
+          <td><span class="badge badge-info">INFO</span></td>
+          <td><span class="badge badge-fp">FALSE POSITIVE</span></td>
+          <td><code>removeItem()</code> before compare is correct OIDC single-use nonce behavior (RFC 6749 §10.12). No CSRF replay window exists.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-009</td>
+          <td>macro-storage-format-bug</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>sessionStorage.removeItem('macroFileList')</code> added to <code>StorageService.setNotConnected()</code>. Cross-session macro name leakage eliminated.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-010</td>
+          <td>cicd-static-scan-non-blocking</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>abort_on_failure: false → true</code> on <code>static-scan</code> step in <code>.pipeline-config.yaml</code>. <code>.secrets.baseline</code> created. SAST now blocks pipeline.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-011</td>
+          <td>error-message-info-disclosure</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>console.error(msg)</code> removed from <code>webLogin.handleError()</code>. 4 <code>console.log()</code> calls removed from <code>MacroComponent</code>. UI error display retained.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-012</td>
+          <td>filter-collisions-unbounded-growth</td>
+          <td><span class="badge badge-high">HIGH</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>MAX_FIELDS = 10000</code> constant added. <code>filterCollisions()</code> breaks if exceeded. <code>fields.concat()</code> → <code>fields.push()</code> for O(1) amortized append.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-013</td>
+          <td>polling-loop-resource-exhaustion</td>
+          <td><span class="badge badge-low">LOW</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td><code>stopHostScreenUpdate()</code> called in <code>NavigationService.errorHandler()</code> redirect path and <code>AppComponent.logout()</code> teardown callback.</td>
+        </tr>
+        <tr>
+          <td class="vuln-id">VULN-014</td>
+          <td>debug-console-log-disclosure</td>
+          <td><span class="badge badge-medium">MEDIUM</span></td>
+          <td><span class="badge badge-fixed">FIXED</span></td>
+          <td>Both <code>console.log()</code> calls removed from <code>FieldComponent</code> constructor. Terminal PII (account numbers, PINs, transaction codes) no longer logged at 1,200–4,800 entries/min.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CODE CHANGES -->
+  <div class="section">
+    <div class="section-header">
+      <span>🔧</span><h2>Source Files Modified (This Assessment)</h2>
+    </div>
+    <div class="section-body">
+      <div class="fix-item">
+        <div class="vid">VULN-004</div>
+        <div class="desc">
+          <h4>src/app/app.component.ts</h4>
+          <p><code>formatPrintPage()</code>: replaced <code>document.write("&lt;div&gt;" + element + "&lt;/div&gt;")</code> with <code>createElement('div') + div.textContent = element</code>.<br>
+          <code>logout()</code>: added <code>navigationService.stopHostScreenUpdate()</code> call before <code>setNotConnected()</code> (VULN-013).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-002</div>
+        <div class="desc">
+          <h4>src/app/mini-components/field/field.component.ts</h4>
+          <p>Constructor: removed 2 <code>console.log()</code> calls exposing <code>field.content</code> and <code>field.visualContent</code> (VULN-014).<br>
+          <code>getCss()</code>: added <code>/\/\*/</code> and <code>/\\[0-9a-fA-F]/</code> value regex guards (VULN-002).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-002</div>
+        <div class="desc">
+          <h4>src/app/mini-components/input-field/input-field.component.ts</h4>
+          <p><code>getCss()</code>: same CSS comment + hex-escape guards added (VULN-002).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-007</div>
+        <div class="desc">
+          <h4>src/app/macro/macro.component.ts</h4>
+          <p><code>selected()</code>: validates event name against <code>MACRO_NAME_PATTERN</code> before storing (VULN-007).<br>
+          <code>onDeleteMacro()</code>: validates <code>macroBaseName</code> before API call; rejects with toast (VULN-007).<br>
+          Removed 4 active <code>console.log()</code> calls in <code>onRecordMacro()</code> and <code>onStopRecordMacro()</code> (VULN-011).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-006</div>
+        <div class="desc">
+          <h4>src/app/services/screen-processor.service.ts</h4>
+          <p>Added <code>MAX_FIELDS = 10000</code> constant and guard in <code>filterCollisions()</code> (VULN-012).<br>
+          Replaced <code>fields.concat()</code> with <code>split.forEach(f => fields.push(f))</code> for O(1) append (VULN-012).<br>
+          <code>splitField()</code> lines 142–143: <code>f.content?.substring() ?? ''</code> (VULN-006).<br>
+          <code>cutField()</code> lines 167, 170: same null guards (VULN-006).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-009</div>
+        <div class="desc">
+          <h4>src/app/services/storage.service.ts</h4>
+          <p><code>setNotConnected()</code>: added <code>sessionStorage.removeItem('macroFileList')</code> (VULN-009).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-013</div>
+        <div class="desc">
+          <h4>src/app/services/navigation/navigation.service.ts</h4>
+          <p><code>errorHandler()</code>: calls <code>this.stopHostScreenUpdate()</code> before <code>setNotConnected()</code> in redirect branch (VULN-013).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-011</div>
+        <div class="desc">
+          <h4>src/app/webLogin/webLogin.component.ts</h4>
+          <p><code>handleError()</code>: removed <code>console.error(msg)</code> (VULN-011). Error message still shown in UI via <code>{{ errorMessage }}</code>.</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-007</div>
+        <div class="desc">
+          <h4>src/utils/GXUtils.ts</h4>
+          <p>Added <code>MACRO_NAME_PATTERN = /^[a-zA-Z0-9-]+$/</code> static constant (VULN-007).</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-010</div>
+        <div class="desc">
+          <h4>.pipeline-config.yaml</h4>
+          <p><code>static-scan</code> step: <code>abort_on_failure: false → true</code> (VULN-010). SAST failures now block pipeline.</p>
+        </div>
+      </div>
+      <div class="fix-item">
+        <div class="vid">VULN-010</div>
+        <div class="desc">
+          <h4>.secrets.baseline <em>(new file)</em></h4>
+          <p>Created empty detect-secrets baseline (v1.4.0) with all standard plugins configured (VULN-010). Required for <code>detect-secrets</code> CI step to function correctly.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESIDUAL RISK + NEXT ACTIONS -->
+  <div class="section">
+    <div class="section-header">
+      <span>📋</span><h2>Required Actions &amp; Follow-up</h2>
+    </div>
+    <div class="section-body">
+      <div class="action-item">
+        <div class="priority">1</div>
+        <div class="content">
+          <strong>Commit package-lock.json</strong> <span class="badge badge-high" style="font-size:11px;">VULN-005 · HIGH</span>
+          <p><code>git add package-lock.json &amp;&amp; git commit -m "chore: commit package-lock.json for deterministic CI builds"</code><br>File already exists in working tree as untracked. Required for <code>npm ci</code> to enforce deterministic resolution.</p>
+        </div>
+      </div>
+      <div class="action-item">
+        <div class="priority">2</div>
+        <div class="content">
+          <strong>Upgrade jQuery to ≥3.7.x</strong> <span class="badge badge-high" style="font-size:11px;">VULN-005 · HIGH</span>
+          <p><code>npm install jquery@^3.7.0</code><br>jQuery 3.6.0 carries CVE-2020-11022, CVE-2020-11023, CVE-2019-11358. Current usage (<code>$('#connect').prop('disabled')</code>) doesn't trigger CVEs, but vulnerable bundle ships to all users.</p>
+        </div>
+      </div>
+      <div class="action-item">
+        <div class="priority">3</div>
+        <div class="content">
+          <strong>Commit all working-tree fixes and run CI</strong>
+          <p>All 11 source fix files are uncommitted. Run CI pipeline to verify <code>abort_on_failure: true</code> on <code>static-scan</code> step functions correctly and <code>npm audit --audit-level=moderate</code> passes.</p>
+        </div>
+      </div>
+      <div class="action-item">
+        <div class="priority">4</div>
+        <div class="content">
+          <strong>Add Terser <code>drop_console: true</code> in angular.json</strong> <span class="badge badge-low">FOLLOW-UP</span>
+          <p>Systematic build-time stripping of all <code>console.*</code> calls. Angular CLI production optimization does not remove console by default — requires explicit Terser configuration. Provides defense-in-depth beyond per-file manual removal.</p>
+        </div>
+      </div>
+      <div class="action-item">
+        <div class="priority">5</div>
+        <div class="content">
+          <strong>Pin CI container image SHAs instead of version tags</strong> <span class="badge badge-low">FOLLOW-UP</span>
+          <p>Current: <code>icr.io/continuous-delivery/pipeline/pipeline-base-ubi:3.61</code> (mutable tag). Recommended: pin to SHA256 digest to prevent tag reassignment attacks.</p>
+        </div>
+      </div>
+      <div class="action-item">
+        <div class="priority">6</div>
+        <div class="content">
+          <strong>ApplinX backend: migrate gx_token to httpOnly cookie</strong> <span class="badge badge-medium">BACKEND</span>
+          <p>From prior assessment VULN-008 (2026-07-31): full fix requires ApplinX REST API backend changes. Out of this repository's scope. JavaScript-inaccessible httpOnly cookie would eliminate the XSS → token theft attack path completely.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PIPELINE TIMELINE -->
+  <div class="section">
+    <div class="section-header">
+      <span>📅</span><h2>Assessment Pipeline Timeline</h2>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Assessment</th><th>Phase</th><th>Findings</th><th>Outcome</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--text-muted)">2026-07-31-10-57</td>
+          <td>Full Assessment</td>
+          <td>22 findings</td>
+          <td>21 fixed_pending_validation · 1 false_positive</td>
+        </tr>
+        <tr>
+          <td style="color:var(--text-muted)">2026-08-02-18-25</td>
+          <td>Fix Validation Rescan</td>
+          <td>2 new findings</td>
+          <td>VULN-004 (fix incomplete) + VULN-023 (new) — both fixed</td>
+        </tr>
+        <tr>
+          <td><strong>2026-08-02-20-57</strong></td>
+          <td>Full Re-Scan (this report)</td>
+          <td>14 findings</td>
+          <td><strong>10 fixed · 3 false positives · 5 attack chains closed</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    Generated by D4rthB0b Security Pipeline · Assessment 2026-08-02-20-57 · webmethods-applinx-web-emulation<br>
+    All findings assessed against OWASP Top 10 2021 · CVSS 3.1
+  </div>
+
+</div>
+</body>
+</html>

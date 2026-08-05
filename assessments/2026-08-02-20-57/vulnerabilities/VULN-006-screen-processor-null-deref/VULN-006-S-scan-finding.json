@@ -1,0 +1,66 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-006",
+  "descriptor": "screen-processor-null-deref",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-002",
+    "task_name": "ScreenProcessorService Server-Supplied Coordinate Handling",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/services/screen-processor.service.ts",
+    "coverage": "100% — entire screen-processor.service.ts analyzed, all methods traced"
+  },
+  "finding": {
+    "severity": "high",
+    "file": "src/app/services/screen-processor.service.ts",
+    "line": 142,
+    "function": "splitField / cutField",
+    "tool": "LLM analysis",
+    "code_snippet": "// In splitField() — lines 139-143:\nconst contentLen = f1.content?.length ?? 0;  // SAFE: optional chain handles null\nconst clampedMinX = Math.max(0, Math.min(rect.minX - 1, contentLen));\nconst clampedMaxX = Math.max(0, Math.min(rect.maxX, contentLen));\nf1.content = f1.content.substring(0, clampedMinX);  // UNSAFE: no null guard — throws TypeError if null\nf2.content = f2.content.substring(clampedMaxX);     // UNSAFE: same issue\n\n// In cutField() — lines 164-170:\nconst contentLen = field.content?.length ?? 0;  // SAFE\nfield.content = field.content.substring(fieldPos.column, clampedMinX);  // UNSAFE: throws if null",
+    "preliminary_assessment": "VULN-021 and VULN-023 correctly apply Math.max/Math.min clamping to prevent out-of-range substring bounds, but the clamping logic uses optional chaining (field.content?.length ?? 0) for the guard while the downstream substring() calls use direct property access (f1.content.substring()). If field.content is null or undefined (possible when server sends a field with no content property), contentLen correctly defaults to 0 but the subsequent .substring() call throws TypeError: Cannot read property 'substring' of null. This crash denies the entire screen rendering for the session. A compromised ApplinX backend sending a transformation rectangle for a field with null content would crash the ScreenProcessorService, causing a DoS. Additionally, filterCollisions() has an unbounded array growth issue (VULN-012) and processTable() lacks row bounds validation.",
+    "threat_model_refs": ["TM-005"],
+    "attack_surface_refs": ["AS-001"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "VULN-021 and VULN-023 clamping logic is semantically correct for non-null content",
+      "Optional chaining used for contentLen computation but not for downstream substring() calls",
+      "No validation of inverted rectangles (rect.minX > rect.maxX) — degenerate case silently ignored",
+      "Rectangle constructor accepts coordinates without any bounds validation",
+      "filterCollisions() grows array during iteration — O(n) growth per server-sent overlapping rect",
+      "processTable() computes body.bottomRight.row from rows.length without bounds check"
+    ],
+    "false_positives": [
+      {
+        "pattern": "cutField() null return filtering",
+        "rationale": "Line 116 correctly checks 'if (field) filtered.push(field)' — null returns from cutField() are properly filtered"
+      },
+      {
+        "pattern": "isFieldContainsRect() syntax error at line 124-128",
+        "rationale": "Upon further review, the JavaScript/TypeScript parser correctly handles the return statement; the 'missing parenthesis' was an analysis artifact"
+      }
+    ],
+    "coverage_assessment": "Complete analysis of all coordinate-handling methods: splitField(), cutField(), filterCollisions(), processTable(), Rectangle constructor, initTree(). All edge cases from task file tested against code logic."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify if ApplinX REST API can send fields with null content property — check API schema documentation or empirical testing",
+      "Test DoS: craft GetScreenResponse with transformation rectangle over a null-content field — verify TypeError crash",
+      "Verify filterCollisions() growth behavior: send 1000 overlapping rectangles — measure memory and CPU impact",
+      "Confirm processTable() rows.length bounds — test with rows=[]; array and verify no crash"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-006 to screen-processor-null-deref",
+      "Set status: flagged, severity: high"
+    ]
+  }
+}

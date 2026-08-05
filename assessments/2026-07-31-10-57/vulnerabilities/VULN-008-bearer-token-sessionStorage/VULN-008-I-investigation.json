@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-008",
+  "descriptor": "bearer-token-sessionStorage",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "StorageService.setConnected() (storage.service.ts:44-50) stores the ApplinX Bearer session token in browser sessionStorage under key 'gx_token'. sessionStorage is accessible to all JavaScript code running in the same origin — any successful XSS can call sessionStorage.getItem('gx_token') to extract the token. Additionally, logger.service.ts:19 reads sessionStorage directly outside the StorageService abstraction, meaning the token is accessed in two places. No httpOnly cookie mechanism is used.",
+    "attack_scenario": "Attack chain: VULN-001 (CSS injection) or VULN-002 (keyboard mapping eval) → JavaScript execution in app origin → sessionStorage.getItem('gx_token') → token exfiltration via fetch/XMLHttpRequest to attacker server → attacker uses token in Authorization: Bearer header → full ApplinX REST API access as victim. The attacker can read all terminal screen data, issue sendKeys commands, execute macros, and perform all operations the victim is authorized to do on the mainframe host.",
+    "prerequisites": [
+      "User must be authenticated (token present in sessionStorage)",
+      "A prior XSS vulnerability (VULN-001, VULN-002, or any other XSS) must be exploitable",
+      "Session must be active (sessionStorage cleared on tab close)"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Attacker with XSS execution in app origin (no session token)",
+      "achieved_privilege": "Full authenticated ApplinX REST API session — all operations the victim user is authorized for on the host",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none",
+      "description": "Full session hijack: attacker impersonates authenticated user to ApplinX REST API. Impact includes reading all terminal screen content (potentially including sensitive host data), issuing arbitrary host commands via sendKeys, executing/reading/deleting macros (including those with stored passwords, VULN-006), and full host session takeover for the duration of the token's validity."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API CreateSessionResponse.token — issued on successful authentication"
+      ],
+      "transformations": [
+        "sessionStorage.setItem('gx_token', authToken) — stored in JS-accessible storage",
+        "getAuthToken() returns 'Bearer ' + sessionStorage.getItem('gx_token') — used for all API calls and ngx-logger"
+      ],
+      "sinks": [
+        "sessionStorage['gx_token'] — accessible to all same-origin JavaScript",
+        "Authorization header of all ApplinX REST API calls",
+        "Authorization header of all ngx-logger remote log requests (VULN-012)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "StorageService.setConnected() — src/app/services/storage.service.ts:44-50", "impact": "Token storage in JS-accessible sessionStorage"},
+      {"component": "AuthTokenServerService.getAuthToken() — src/app/services/logger.service.ts:18-20", "impact": "Direct sessionStorage access bypassing StorageService abstraction"}
+    ],
+    "indirect": [
+      {"component": "VULN-001 (CSS injection)", "impact": "CSS injection attack chain pivot point — CSS-based exfiltration upgrades to token theft"},
+      {"component": "VULN-002 (keyboard mapping eval)", "impact": "Eval-equivalent execution enables direct sessionStorage.getItem()"},
+      {"component": "VULN-012 (ngx-logger token logging)", "impact": "Token also sent to remote logging endpoint — expanded attack surface"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Migrate to httpOnly/Secure cookie-based session token storage. This requires ApplinX REST API to support Set-Cookie response headers with HttpOnly; Secure; SameSite=Strict flags. The Angular client would remove all sessionStorage token handling — the cookie is transmitted automatically by the browser and inaccessible to JavaScript.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Migrate Bearer token to httpOnly/Secure cookie (requires backend change to ApplinX REST API)",
+      "If sessionStorage must be used: eliminate all non-StorageService sessionStorage token reads (fix logger.service.ts:19)",
+      "Implement CSP to restrict XSS vectors that could lead to token exfiltration",
+      "Implement short token lifetimes with automatic refresh to limit hijack window",
+      "Remediate XSS vectors (VULN-001, VULN-002) to eliminate the attack chain entry points"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-008-bearer-token-sessionStorage/VULN-008-S-scan-finding.md",
+    "threat_model": ["TM-001", "TM-006"],
+    "attack_surface": ["AS-007"],
+    "external": [
+      "CWE-922: Insecure Storage of Sensitive Information",
+      "OWASP A02:2021 — Cryptographic Failures",
+      "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N — Score: 6.8 MEDIUM (HIGH impact, HIGH complexity due to required XSS prerequisite)"
+    ]
+  }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-008",
+  "descriptor": "oidc-state-consumed-before-validation",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "OIDC State Parameter Consumed Before Validation — False Positive",
+    "severity": "low",
+    "status": "false_positive",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-352"],
+    "owasp": ["A07:2021-Identification and Authentication Failures"],
+    "capec": ["CAPEC-62"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      "score": 0.0,
+      "breakdown": {
+        "attack_vector": "network",
+        "attack_complexity": "high",
+        "privileges_required": "none",
+        "user_interaction": "none",
+        "scope": "unchanged",
+        "confidentiality": "none",
+        "integrity": "none",
+        "availability": "none"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/route-guard.service.ts",
+    "line_start": 55,
+    "line_end": 76,
+    "function": "canActivate",
+    "class": "RouteGuardService",
+    "component": "RouteGuardService",
+    "module": "route-guard"
+  },
+  "data_flow": {
+    "sources": ["route.queryParams.state (OIDC callback URL parameter)", "sessionStorage.getItem('oidc_state') (previously stored nonce)"],
+    "transformations": ["sessionStorage.removeItem('oidc_state') — single-use consumption (correct OIDC practice)", "receivedState !== storedState comparison — CSRF validation"],
+    "sinks": ["sendCodeAndConnectSession(idPcode) — only reached when state validates correctly", "sessionStorage (state cleared, no residual)"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "medium",
+    "artifact": "VULN-008-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": null,
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "theoretical",
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated user",
+      "achieved_privilege": "Unauthenticated user — no escalation",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "none",
+      "description": "removeItem-before-compare is correct OIDC behavior. Single-use state prevents replay. No CSRF window exists — IdP authorization codes are also single-use. No security impact."
+    },
+    "artifact": "VULN-008-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["OIDC state is single-use by design — consuming before compare is correct", "IdP authorization codes are also single-use", "RFC 6749 §10.12 mandates single-use state consumption"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "No security fix required. Reliability: add explicit router.navigate(['webLogin']) to catchError handler for clear error recovery path.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-001"],
+    "attack_surface": ["AS-002", "AS-003"],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": ["oidc", "csrf", "state-parameter", "false-positive"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "oidc_state consumed (removeItem) at line 58 before validation at line 59; failed code exchange leaves orphaned session"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "false_positive",
+      "mode": "inquisitor",
+      "note": "removeItem-before-compare is correct OIDC behavior per RFC 6749 §10.12. State must be consumed regardless of validation outcome. No CSRF window — codes are single-use. False positive."
+    }
+  ]
+}

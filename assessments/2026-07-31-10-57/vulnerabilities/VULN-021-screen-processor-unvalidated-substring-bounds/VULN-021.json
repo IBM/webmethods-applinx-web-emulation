@@ -1,0 +1,150 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-021",
+  "descriptor": "screen-processor-unvalidated-substring-bounds",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "Screen Processor Uses Server-Supplied Coordinates Without Bounds Validation in substring() Calls",
+    "severity": "low",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-20",
+      "CWE-1284"
+    ],
+    "owasp": [
+      "A04:2021 - Insecure Design"
+    ],
+    "capec": [
+      "CAPEC-540"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:L",
+      "score": 4.8,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "None",
+        "integrity": "Low",
+        "availability": "Low"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/screen-processor.service.ts",
+    "line_start": 131,
+    "line_end": 165,
+    "function": "splitField / cutField",
+    "class": "ScreenProcessorService",
+    "component": "ScreenProcessorService",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "ApplinX REST API AbstractTransformation.regionsToHide coordinates (rect.minX, rect.maxX — server-controlled)"
+    ],
+    "transformations": [
+      "f1.content.substring(0, rect.minX - 1) — no bounds check on rect.minX",
+      "f2.content.substring(rect.maxX) — no bounds check on rect.maxX",
+      "fields.concat(splitField()) — growing array during iteration"
+    ],
+    "sinks": [
+      "Incorrect field content rendering in Angular DOM",
+      "Potentially unbounded array growth — UI thread freeze"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "medium",
+    "artifact": "VULN-021-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Compromised ApplinX server",
+      "achieved_privilege": "Silent field suppression or client-side CPU DoS (quadratic growth)",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "low",
+      "description": "Out-of-bounds rect coordinates produce silent empty fields (no crash — JS substring() safe). filterCollisions() O(n²) with adversarial input. Both require ApplinX server compromise. CVSS 3.7 LOW."
+    },
+    "artifact": "VULN-021-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: rect.minX/maxX clamped to content length before substring() in splitField().",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-021-screen-processor-unvalidated-substring-bounds/VULN-021-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-001",
+      "TM-004"
+    ],
+    "attack_surface": [
+      "AS-002"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "screen-processor",
+    "input-validation",
+    "substring-bounds",
+    "dos"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "splitField()/cutField() use server-supplied rect.minX/maxX without bounds validation; fields.concat() during iteration enables array growth DoS"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: Silent field suppression + O(n²) DoS with adversarial rect coords. Requires ApplinX server compromise. CVSS 3.7 LOW."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: rect.minX/maxX clamped to content length before substring() in splitField()."
+    }
+  ]
+}

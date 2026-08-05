@@ -1,0 +1,74 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-007",
+  "descriptor": "open-redirect-server-controlled-redirect-uri",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "OAuth2HandlerService.redirectToIDPLoginPage() (oauth2-handler.service.ts:43) assigns window.location.href = res.redirectUri directly from the ApplinX REST API CreateSessionResponse without any URL validation. No scheme check (only https allowed), no domain allowlist, and no URL parsing. The application fully trusts the server-supplied redirect URL.",
+    "attack_scenario": "Compromised ApplinX server returns CreateSessionResponse with redirectUri = 'https://attacker.com/fake-idp-login'. User initiates OIDC authentication (clicks Connect), browser navigates to attacker URL. Phishing page mimics the real IdP login, capturing the user's IdP credentials. The attack requires the ApplinX backend to be compromised — making this a second-order attack dependent on server-level compromise.",
+    "prerequisites": [
+      "ApplinX REST API server must be compromised or misconfigured to return malicious redirectUri",
+      "User must be using OIDC authentication mode (auth=OPEN_ID_CONNECT in ApplinX config)",
+      "User must click Connect to trigger the redirect"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated user initiating OIDC login",
+      "achieved_privilege": "User redirected to attacker-controlled URL — phishing attack vector, IdP credentials theft",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Open redirect enables phishing of IdP credentials if ApplinX server is compromised. Impact is moderate: user navigates away from legitimate application, phishing site can capture IdP credentials. This is a server-compromise-dependent secondary attack, not a direct injection from an unauthenticated attacker."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API SessionService.connect() response — CreateSessionResponse.redirectUri (server-controlled)"
+      ],
+      "transformations": [
+        "res.redirectUri extracted from API response without any validation",
+        "window.location.href = res.redirectUri — immediate navigation"
+      ],
+      "sinks": [
+        "window.location.href — browser navigation to attacker-controlled URL"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "OAuth2HandlerService.redirectToIDPLoginPage() — src/app/services/oauth2-handler.service.ts:43", "impact": "Open redirect sink — no URL validation before navigation"}
+    ],
+    "indirect": [
+      {"component": "VULN-003 (missing OIDC state parameter)", "impact": "Combined: CSRF can force code injection; open redirect enables credential phishing — compound attack"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Validate res.redirectUri before assigning to window.location.href: (1) parse URL with new URL(uri), (2) verify protocol is 'https:', (3) verify hostname matches configured IdP domain from application settings. Reject and log if validation fails.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Maintain a configured allowlist of valid IdP domains in sessionConfig.json",
+      "Enforce https:// scheme requirement",
+      "Log and alert when redirectUri validation fails",
+      "Review VULN-003: implement state parameter to compound-protect the OIDC flow"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-007-open-redirect-server-controlled-redirect-uri/VULN-007-S-scan-finding.md",
+    "threat_model": ["TM-002"],
+    "attack_surface": ["AS-006"],
+    "external": [
+      "CWE-601: URL Redirection to Untrusted Site (Open Redirect)",
+      "OWASP A01:2021 — Broken Access Control",
+      "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N — Score: 4.7 MEDIUM"
+    ]
+  }
+}

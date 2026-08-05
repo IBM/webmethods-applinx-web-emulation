@@ -1,0 +1,88 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-014",
+  "descriptor": "debug-console-log-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:00:00Z",
+    "exploitability": "proven",
+    "root_cause": "FieldComponent constructor contains two unconditional console.log() calls (lines 35-36) that log field.content and field.visualContent on every component instantiation. FieldComponent is instantiated for every terminal screen field on every screen render (every 5 seconds via polling). Angular CLI production optimization (optimization: true) does NOT remove console.log() calls by default — terser requires explicit drop_console: true config which is absent from angular.json. No environment.production guard exists in the constructor. Result: all terminal screen data (account numbers, PINs, usernames, transaction codes) is continuously logged to the browser console in production at ~1,200-4,800 entries per minute.",
+    "attack_scenario": "Scenario 1 (shared workstation): User accesses mainframe terminal via the SPA. Every screen render logs field.content to browser console. User leaves workstation open. Attacker opens DevTools (F12 → Console), reads all terminal screen data logged during the user's session — account numbers, PINs, transaction codes visible in plain text. Scenario 2 (XSS amplification via VULN-004): XSS payload in print popup accesses browser console history, collects all logged terminal field data, and exfiltrates to attacker server — enabling bulk data theft of all terminal data visible during the session.",
+    "prerequisites": [
+      "Proven: any user can open browser DevTools and observe the continuous logging without any technical barrier",
+      "XSS amplification: prior XSS exploitation (VULN-004) to automate data collection"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Authenticated ApplinX user",
+      "achieved_privilege": "Read access to all terminal screen field data logged during the session",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "All terminal screen content (field.content and field.visualContent) is continuously disclosed to the browser console. Terminal data includes: account numbers, customer PINs, usernames, transaction codes, session context — typical mainframe/AS400 PII data. Frequency of 100-400 log entries per screen update × polling every 5s = high-volume continuous disclosure. No data modification or availability impact."
+    },
+    "data_flow": {
+      "sources": [
+        "ApplinX REST API GetScreenResponse fields[].content and fields[].visualContent (terminal screen data)"
+      ],
+      "transformations": [
+        "ScreenProcessorService processes fields",
+        "FieldComponent instantiated for each field (@Input() field binding)",
+        "Constructor executes: this.field ? console.log('>>@constructor>>> this.field.content = ', this.field.content) : ''"
+      ],
+      "sinks": [
+        "Browser console (F12 DevTools) — accessible to users and XSS code",
+        "Browser console history buffer — persists for session duration",
+        "XSS exfiltration channel (post-exploitation via VULN-004 or other XSS)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "FieldComponent constructor (lines 35-36)",
+        "impact": "Logs all terminal screen field data to browser console on every render"
+      }
+    ],
+    "indirect": [
+      {
+        "component": "MacroComponent (lines 231, 235, 239, 272)",
+        "impact": "Logs macro names and API responses to browser console (lower sensitivity)"
+      },
+      {
+        "component": "GXUtils global mutable statics",
+        "impact": "typeAheadCharacterArray captures keystroke input; readable by XSS post-exploitation"
+      }
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove the two console.log() calls from FieldComponent constructor (lines 35-36). These are debug artifacts that must not appear in production code. Also remove or gate behind if (!environment.production) the four console.log() calls in MacroComponent (lines 231, 235, 239, 272). The quickest fix is removal; if debug output is needed for development, add the environment guard.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Remove console.log() from FieldComponent constructor lines 35-36",
+      "Remove or gate MacroComponent console.log() calls (lines 231, 235, 239, 272) behind if (!environment.production)",
+      "Add terser configuration in angular.json production build: optimize.scripts with drop_console: true for belt-and-suspenders",
+      "Remove all transformation-component console.log() calls (checkbox, calendar, table components)",
+      "Consider a global eslint rule: no-console for production builds"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-014-S-scan-finding.md",
+    "threat_model": ["TM-012"],
+    "attack_surface": ["AS-008"],
+    "external": [
+      "CWE-532: Insertion of Sensitive Information into Log File",
+      "Attack chain: VULN-004 XSS + VULN-014 console logging = automated terminal PII exfiltration",
+      "Attack chain AC-004: VULN-012 O(n²) creates 1M+ Fields → VULN-014 logs all of them = memory exhaustion"
+    ]
+  }
+}

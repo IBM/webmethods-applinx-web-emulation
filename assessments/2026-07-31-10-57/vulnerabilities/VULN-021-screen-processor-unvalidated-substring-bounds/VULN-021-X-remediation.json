@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-021",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": ["ScreenProcessorService.splitField(): added bounds clamping for rect.minX and rect.maxX before substring() calls using Math.max/Math.min. clampedMinX = Math.max(0, Math.min(rect.minX - 1, contentLen)); clampedMaxX = Math.max(0, Math.min(rect.maxX, contentLen)). Prevents silent empty field content from out-of-bounds server-supplied coordinates."],
+    "files_modified": [{"file": "src/app/services/screen-processor.service.ts: splitField() — added contentLen, clampedMinX, clampedMaxX clamping.", "changes": "See changes_made."}],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "ScreenProcessorService.splitField(): added bounds clamping for rect.minX and rect.maxX before substring() calls using Math.max/Math.min. clampedMinX = Math.max(0, Math.min(rect.minX - 1, contentLen)); clampedMaxX = Math.max(0, Math.min(rect.maxX, contentLen)). Prevents silent empty field content from out-of-bounds server-supplied coordinates.",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-021-screen-processor-unvalidated-substring-bounds/VULN-021-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-021-screen-processor-unvalidated-substring-bounds/VULN-021-I-investigation.md",
+    "validation": null
+  }
+}

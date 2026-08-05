@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-018",
+    "descriptor":  "sign-artifact-disabled-ci",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-L-001",
+                     "task_name":  "CI/CD Pipeline Security",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  ".pipeline-config.yaml",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "medium",
+                    "file":  ".pipeline-config.yaml",
+                    "line":  27,
+                    "function":  null,
+                    "code_snippet":  "- name: sign-artifact\n  when: \u0027false\u0027",
+                    "preliminary_assessment":  "Artifact signing disabled — no cryptographic integrity guarantee; dind: true amplifies risk",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-011"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "sign-artifact disabled in both task blocks",
+                                               "dind: true with docker-socket",
+                                               "image_pull_policy: IfNotPresent"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Assess IBM CD platform integrity guarantees",
+                                              "Change image_pull_policy to Always"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-018 to vulnerability-registry.json"
+                                        ]
+                   }
+}

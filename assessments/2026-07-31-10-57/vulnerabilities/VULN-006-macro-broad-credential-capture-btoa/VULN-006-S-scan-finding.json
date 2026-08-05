@@ -1,0 +1,61 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "input[type=password]\\) + window.btoa(value)",
+                    "threat_model_refs":  "Global DOM password capture; base64 encoding (not encryption) stores recoverable plaintext passwords in macro files",
+                    "severity":  "high",
+                    "function":  "recordMacro",
+                    "line":  90,
+                    "code_snippet":  "document.querySelectorAll(\\",
+                    "attack_surface_refs":  [
+                                                "TM-007"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/shared.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-006",
+    "execution":  {
+                      "target":  "src/app/services/shared.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-004",
+                     "task_name":  "Macro Feature SAST",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+                                           "Assess ApplinX macro API access controls per user",
+                                           "Evaluate Web Crypto API AES-GCM replacement",
+                                           "Verify macro file transmission over HTTPS (see VULN-016)"
+                                       ],
+                       "for_inquisitor":  [
+                                              "Global querySelectorAll captures ALL DOM passwords",
+                                              "window.btoa/atob used as credential protection",
+                                              "decryptBeforePlay() has no null guard on element.fields unlike setPasswordMask()"
+                                          ],
+                       "for_registry":  [
+
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "macro-broad-credential-capture-btoa",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "AS-008"
+                                           ]
+                 }
+}

@@ -1,0 +1,116 @@
+{
+  "$schema": "../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-013",
+  "descriptor": "polling-loop-resource-exhaustion",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "title": "stopHostScreenUpdate() Dead Code — Polling Continues After Logout",
+    "severity": "low",
+    "status": "confirmed",
+    "created": "2026-08-02T21:30:00Z",
+    "updated": "2026-08-02T22:30:00Z"
+  },
+  "classification": {
+    "cwe": ["CWE-400"],
+    "owasp": ["A04:2021-Insecure Design"],
+    "capec": ["CAPEC-25"],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L",
+      "score": 3.3,
+      "breakdown": {
+        "attack_vector": "local",
+        "attack_complexity": "low",
+        "privileges_required": "low",
+        "user_interaction": "none",
+        "scope": "unchanged",
+        "confidentiality": "none",
+        "integrity": "none",
+        "availability": "low"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/navigation/navigation.service.ts",
+    "line_start": 60,
+    "line_end": 80,
+    "function": "stopHostScreenUpdate",
+    "class": "NavigationService",
+    "component": "NavigationService",
+    "module": "navigation"
+  },
+  "data_flow": {
+    "sources": ["NavigationService constructor (line 66) — starts setInterval unconditionally on service instantiation"],
+    "transformations": ["setNotConnected() — clears session tokens but does NOT call stopHostScreenUpdate()", "checkScreenUpdated() fires every 5 seconds", "!isConnected() check returns true (not connected) → early return"],
+    "sinks": ["CPU/event loop: ~1-2ms per callback wasted every 5 seconds after logout", "No network requests, no data access, no side effects after !isConnected() guard"]
+  },
+  "scanner": {
+    "flagged_at": "2026-08-02T21:30:00Z",
+    "tools_used": ["LLM analysis"],
+    "confidence": "medium",
+    "artifact": "VULN-013-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-08-02T22:30:00Z",
+    "analyst": "d4rthb0b-inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user (before logout)",
+      "achieved_privilege": "Same — no escalation possible from resource waste",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low",
+      "description": "Trivial resource waste: one function call every 5 seconds after logout. The !isConnected() guard prevents any API calls or data access. No security escalation possible. VULN-020 fix incomplete — stop method defined but never wired into logout path."
+    },
+    "artifact": "VULN-013-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": ["User must authenticate and then logout", "Browser tab must remain open after logout"],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": ["!isConnected() guard prevents API calls or data access after logout"]
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": null,
+    "fix_approach": "Call stopHostScreenUpdate() in StorageService.setNotConnected(). Also add to AppComponent.ngOnDestroy() as defense-in-depth. Consider lazy-starting the polling interval on login rather than in constructor.",
+    "fix_complexity": "low",
+    "verification_status": null,
+    "artifact": null
+  },
+  "references": {
+    "threat_model": ["TM-009"],
+    "attack_surface": ["AS-001"],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": ["resource-waste", "polling", "logout-incomplete", "dead-code"],
+  "history": [
+    {
+      "timestamp": "2026-08-02T21:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "stopHostScreenUpdate() defined but never called (VULN-020 incomplete); polling continues after logout"
+    },
+    {
+      "timestamp": "2026-08-02T22:30:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "Confirmed dead code — stopHostScreenUpdate() has zero call sites. !isConnected() guard prevents actual API calls post-logout. Low severity: trivial resource waste, no security escalation. Trivial 1-line fix in setNotConnected()."
+    }
+  ]
+}

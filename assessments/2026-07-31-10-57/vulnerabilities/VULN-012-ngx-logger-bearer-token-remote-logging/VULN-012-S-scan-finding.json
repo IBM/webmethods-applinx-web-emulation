@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "Bearer token attached to all ngx-logger remote log HTTP requests — token exposure to log infrastructure",
+                    "threat_model_refs":  [
+                                              "TM-005"
+                                          ],
+                    "severity":  "medium",
+                    "function":  "alterHttpRequest",
+                    "line":  10,
+                    "code_snippet":  "setHeaders: { \u0027Authorization\u0027: this.getAuthToken() } // attached to every log request",
+                    "attack_surface_refs":  [
+                                                "AS-013"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/logger.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-012",
+    "execution":  {
+                      "target":  "src/app/services/logger.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-M-002",
+                     "task_name":  "Error Message Information Disclosure",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Verify serverLoggingUrl is actually configured and active in production",
+                                              "Assess /logger endpoint TLS and access controls",
+                                              "Remove Bearer token from log requests or use log-specific scope token"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-012 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "ngx-logger-bearer-token-remote-logging",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "AuthTokenServerService attaches Bearer token to all server log requests",
+                                               "logger.service.ts:19 reads sessionStorage directly — bypass of StorageService token boundary"
+                                           ]
+                 }
+}

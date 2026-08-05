@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-020",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": ["NavigationService: (1) added 'private intervalId: ReturnType<typeof setInterval> | null = null' field to store the setInterval return value; (2) checkHostScreenUpdate() now stores the interval ID and clears any existing interval before starting a new one; (3) added stopHostScreenUpdate() method that calls clearInterval(this.intervalId) — can be called from ngOnDestroy; (4) CHECK_HOST_SCREEN_UPDATE_INTERVAL changed from public to private readonly to prevent external mutation; (5) errorHandler() wrapped in try/catch — catch sets isThereError=true to stop polling on unexpected errors (VULN-011 synergy)."],
+    "files_modified": [{"file": "src/app/services/navigation/navigation.service.ts: intervalId field, checkHostScreenUpdate() stores ID, stopHostScreenUpdate() added, field visibility changed, errorHandler try/catch.", "changes": "See changes_made."}],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "NavigationService: (1) added 'private intervalId: ReturnType<typeof setInterval> | null = null' field to store the setInterval return value; (2) checkHostScreenUpdate() now stores the interval ID and clears any existing interval before starting a new one; (3) added stopHostScreenUpdate() method that calls clearInterval(this.intervalId) — can be called from ngOnDestroy; (4) CHECK_HOST_SCREEN_UPDATE_INTERVAL changed from public to private readonly to prevent external mutation; (5) errorHandler() wrapped in try/catch — catch sets isThereError=true to stop polling on unexpected errors (VULN-011 synergy).",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-020-uncapped-polling-no-backoff/VULN-020-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-020-uncapped-polling-no-backoff/VULN-020-I-investigation.md",
+    "validation": null
+  }
+}

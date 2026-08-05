@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-003",
+  "descriptor": "oidc-csrf-missing-state-parameter",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "The OpenID Connect authorization code flow is implemented across RouteGuardService and OAuth2HandlerService with zero OAuth2 state parameter handling. OAuth2HandlerService.redirectToIDPLoginPage() initiates the IDP redirect without generating or storing a state value. RouteGuardService.canActivate() extracts `route.queryParams.code` (line 51) without validating any state parameter. RFC 6749 Section 10.12 and the OAuth 2.0 Security Best Current Practice (RFC 9700) mandate state parameter validation to prevent CSRF. Without state, any party able to craft a URL with a valid OIDC code can inject that code into a victim's session.",
+    "attack_scenario": "CSRF Authorization Code Injection: (1) Attacker registers with the same OIDC IdP and obtains their own valid authorization code for this application's client_id. (2) Attacker crafts URL: https://app.example.com/instant?code=ATTACKER_CODE. (3) Attacker tricks victim (phishing, clickjacking, XSS redirect) into visiting this URL while on the login page. (4) RouteGuardService.canActivate() extracts ATTACKER_CODE (no state check). (5) OAuth2HandlerService.sendCodeAndConnectSession() sends ATTACKER_CODE to ApplinX REST API. (6) ApplinX REST API exchanges code and creates session for the ATTACKER's OIDC identity. (7) Victim's browser is now logged in as the attacker's identity. (8) Victim unknowingly performs host terminal operations under attacker's account. Compounded by VULN-009: the code is also stored in sessionStorage and never cleaned up.",
+    "prerequisites": [
+      "OIDC authentication mode must be configured (ApplinX /info returns auth=OPEN_ID_CONNECT)",
+      "Attacker must have a valid OIDC account at the same IdP and obtain a valid auth code for this application",
+      "Attacker must deliver the crafted URL to the victim (phishing, XSS redirect, clickjacking)",
+      "ApplinX REST API must not perform server-side user-agent binding or additional CSRF protections beyond code validation"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Attacker with valid IdP account (cannot authenticate as victim)",
+      "achieved_privilege": "Victim's browser session bound to attacker's OIDC identity — session fixation enabling cross-account attack",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "none",
+      "description": "Session fixation to attacker's OIDC identity: victim performs mainframe terminal operations under attacker's account. If attacker's account has elevated privileges (admin OIDC identity), victim unknowingly gains those privileges. Attacker can also observe victim's actions if both sessions share the same ApplinX session token. This is a textbook OAuth2 CSRF with account hijacking consequences. Combined with VULN-009 (code persists in sessionStorage), the attack window is extended."
+    },
+    "data_flow": {
+      "sources": [
+        "Browser URL query parameter: route.queryParams.code — attacker-controlled in CSRF scenario",
+        "Browser navigation to attacker-crafted URL"
+      ],
+      "transformations": [
+        "const idPcode = route.queryParams.code — line 51, no state validation, no nonce check",
+        "sessionStorage.setItem('idPcode', code) — stored without cleanup (VULN-009)",
+        "this.oAuth2handler.sendCodeAndConnectSession(idPcode, ...) — forwarded to ApplinX REST API"
+      ],
+      "sinks": [
+        "ApplinX REST API SessionService.connect(createSessionRequest) — code exchanged for session token",
+        "storageService.setConnected(res.token) — attacker-identity session token stored and used for all subsequent API calls"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "RouteGuardService.canActivate() — src/app/services/route-guard.service.ts:51", "impact": "OIDC code extracted from URL with no state parameter validation"},
+      {"component": "OAuth2HandlerService.redirectToIDPLoginPage() — src/app/services/oauth2-handler.service.ts:39-47", "impact": "No state parameter generated or stored before IdP redirect"},
+      {"component": "OAuth2HandlerService.sendCodeAndConnectSession() — src/app/services/oauth2-handler.service.ts:56-68", "impact": "Authorization code forwarded to ApplinX without state validation"}
+    ],
+    "indirect": [
+      {"component": "StorageService.setConnected()", "impact": "Attacker's session token stored — victim authenticates as attacker"},
+      {"component": "VULN-009 (idPcode never removed)", "impact": "Code persists in sessionStorage across logout, compounding exposure"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Before initiating IdP redirect, generate and store a cryptographic state parameter: `const state = crypto.randomUUID(); sessionStorage.setItem('oidc_state', state);`. Append state to the IdP redirect URL. On callback in RouteGuardService, validate: `if (route.queryParams.state !== sessionStorage.getItem('oidc_state')) { reject; redirect to login; }`. Remove state from sessionStorage after validation.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Use crypto.randomUUID() or crypto.getRandomValues() for state generation — never Math.random()",
+      "Implement PKCE (Proof Key for Code Exchange) as an additional binding mechanism",
+      "Validate state before ANY OIDC callback processing",
+      "Fix VULN-009: remove idPcode from sessionStorage after successful exchange",
+      "Request ApplinX REST API team to document whether server-side session binding provides partial mitigation"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-003-oidc-csrf-missing-state-parameter/VULN-003-S-scan-finding.md",
+    "threat_model": ["TM-002"],
+    "attack_surface": ["AS-005", "AS-006"],
+    "external": [
+      "RFC 6749 Section 10.12 — Cross-Site Request Forgery",
+      "RFC 9700 — OAuth 2.0 Security Best Current Practice",
+      "CWE-352: Cross-Site Request Forgery (CSRF)",
+      "OWASP A07:2021 — Identification and Authentication Failures",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:H/I:H/A:N — Score: 6.8 MEDIUM"
+    ]
+  }
+}

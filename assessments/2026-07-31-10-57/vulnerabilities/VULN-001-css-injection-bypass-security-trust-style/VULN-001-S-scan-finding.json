@@ -1,0 +1,65 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "bypassSecurityTrustStyle applied to server-supplied field.style — CSS injection via url() possible",
+                    "threat_model_refs":  [
+                                              "TM-001",
+                                              "TM-004"
+                                          ],
+                    "severity":  "high",
+                    "function":  "getCss",
+                    "line":  198,
+                    "code_snippet":  "return this.doms.bypassSecurityTrustStyle(this.field.style ?? \u0027\u0027);",
+                    "attack_surface_refs":  [
+                                                "AS-001",
+                                                "AS-002"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/mini-components/input-field/input-field.component.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-001",
+    "execution":  {
+                      "target":  "src/app/mini-components/input-field/input-field.component.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-001",
+                     "task_name":  "XSS / DOM Injection",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Confirm how field.style is set server-side",
+                                              "Test url() data exfiltration in controlled environment",
+                                              "Check for CSP headers in deployment"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-001 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "css-injection-bypass-security-trust-style",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "bypassSecurityTrustStyle on server-controlled field.style in both InputFieldComponent and FieldComponent",
+                                               "No [innerHTML] bindings found in any transformation template",
+                                               "No CSP evidence found in codebase"
+                                           ]
+                 }
+}

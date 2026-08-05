@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-020",
+    "descriptor":  "uncapped-polling-no-backoff",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-L-002",
+                     "task_name":  "Session Polling Resilience",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  "src/app/services/navigation/navigation.service.ts",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "low",
+                    "file":  "src/app/services/navigation/navigation.service.ts",
+                    "line":  74,
+                    "function":  "checkHostScreenUpdate",
+                    "code_snippet":  "setInterval(() =\u003e checkScreenUpdated(), CHECK_HOST_SCREEN_UPDATE_INTERVAL)",
+                    "preliminary_assessment":  "setInterval ID discarded — no clearInterval; no backoff; polling continues indefinitely",
+                    "threat_model_refs":  [
+                                              "TM-009"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-015"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "0 clearInterval calls in codebase",
+                                               "INTERVAL/TIMEOUT are public mutable",
+                                               "isThereError only for 3 hardcoded error strings"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Store interval ID and clearInterval in ngOnDestroy",
+                                              "Use RxJS timer with takeUntil and backoff"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-020 to vulnerability-registry.json"
+                                        ]
+                   }
+}

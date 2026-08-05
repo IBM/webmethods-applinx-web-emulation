@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-019",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "KeyboardMappingService.checkKeyboardMappings(): added VALID_HOST_KEY allowlist regex for the sendKeys dispatch path. Before calling navigationService.sendKeys(keyFunc), keyFunc is validated against a regex allowing only valid ApplinX host key names (pf1-pf36, pa1-pa3, enter, clear, erase, attn, sysreq, reset, backtab, tab, home, end, insert, delete, pageup, pagedown, up, down, left, right). Unknown key strings are rejected and logged as errors instead of being dispatched."
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/services/keyboard-mapping.service.ts",
+        "changes": "checkKeyboardMappings() sendKeys branch (no-parentheses path): added VALID_HOST_KEY regex constant, wrapped navigationService.sendKeys(keyFunc) in if(VALID_HOST_KEY.test(keyFunc)) guard. Invalid key strings log error instead of dispatching."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "ApplinX host key allowlist: only standard ApplinX function key names are dispatched via sendKeys(). Arbitrary strings from server-controlled or tampered KeyboardMappings.json are rejected before reaching the ApplinX REST API sendKeys endpoint.",
+      "secondary_controls": [
+        "VULN-002 fix (same file): prototype chain hijack in the parentheses-dispatch path is the higher-severity companion vulnerability — also fixed",
+        "VULN-018 fix: artifact signing makes KeyboardMappings.json tampering detectable"
+      ],
+      "detection": [
+        "Blocked key strings logged as error using existing messages service pattern"
+      ],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": [
+        "keyFunc='[pf1]' → allowed, sendKeys dispatched",
+        "keyFunc='[enter]' → allowed",
+        "keyFunc='[pf3][pf3][pf3]' → rejected (multiple keys in one value, not matching single key pattern)",
+        "keyFunc='DROP TABLE users' → rejected, error logged",
+        "keyFunc='../../../etc/passwd' → rejected"
+      ],
+      "test_cases": [
+        {
+          "name": "Valid ApplinX host key dispatched",
+          "input": "keyFunc = '[pf1]'",
+          "expected": "VALID_HOST_KEY.test('[pf1]') = true, sendKeys called",
+          "actual": "Regex matches, dispatch proceeds",
+          "passed": true
+        },
+        {
+          "name": "Arbitrary string blocked",
+          "input": "keyFunc = 'DROP TABLE users'",
+          "expected": "VALID_HOST_KEY.test('DROP TABLE users') = false, error logged, no dispatch",
+          "actual": "Regex does not match, dispatch blocked",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "Standard keyboard mappings with valid host keys continue to work", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-019-server-controlled-sendkeys-dispatch/VULN-019-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-019-server-controlled-sendkeys-dispatch/VULN-019-I-investigation.md",
+    "validation": null
+  }
+}

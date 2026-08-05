@@ -1,0 +1,64 @@
+﻿{
+    "schema_version":  "1.0",
+    "finding":  {
+                    "preliminary_assessment":  "No OAuth2 state parameter generated or validated — CSRF authorization code injection enables account hijacking",
+                    "threat_model_refs":  [
+                                              "TM-002"
+                                          ],
+                    "severity":  "high",
+                    "function":  "canActivate",
+                    "line":  51,
+                    "code_snippet":  "const idPcode = route.queryParams.code; // no state validation",
+                    "attack_surface_refs":  [
+                                                "AS-005",
+                                                "AS-006"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR",
+                    "file":  "src/app/services/route-guard.service.ts"
+                },
+    "assessment_id":  "2026-07-31-10-57",
+    "vulnerability_id":  "VULN-003",
+    "execution":  {
+                      "target":  "src/app/services/route-guard.service.ts",
+                      "coverage":  "100%",
+                      "tools_used":  [
+                                         {
+                                             "version":  "N/A",
+                                             "name":  "LLM-static-analysis"
+                                         }
+                                     ]
+                  },
+    "metadata":  {
+                     "status":  "complete",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "task_id":  "R-H-003",
+                     "task_name":  "OIDC Flow",
+                     "executed":  "2026-07-31T11:30:00Z"
+                 },
+    "next_steps":  {
+                       "for_scanner":  [
+
+                                       ],
+                       "for_inquisitor":  [
+                                              "Confirm no secondary OIDC handler exists",
+                                              "Verify ApplinX IdP does not compensate with server-side state check",
+                                              "Construct CSRF PoC"
+                                          ],
+                       "for_registry":  [
+                                            "Add VULN-003 to vulnerability-registry.json"
+                                        ]
+                   },
+    "phase":  "scanner",
+    "descriptor":  "oidc-csrf-missing-state-parameter",
+    "analysis":  {
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed",
+                     "patterns_observed":  [
+                                               "Zero state parameter handling in entire OIDC flow",
+                                               "route.queryParams forwarded wholesale at line 56",
+                                               "idPcode stored in sessionStorage and never removed"
+                                           ]
+                 }
+}

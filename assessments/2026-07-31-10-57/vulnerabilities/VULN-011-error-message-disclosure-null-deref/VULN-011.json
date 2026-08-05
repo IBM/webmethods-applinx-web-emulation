@@ -1,0 +1,150 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-011",
+  "descriptor": "error-message-disclosure-null-deref",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "Server Error Messages Exposed in UI + Null Dereference in errorHandler() Crashes Angular Zone",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-209",
+      "CWE-476"
+    ],
+    "owasp": [
+      "A05:2021 - Security Misconfiguration"
+    ],
+    "capec": [
+      "CAPEC-118"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:L/I:N/A:L",
+      "score": 4.6,
+      "breakdown": {
+        "attack_vector": "Network",
+        "attack_complexity": "Low",
+        "privileges_required": "None",
+        "user_interaction": "Required",
+        "scope": "Unchanged",
+        "confidentiality": "Low",
+        "integrity": "None",
+        "availability": "Low"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/navigation/navigation.service.ts",
+    "line_start": 102,
+    "line_end": 121,
+    "function": "errorHandler",
+    "class": "NavigationService",
+    "component": "NavigationService / WebLoginComponent",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "HttpErrorResponse.error.message — ApplinX REST API error body"
+    ],
+    "transformations": [
+      "navigation.service.ts line 103: .indexOf() called on potentially null .error.message — unguarded",
+      "webLogin.component.ts line 157: errorMessage set from error.message — displayed in {{ }} safe interpolation"
+    ],
+    "sinks": [
+      "Angular UI — {{errorMessage}} safe interpolation (no XSS)",
+      "console.error(msg) — browser developer console",
+      "TypeError crash if error.message is null — locks Angular zone"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-011-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "proven",
+    "privilege_boundary": {
+      "start_privilege": "Authenticated user experiencing network error",
+      "achieved_privilege": "UI permanently locked (DoS) — Angular HttpErrorResponse.error is null for network errors",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "high",
+      "description": "PROVEN EXPLOITABLE: Angular HttpErrorResponse.error IS null for network errors. null.message.indexOf() at line 103 throws TypeError, crashes errorHandler, permanently locks Angular UI. Combined with VULN-020 (polling continues), creates sustained DoS for affected user sessions."
+    },
+    "artifact": "VULN-011-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: optional chaining on errorResponse.error.message prevents null dereference. try/catch stops polling on unexpected errors.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-011-error-message-disclosure-null-deref/VULN-011-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-005",
+      "TM-008"
+    ],
+    "attack_surface": [
+      "AS-013"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "error-disclosure",
+    "null-dereference",
+    "information-disclosure",
+    "availability"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "errorResponse.error.message.indexOf() at navigation.service.ts:103 has no null guard — TypeError crashes on network errors; raw server error in UI via webLogin handleError()"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED PROVEN: Angular HttpErrorResponse.error=null for network errors — null dereference at line 103 proven. Permanent UI lock. Combined with VULN-020: polling continues after crash. CVSS 6.5 MEDIUM."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: optional chaining on errorResponse.error.message prevents null dereference. try/catch stops polling on unexpected errors."
+    }
+  ]
+}

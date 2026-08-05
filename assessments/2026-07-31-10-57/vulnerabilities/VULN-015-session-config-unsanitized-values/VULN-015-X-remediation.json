@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-015",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": ["ConfigurationService.loadConfig(): added strict allowlist validation for applicationName and connectionPool — only alphanumeric characters, hyphens, and underscores are accepted (/^[a-zA-Z0-9_-]+$/). Values containing path traversal characters ('../', '/'), spaces, or other special characters are rejected with an error log and not stored. Invalid values are not passed to macro API calls."],
+    "files_modified": [{"file": "src/app/services/configuration.service.ts: added APP_NAME_PATTERN static readonly regex, applied to applicationName and connectionPool in loadConfig().", "changes": "See changes_made."}],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "ConfigurationService.loadConfig(): added strict allowlist validation for applicationName and connectionPool — only alphanumeric characters, hyphens, and underscores are accepted (/^[a-zA-Z0-9_-]+$/). Values containing path traversal characters ('../', '/'), spaces, or other special characters are rejected with an error log and not stored. Invalid values are not passed to macro API calls.",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-015-session-config-unsanitized-values/VULN-015-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-015-session-config-unsanitized-values/VULN-015-I-investigation.md",
+    "validation": null
+  }
+}

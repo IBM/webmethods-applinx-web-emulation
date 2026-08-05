@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-006",
+  "descriptor": "screen-processor-null-deref",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Applied optional chaining (?.) with nullish coalescing (?? '') to all four f.content.substring() calls in splitField() and cutField() in ScreenProcessorService. Null content now yields empty string instead of throwing TypeError.",
+    "fix_complexity": "low",
+    "root_cause": "splitField() computed contentLen via f1.content?.length ?? 0 (null-safe) but then called f1.content.substring() (not null-safe) — inconsistency causing TypeError when field.content is null and a transformation rectangle overlaps the field. Same pattern in cutField() at two locations.",
+    "fix_strategy": "input_validation",
+    "changes_made": [
+      "src/app/services/screen-processor.service.ts splitField() line 142: f1.content = f1.content?.substring(0, clampedMinX) ?? ''",
+      "src/app/services/screen-processor.service.ts splitField() line 143: f2.content = f2.content?.substring(clampedMaxX) ?? ''",
+      "src/app/services/screen-processor.service.ts cutField() line 167: field.content = field.content?.substring(fieldPos.column, clampedMinX) ?? ''",
+      "src/app/services/screen-processor.service.ts cutField() line 170: field.content = field.content?.substring(clampedMaxX) ?? ''"
+    ],
+    "files_modified": [
+      "src/app/services/screen-processor.service.ts"
+    ],
+    "verification_needed": "Verify screen renders correctly when ApplinX API returns a field with null content alongside transformation rectangles. Session should not freeze.",
+    "defense_in_depth": "VULN-012 MAX_FIELDS guard also limits the damage surface by capping iteration depth.",
+    "testing": "Unit test: call splitField({content: null, ...}, rect) — should return two fields with empty content, no exception. Call cutField({content: null, ...}, rect) — should return field with empty content.",
+    "residual_risk": "Low. Empty string is semantically correct for a null-content field in the rendering context."
+  }
+}

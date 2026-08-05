@@ -6,17 +6,10 @@ import { NGXLoggerServerService } from "ngx-logger";
 export class AuthTokenServerService extends NGXLoggerServerService {
 
     protected override alterHttpRequest(httpRequest: HttpRequest<any>): HttpRequest<any> {
-        // Alter httpRequest by adding auth token to header 
-        httpRequest = httpRequest.clone({
-            setHeaders: {
-                ['Authorization']: this.getAuthToken(),
-            },
-        });
+        // VULN-012: do NOT add the user's Bearer session token to remote log requests.
+        // The log endpoint does not require user authentication — adding the token here
+        // expands the credential attack surface to the log infrastructure.
         return httpRequest;
-    }
-
-    getAuthToken(): string {
-        return 'Bearer ' + sessionStorage.getItem('gx_token');
     }
 
 }

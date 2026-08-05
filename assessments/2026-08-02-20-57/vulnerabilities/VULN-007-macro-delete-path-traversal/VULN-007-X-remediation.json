@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-007",
+  "descriptor": "macro-delete-path-traversal",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Added MACRO_NAME_PATTERN (/^[a-zA-Z0-9-]+$/) static constant to GXUtils. Applied validation in selected() to reject non-matching names at entry point, and in onDeleteMacro() to reject before API call. Invalid names show error toast and abort operation.",
+    "fix_complexity": "low",
+    "root_cause": "selected() set selectedMacro = event + '.json' without any validation. onDeleteMacro() passed selectedMacro directly to macroService.deleteMacro() without any allowlist check. sessionStorage macroFileList can be injected by XSS to contain path-traversal sequences (../../../etc/passwd).",
+    "fix_strategy": "input_validation",
+    "changes_made": [
+      "src/utils/GXUtils.ts: added MACRO_NAME_PATTERN = /^[a-zA-Z0-9-]+$/ static constant",
+      "src/app/macro/macro.component.ts selected(): validates event against MACRO_NAME_PATTERN before storing as selectedMacro",
+      "src/app/macro/macro.component.ts onDeleteMacro(): validates macroBaseName against MACRO_NAME_PATTERN; rejects with error toast if invalid"
+    ],
+    "files_modified": [
+      "src/utils/GXUtils.ts",
+      "src/app/macro/macro.component.ts"
+    ],
+    "verification_needed": "Test with macro name '../../../etc/passwd' — delete should be blocked with error toast. Test with valid 'my-macro' — delete should proceed normally.",
+    "defense_in_depth": "VULN-009 macroFileList clearance on logout reduces the sessionStorage injection window. HTML template already has pattern attribute on macro record input field.",
+    "testing": "Test onDeleteMacro() with selectedMacro = '../../../etc/passwd.json' — expect early return with error notification. Test with 'my-macro.json' — expect API call to proceed.",
+    "residual_risk": "Medium. Server-side path validation on the ApplinX API is unknown — client-side guard is necessary but should be complemented by server-side validation."
+  }
+}

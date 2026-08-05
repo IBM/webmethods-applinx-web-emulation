@@ -1,0 +1,151 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-004",
+  "descriptor": "user-exit-listener-global-replacement",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "GXGeneratedPage.addUserExits() Clears All Global Security Lifecycle Hooks",
+    "severity": "low",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-269",
+      "CWE-284"
+    ],
+    "owasp": [
+      "A01:2021 - Broken Access Control"
+    ],
+    "capec": [
+      "CAPEC-122"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:L/AC:H/PR:H/UI:R/S:U/C:L/I:L/A:N",
+      "score": 3.8,
+      "breakdown": {
+        "attack_vector": "Local",
+        "attack_complexity": "High",
+        "privileges_required": "High",
+        "user_interaction": "Required",
+        "scope": "Unchanged",
+        "confidentiality": "Low",
+        "integrity": "Low",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/generated-pages/GXGeneratedPage.ts",
+    "line_start": 88,
+    "line_end": 91,
+    "function": "addUserExits",
+    "class": "GXGeneratedPage",
+    "component": "GXGeneratedPage",
+    "module": "generated-pages"
+  },
+  "data_flow": {
+    "sources": [
+      "GXGeneratedPage subclass (customer-generated page component)"
+    ],
+    "transformations": [
+      "clearEventListeners() removes ALL listeners from root-singleton UserExitsEventThrowerService",
+      "addEventListener(userExits) adds single attacker-controlled implementation"
+    ],
+    "sinks": [
+      "firePostConnect() — delivers CreateSessionResponse (token) to replaced listener",
+      "firePreConnect() — delivers authHeader credential to replaced listener",
+      "firePreSendKey() / firePostSendKey() — delivers all keystrokes and screen data"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "high",
+    "artifact": "VULN-004-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Authenticated developer with privileged GXGeneratedPage subclass creation rights",
+      "achieved_privilege": "Replacement of all global security lifecycle hooks — credential capture capability for all users",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Insider threat: addUserExits() calls clearEventListeners() which removes ALL registered listeners before adding attacker's listener. Requires privileged developer access. CVSS downgraded from 8.2 to 3.8 LOW as exploitation requires developer-level code deployment privilege."
+    },
+    "artifact": "VULN-004-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: clearEventListeners() removed from addUserExits() — append-only registration.",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-004-user-exit-listener-global-replacement/VULN-004-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-003"
+    ],
+    "attack_surface": [
+      "AS-012"
+    ],
+    "related_vulnerabilities": [
+      "VULN-005"
+    ],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "user-exits",
+    "privilege-escalation",
+    "listener-replacement",
+    "generated-page"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "clearEventListeners() in addUserExits() replaces ALL global security hooks — any GXGeneratedPage subclass can install a data-exfiltrating listener"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: Insider threat. Requires developer-level code deployment privilege. CVSS downgraded 8.2 → 3.8 LOW. Attack chain: VULN-004 + VULN-005 for credential capture."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: clearEventListeners() removed from addUserExits() — append-only registration."
+    }
+  ]
+}

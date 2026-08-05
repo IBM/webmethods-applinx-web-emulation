@@ -134,16 +134,24 @@ export class KeyboardMappingService {
 				let beginBracket = keyFunc.indexOf("(");
 			    if (beginBracket != -1) {
 				    let methodName = keyFunc.substring(0, beginBracket);
-				    if(this.jsFunc[methodName]) {
-				     	// method exists in the component
+				    // VULN-002: guard against prototype chain hijack via bracket-notation dispatch.
+				    // Only dispatch to own-property methods; never traverse the prototype chain.
+				    if (Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) && typeof (this.jsFunc as any)[methodName] === 'function') {
+				     	// method exists as own property in the component
 				    	let param = keyFunc.substring(beginBracket+1, keyFunc.length-1);
-				    	result = this.jsFunc[methodName](param); // call it
+				    	result = (this.jsFunc as any)[methodName](param); // call it
 				    }else{
 					     this.logger.error(this.messages.get("NO") + methodName + this.messages.get("SUCH_FUNCTION_FOR_KEYCODE") + keyMap.keyCode + this.messages.get("ADDITIONALKEY") + keyMap.additionalKey);
-				    }			
+				    }
 			    }else{
-						this.navigationService.sendKeys(keyFunc);
-			    }				
+						// VULN-019: validate sendKey against ApplinX host key allowlist before dispatch.
+						const VALID_HOST_KEY = /^\[(pf([1-9]|[12][0-9]|3[0-6])|pa[1-3]|enter|clear|erase|attn|sysreq|reset|backtab|tab|home|end|insert|delete|pageup|pagedown|up|down|left|right)\]$/i;
+						if (VALID_HOST_KEY.test(keyFunc)) {
+							this.navigationService.sendKeys(keyFunc);
+						} else {
+							this.logger.error(this.messages.get("NO") + keyFunc + this.messages.get("SUCH_FUNCTION_FOR_KEYCODE") + keyMap.keyCode + this.messages.get("ADDITIONALKEY") + keyMap.additionalKey);
+						}
+			    }
 			    if (result != null) {
 			    	keyFunc = result;				
 			    }

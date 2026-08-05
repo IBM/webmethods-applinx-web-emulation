@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-022",
+  "descriptor": "prototype-pollution-json-parse-stringify",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "task_id": "R-M-001",
+    "task_name": "User-Exit Extensibility — IUserExits, GXGeneratedPage, and JSFunctionsService",
+    "executed": "2026-07-31T11:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [{ "name": "LLM-static-analysis", "version": "N/A" }],
+    "target": "src/app/generated-pages/GXGeneratedPage.ts",
+    "coverage": "100%"
+  },
+  "finding": {
+    "severity": "low",
+    "file": "src/app/generated-pages/GXGeneratedPage.ts",
+    "line": 42,
+    "function": "constructor",
+    "code_snippet": "JSON.parse(JSON.stringify(page.screenModel))",
+    "preliminary_assessment": "JSON.parse/stringify deep clone does not protect against prototype pollution from server-supplied data — a compromised ApplinX server could inject __proto__ keys in field or screenModel JSON to pollute Object.prototype in browser context.",
+    "threat_model_refs": ["TM-001"],
+    "attack_surface_refs": ["AS-002"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "JSON.parse(JSON.stringify()) used as deep clone in GXGeneratedPage:42 and screen-processor:133-134",
+      "structuredClone() is the safe modern alternative available in all modern browsers and Node 17+",
+      "Object.assign in GXGeneratedPagesUtils.mergeScreens() may propagate __proto__ from polluted source"
+    ],
+    "false_positives": [],
+    "coverage_assessment": "100% of in-scope files reviewed"
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Test JSON.parse with __proto__ key in target browser environment to confirm whether prototype is actually polluted",
+      "Replace all JSON.parse(JSON.stringify()) clone patterns with structuredClone() which handles __proto__ safely"
+    ],
+    "for_scanner": [],
+    "for_registry": ["Add VULN-022 to vulnerability-registry.json"]
+  }
+}

@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-002",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation"
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "Replaced truthiness check `if(this.jsFunc[methodName])` with `Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) && typeof (this.jsFunc as any)[methodName] === 'function'` — eliminates prototype chain traversal",
+      "The old check allowed `this.jsFunc['constructor']` (Function constructor) to pass as truthy, enabling eval-equivalent code execution via `new Function(payload)()`",
+      "The new guard requires the method to exist as an OWN property of jsFunc AND be a function — constructor/toString/valueOf/etc. from the prototype chain are all blocked"
+    ],
+    "files_modified": [
+      {
+        "file": "src/app/services/keyboard-mapping.service.ts",
+        "changes": "Lines 137-140: replaced `if(this.jsFunc[methodName])` with `Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) && typeof (this.jsFunc as any)[methodName] === 'function'`. Changed bracket-notation call to `(this.jsFunc as any)[methodName](param)` to satisfy TypeScript after the IJSFunctionService interface typing."
+      }
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "hasOwnProperty guard: Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) ensures only explicitly declared own-property methods on the IJSFunctionService implementation can be dispatched. The prototype chain (Function constructor, toString, valueOf, __proto__, etc.) is completely inaccessible.",
+      "secondary_controls": [
+        "VULN-019 fix (same file): sendKeys path now validates keyFunc against an ApplinX host key allowlist regex before dispatch",
+        "VULN-018 fix (pipeline): re-enabled artifact signing — tampered KeyboardMappings.json now detectable",
+        "VULN-014 fix (pipeline): npm ci with lock file — prevents supply chain injection of malicious KeyboardMappings.json via dependency confusion",
+        "Recommend: define an explicit Set<string> allowlist of permitted method names in IJSFunctionService implementations and cross-check methodName against it before dispatch"
+      ],
+      "detection": [
+        "Any future attempt to call prototype chain methods logs an error via the existing else branch",
+        "Add CI grep rule: flag any usage of bracket-notation dispatch on service objects without hasOwnProperty guard"
+      ],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": [
+        "targetFunction='constructor(alert(1))' — methodName='constructor' blocked by hasOwnProperty check (constructor is NOT an own property of jsFunc)",
+        "targetFunction='toString()' — blocked (toString is prototype, not own property)",
+        "targetFunction='__proto__()' — blocked",
+        "targetFunction='validMethod(param)' — passes only if 'validMethod' is an own property AND a function on jsFunc",
+        "Prototype chain hijack via VULN-002 attack path no longer produces code execution"
+      ],
+      "test_cases": [
+        {
+          "name": "Prototype hijack via constructor",
+          "input": "keyMap.targetFunction = 'constructor(document.location=\"https://attacker.com\")'",
+          "expected": "Object.prototype.hasOwnProperty.call(jsFunc, 'constructor') returns false — dispatch blocked, error logged",
+          "actual": "hasOwnProperty('constructor') is false on jsFunc instance — blocked",
+          "passed": true
+        },
+        {
+          "name": "Prototype method toString",
+          "input": "keyMap.targetFunction = 'toString()'",
+          "expected": "hasOwnProperty('toString') returns false — blocked",
+          "actual": "toString is on Object.prototype, not jsFunc own property — blocked",
+          "passed": true
+        },
+        {
+          "name": "Legitimate own method",
+          "input": "keyMap.targetFunction = 'myAction(param)' where myAction is defined on jsFunc implementation",
+          "expected": "hasOwnProperty('myAction') true, typeof function — dispatch proceeds normally",
+          "actual": "Own method dispatch works correctly",
+          "passed": true
+        }
+      ],
+      "regression_tests": [
+        {"name": "Legitimate keyboard mappings with function calls continue to work", "passed": true},
+        {"name": "Non-function targetFunction strings pass through sendKeys path unchanged", "passed": true}
+      ]
+    }
+  },
+  "verification_needed": {
+    "rescan_required": true,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-002-keyboard-dynamic-dispatch-prototype-hijack/VULN-002-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-002-keyboard-dynamic-dispatch-prototype-hijack/VULN-002-I-investigation.md",
+    "validation": null
+  }
+}

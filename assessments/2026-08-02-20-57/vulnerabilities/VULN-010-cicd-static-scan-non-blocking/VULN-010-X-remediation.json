@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-010",
+  "descriptor": "cicd-static-scan-non-blocking",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Changed abort_on_failure from false to true on the static-scan step in .pipeline-config.yaml. Created .secrets.baseline file required for detect-secrets to operate correctly.",
+    "fix_complexity": "low",
+    "root_cause": "abort_on_failure: false on the static-scan step caused the pipeline to continue even when SAST tools detected vulnerabilities. This allowed vulnerable code to pass artifact signing and reach production deployment. The .secrets.baseline file was also missing, making the re-enabled detect-secrets step ineffective.",
+    "fix_strategy": "security_configuration",
+    "changes_made": [
+      ".pipeline-config.yaml: static-scan step abort_on_failure changed from false to true",
+      ".secrets.baseline: created with standard detect-secrets 1.4.0 configuration and empty results"
+    ],
+    "files_modified": [
+      ".pipeline-config.yaml",
+      ".secrets.baseline"
+    ],
+    "verification_needed": "Run the CI pipeline with an intentionally vulnerable test — verify the pipeline fails at the static-scan step. Verify detect-secrets runs without 'baseline not found' error.",
+    "defense_in_depth": "npm audit --audit-level=moderate (already present) catches dependency CVEs. abort_on_failure:true ensures code-quality gate is enforced for SAST findings.",
+    "testing": "CI/CD integration test: introduce a test-only XSS-containing file, push, verify pipeline abort at static-scan step.",
+    "residual_risk": "Medium. Container images still use mutable version tags instead of SHA256 digests. This is a follow-up hardening action."
+  }
+}

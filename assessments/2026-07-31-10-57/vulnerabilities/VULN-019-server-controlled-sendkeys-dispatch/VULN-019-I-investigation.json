@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-019",
+  "descriptor": "server-controlled-sendkeys-dispatch",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "When KeyboardMappingService.checkKeyboardMappings() processes a targetFunction string that does NOT contain parentheses (no method call syntax), it calls `this.navigationService.sendKeys(keyFunc)` directly (line 145). The keyFunc value is the raw targetFunction string from the keyboard mapping — which comes from either KeyboardMappings.json or server-supplied keyboard mappings. This means any string can be sent as a host key to ApplinX, not just valid ApplinX function key names (e.g., [pf1], [pf2], [enter]). A malicious keyboard mapping could send arbitrary strings as keystrokes to the mainframe host.",
+    "attack_scenario": "Malicious Keyboard Mapping: Attacker modifies KeyboardMappings.json (or compromises ApplinX server keyboard mappings) to set targetFunction = '[pf3][pf3][pf3]' (triple PF3 for an unintended menu navigation) or any other arbitrary key sequence. When user presses the mapped key, arbitrary host commands are dispatched.\n\nNote: The impact is bounded by what the ApplinX host accepts as valid keystrokes. The ApplinX REST API sendKeys endpoint on the server side validates and forwards keystrokes to the host terminal — so the attack surface is limited to keystrokes the authenticated user can legitimately send. This is not arbitrary code execution on the host; it is arbitrary keystroke injection with the victim's terminal privileges.\n\nRelationship to VULN-002: The sendKeys path (no parentheses) and the dynamic dispatch path (with parentheses, VULN-002) are different branches. VULN-019 is strictly lower severity than VULN-002.",
+    "prerequisites": [
+      "Attacker must control KeyboardMappings.json or ApplinX server keyboard mappings",
+      "User must press the mapped key combination",
+      "Attack is limited to keystrokes the user's ApplinX session can legitimately perform"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Static asset modification (supply chain) or ApplinX server compromise",
+      "achieved_privilege": "Arbitrary keystroke injection to ApplinX host terminal within victim's session privileges",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Arbitrary keystroke injection to ApplinX mainframe session — within the victim user's terminal privileges. An attacker who controls keyboard mappings can cause unintended menu navigation, accidental data submission, or triggering of host functions. Impact is bounded by the user's host privileges and ApplinX session scope."
+    },
+    "data_flow": {
+      "sources": [
+        "KeyboardMappings.json targetFunction string (no parentheses branch)",
+        "ApplinX server-supplied keyboard mapping targetFunction"
+      ],
+      "transformations": [
+        "keyFunc = keyMap.targetFunction — no validation when no parentheses detected",
+        "navigationService.sendKeys(keyFunc) — keyFunc sent as raw host key string"
+      ],
+      "sinks": [
+        "ApplinX REST API sendKeys endpoint — keyFunc transmitted as SendKeysRequest.sendKey"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "KeyboardMappingService.checkKeyboardMappings() — src/app/services/keyboard-mapping.service.ts:144-145", "impact": "Server-controlled key string sent verbatim to ApplinX host without validation"}
+    ],
+    "indirect": [
+      {"component": "VULN-002 (prototype hijack path)", "impact": "The parentheses branch (VULN-002) is far more severe than this sendKeys path — fix VULN-002 first"},
+      {"component": "VULN-014/018 (supply chain)", "impact": "KeyboardMappings.json tampering is the attack vector for both VULN-019 and VULN-002"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Implement an allowlist of valid ApplinX host key values before calling sendKeys(). Valid ApplinX host key names follow a defined format (e.g., [pf1]-[pf24], [enter], [clear], [pa1]-[pa3]). Validate keyFunc against this allowlist and reject unknown values.",
+    "priority": "low",
+    "defense_in_depth": [
+      "Define ApplinX valid host key allowlist: /^\\[(pf[0-9]+|pa[1-3]|enter|clear|erase|attn|sysreq|reset)\\]$/i",
+      "Validate targetFunction against allowlist before sendKeys()",
+      "Fix VULN-002 (prototype hijack) as higher priority — same attack vector, much greater impact",
+      "Protect KeyboardMappings.json via artifact signing (VULN-018)"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-019-server-controlled-sendkeys-dispatch/VULN-019-S-scan-finding.md",
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-003", "AS-004"],
+    "external": [
+      "CWE-20: Improper Input Validation",
+      "OWASP A03:2021 — Injection",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:U/C:N/I:L/A:N — Score: 2.6 LOW (limited to user's terminal privileges)"
+    ]
+  }
+}

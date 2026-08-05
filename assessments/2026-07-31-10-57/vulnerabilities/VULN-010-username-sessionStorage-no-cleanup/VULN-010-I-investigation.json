@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-010",
+  "descriptor": "username-sessionStorage-no-cleanup",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "WebLoginComponent.handleSimpleAuth() (webLogin.component.ts:137) stores the username as JSON.stringify(username.toLowerCase()) in sessionStorage['userName']. StorageService.setNotConnected() removes only 'gx_token' — never 'userName'. The username therefore persists across logout. Additionally, macro.component.ts:84 uses `userName?.substr(1, userName.length - 2)` (fragile quote-stripping instead of JSON.parse), and a similar pattern in app.component.ts:639 without optional chaining — TypeError if value is null.",
+    "attack_scenario": "XSS Username Enumeration: Same-origin XSS reads sessionStorage.getItem('userName') → returns '\"username\"' (JSON-encoded) → JSON.parse() → username. Attacker uses username for targeted phishing, credential stuffing, or social engineering.\n\nShared Device: User logs out on shared workstation. Username persists in sessionStorage. Next user at the same browser reads previous user's identity.\n\nNull Deref (app.component.ts:639): If something clears the userName key externally (e.g., another script, storage cleared by browser extension), the non-optional chaining access throws TypeError, crashing that code path.",
+    "prerequisites": [
+      "User must have authenticated using simple auth (username stored in sessionStorage)",
+      "XSS or same-origin script access required to read sessionStorage",
+      "Username is low-sensitivity alone but aids targeted attacks"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "XSS execution in app origin",
+      "achieved_privilege": "Attacker learns authenticated user's username — reconnaissance for targeted attacks",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "none",
+      "availability": "none",
+      "description": "Username disclosure via sessionStorage enables targeted phishing and social engineering. Username alone does not grant access. The null-deref in app.component.ts:639 is a code quality/availability concern in error paths. The fragile substr() quote-stripping in macro.component.ts:84 can produce incorrectly parsed usernames if JSON encoding is unexpected."
+    },
+    "data_flow": {
+      "sources": [
+        "WebLoginComponent form — username.value entered by user"
+      ],
+      "transformations": [
+        "JSON.stringify(username.value.toLowerCase()) — encoded",
+        "sessionStorage.setItem('userName', encoded) — persisted without cleanup"
+      ],
+      "sinks": [
+        "sessionStorage['userName'] — accessible to all same-origin JavaScript",
+        "MacroComponent.ngOnInit() — reads userName for macro API calls (user parameter)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "WebLoginComponent.handleSimpleAuth() — src/app/webLogin/webLogin.component.ts:137", "impact": "Username stored in sessionStorage without cleanup on logout"},
+      {"component": "StorageService.setNotConnected() — src/app/services/storage.service.ts:51-56", "impact": "Incomplete cleanup — only removes gx_token"},
+      {"component": "app.component.ts:639", "impact": "Non-optional chaining substr() on potentially null sessionStorage value — TypeError risk"}
+    ],
+    "indirect": [
+      {"component": "MacroComponent.ngOnInit():84", "impact": "Fragile substr(1, length-2) quote-stripping instead of JSON.parse — incorrect parsing risk"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Add sessionStorage.removeItem('userName') to StorageService.setNotConnected(). Replace fragile substr() quote-stripping with JSON.parse(): const user = JSON.parse(sessionStorage.getItem('userName') ?? 'null'). Add optional chaining at app.component.ts:639.",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Add 'userName' to setNotConnected() cleanup alongside 'gx_token'",
+      "Add 'idPcode' to setNotConnected() cleanup (VULN-009)",
+      "Replace all substr(1, length-2) with JSON.parse() for sessionStorage reads",
+      "Consider auditing all sessionStorage keys for comprehensive cleanup"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-010-username-sessionStorage-no-cleanup/VULN-010-S-scan-finding.md",
+    "threat_model": ["TM-006"],
+    "attack_surface": ["AS-007"],
+    "external": [
+      "CWE-922: Insecure Storage of Sensitive Information",
+      "CWE-476: NULL Pointer Dereference (app.component.ts:639)",
+      "OWASP A02:2021 — Cryptographic Failures",
+      "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:N/A:N — Score: 3.1 LOW"
+    ]
+  }
+}

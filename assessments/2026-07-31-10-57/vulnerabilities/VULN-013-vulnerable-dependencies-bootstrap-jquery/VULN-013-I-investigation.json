@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-013",
+  "descriptor": "vulnerable-dependencies-bootstrap-jquery",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "low",
+    "root_cause": "package.json pins bootstrap: 5.1.3 (CVE-2024-6531 — XSS via tooltip/popover data-bs-content with unsanitized HTML) and jquery: 3.6.0 (CVE-2019-11358 — prototype pollution via $.extend(true, ...) with recursive merge of user-controlled objects). Investigation of actual usage: (1) bootstrap: loaded as CSS/JS in angular.json; Bootstrap tooltip/popover JS components not observed in use with user-supplied HTML. Angular's template sanitization prevents the CVE-2024-6531 XSS vector in templates. (2) jquery: used only at webLogin.component.ts:117 as `const isConnectButtonDisabled = $('#connect').prop('disabled')` — this is a safe DOM property read, NOT $.extend() with user data. CVE-2019-11358 is NOT triggered. Both dependencies are outdated and should be updated regardless of CVE exploitability.",
+    "attack_scenario": "CVE-2024-6531 (Bootstrap XSS): Not exploitable in current code. Would require Bootstrap tooltip/popover initialization with user-supplied HTML in data-bs-content or data-bs-title. Angular template sanitization removes the HTML injection vector in templates. Exploitation would require Bootstrap JS components to be used with unescaped user content outside Angular templates.\n\nCVE-2019-11358 (jQuery Prototype Pollution): Not triggered by current usage. Requires $.extend(true, target, userControlledObject) with a __proto__ key. Current usage ($('#connect').prop('disabled')) does not call $.extend().\n\nSupply Chain Risk: Both dependencies are outdated. No package-lock.json (VULN-014) means npm install can resolve to different versions — potentially including malicious forks or future vulnerable patch versions.",
+    "prerequisites": [
+      "Bootstrap XSS (CVE-2024-6531): Bootstrap tooltip/popover components must be used with unsanitized user HTML — NOT the current usage pattern",
+      "jQuery prototype pollution (CVE-2019-11358): $.extend(true, ...) with user-controlled data — NOT the current usage",
+      "Supply chain: npm install without lock file could resolve to different versions in future builds"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated user",
+      "achieved_privilege": "XSS in app context (theoretical, not current usage pattern)",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "Specific CVE exploitation is NOT demonstrated in current codebase usage patterns. Angular sanitization mitigates Bootstrap XSS; jQuery usage is safe. However, outdated dependencies carry supply chain risk and future-exploit surface. The confirmed issue is: dependencies are outdated and SHOULD be updated, and combined with VULN-014 (no lock file), version pinning is not reliable."
+    },
+    "data_flow": {
+      "sources": [
+        "package.json — pinned dependency versions bootstrap: 5.1.3, jquery: 3.6.0"
+      ],
+      "transformations": [
+        "npm install resolves to pinned versions (current), but no lock file means version drift is possible"
+      ],
+      "sinks": [
+        "Bundled JavaScript delivered to browser — outdated library code present in production bundle"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "package.json — bootstrap: 5.1.3", "impact": "CVE-2024-6531 present but not exploitable in current usage; update to 5.3.x"},
+      {"component": "package.json — jquery: 3.6.0", "impact": "CVE-2019-11358 present but NOT triggered by current usage (prop() read only); update to 3.7.x or remove"},
+      {"component": "package.json — rxjs-compat: 6.6.7", "impact": "Deprecated package with no security fix path"}
+    ],
+    "indirect": [
+      {"component": "VULN-014 (missing lock file)", "impact": "Without lock file, npm install could pull future vulnerable patch versions"},
+      {"component": "webLogin.component.ts:117", "impact": "Only jQuery usage: $('#connect').prop('disabled') — safe; consider removing jQuery entirely"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Update bootstrap to 5.3.x or latest. Update jquery to 3.7.x or remove entirely (used in one place only — the #connect prop read can be replaced with standard DOM API: document.getElementById('connect').disabled). Remove rxjs-compat. Commit package-lock.json after updates (VULN-014).",
+    "priority": "medium",
+    "defense_in_depth": [
+      "Update bootstrap ≥ 5.3.3",
+      "Remove jquery entirely — replace $('connect').prop('disabled') with document.getElementById('connect').disabled",
+      "Remove rxjs-compat 6.6.7 — migrate remaining Observable patterns to rxjs 7",
+      "Add npm audit --audit-level=moderate to CI pipeline",
+      "Commit package-lock.json (VULN-014) to pin dependency tree"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-013-vulnerable-dependencies-bootstrap-jquery/VULN-013-S-scan-finding.md",
+    "threat_model": ["TM-001", "TM-003"],
+    "attack_surface": ["AS-011"],
+    "external": [
+      "CVE-2024-6531 — Bootstrap XSS via tooltip/popover (CVSS 6.4 MEDIUM)",
+      "CVE-2019-11358 — jQuery prototype pollution via $.extend (CVSS 6.1 MEDIUM)",
+      "CWE-1104: Use of Unmaintained Third Party Components",
+      "OWASP A06:2021 — Vulnerable and Outdated Components",
+      "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:L/I:L/A:N — Score: 4.2 MEDIUM (supply chain/future risk)"
+    ]
+  }
+}

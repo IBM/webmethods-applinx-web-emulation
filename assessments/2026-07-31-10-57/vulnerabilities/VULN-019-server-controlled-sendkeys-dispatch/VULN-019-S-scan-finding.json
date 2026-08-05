@@ -1,0 +1,62 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-019",
+    "descriptor":  "server-controlled-sendkeys-dispatch",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-H-002",
+                     "task_name":  "Dynamic Code Dispatch",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  "src/app/services/keyboard-mapping.service.ts",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "low",
+                    "file":  "src/app/services/keyboard-mapping.service.ts",
+                    "line":  145,
+                    "function":  "checkKeyboardMappings",
+                    "code_snippet":  "this.navigationService.sendKeys(keyFunc);",
+                    "preliminary_assessment":  "Server-controlled key string sent verbatim to host without allowlist — arbitrary host key injection",
+                    "threat_model_refs":  [
+                                              "TM-003"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-003",
+                                                "AS-004"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "targetFunction without parenthesis sent as host key",
+                                               "No allowlist of valid ApplinX key values"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Enumerate valid ApplinX host key values",
+                                              "Add allowlist before sendKeys call"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-019 to vulnerability-registry.json"
+                                        ]
+                   }
+}

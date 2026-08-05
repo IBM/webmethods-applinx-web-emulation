@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-remediation.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-014",
+  "descriptor": "debug-console-log-disclosure",
+  "assessment_id": "2026-08-02-20-57",
+  "remediation": {
+    "fixed_at": "2026-08-02T23:30:00Z",
+    "fix_approach": "Removed both console.log() calls from FieldComponent constructor. FieldComponent is instantiated 100-400+ times per screen render at 5-second polling intervals, producing 1,200-4,800 log entries per minute containing all terminal field.content and field.visualContent data including PINs, account numbers, and transaction codes.",
+    "fix_complexity": "low",
+    "root_cause": "Development debug console.log() statements were not removed before production. No environment.production guard existed. Angular CLI production optimization does not remove console.log() without explicit Terser drop_console configuration. The logs fired unconditionally on every field render in production.",
+    "fix_strategy": "information_disclosure_prevention",
+    "changes_made": [
+      "src/app/mini-components/field/field.component.ts constructor(): removed both console.log() calls for field.content and field.visualContent"
+    ],
+    "files_modified": [
+      "src/app/mini-components/field/field.component.ts"
+    ],
+    "verification_needed": "Open browser DevTools in production build. Navigate through several terminal screens. Verify no '>>@constructor>>>' log entries appear in console.",
+    "defense_in_depth": "VULN-011 console.error() in webLogin also removed in the same fix round — addresses the same root cause (unconditional debug output) across multiple components.",
+    "testing": "Load a screen with 200+ fields in the terminal emulator. Verify zero console.log entries referencing field.content or field.visualContent.",
+    "residual_risk": "Low. Remaining console.log() calls in other files are either behind commented-out code blocks or in paths unrelated to terminal PII. Follow-up: add angular.json Terser drop_console:true for systematic build-time guarantee."
+  }
+}

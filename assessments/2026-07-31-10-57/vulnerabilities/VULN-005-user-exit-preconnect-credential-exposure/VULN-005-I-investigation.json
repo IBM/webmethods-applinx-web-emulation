@@ -1,0 +1,82 @@
+{
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-005",
+  "descriptor": "user-exit-preconnect-credential-exposure",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "investigated": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "confirmed"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "exploitability": "medium",
+    "root_cause": "The IUserExits.preConnect() interface signature includes `authHeader?: string` (IUserExits.ts:24). WebLoginComponent.sessionConnect() calls userExitsEventThrower.firePreConnect(createSessionRequest, authHeader) at line 101, where authHeader = 'Basic ' + btoa(username+':'+password) — a base64-encoded credential that is plaintext-equivalent (atob() trivially reverses it). UserExitsEventThrowerService.firePreConnect() (line 40-42) delivers this credential to every registered IUserExits implementation. Any user-exit code (custom integrations, third-party libraries implementing IUserExits) that logs, stores, or transmits the authHeader parameter receives the plaintext-equivalent credential.",
+    "attack_scenario": "Malicious Third-Party User Exit: Developer integrates a third-party analytics or monitoring library that implements IUserExits. Library's preConnect() captures the authHeader parameter: const decoded = atob(authHeader.split(' ')[1]); → 'username:password'. Library exfiltrates credential to vendor server. Every user login is captured.\n\nAccidental Logging: Developer writes a debugging user exit that logs all preConnect parameters including authHeader. The log entry contains 'Basic dXNlcm5hbWU6cGFzc3dvcmQ=' which any log viewer decodes to plaintext credential.\n\nCombined with VULN-004: Malicious generated page displaces existing security hooks (VULN-004), installs credential-capturing user exit, and receives all subsequent login credentials via preConnect.",
+    "prerequisites": [
+      "A user-exit implementation must be registered (any code calling addEventListener(new CustomExit()))",
+      "User must attempt to authenticate using ApplinX or LDAP auth method (which generates authHeader)",
+      "The user-exit implementer must have code execution capability to exfiltrate data"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Developer/integrator with ability to register custom IUserExits implementation",
+      "achieved_privilege": "Access to plaintext-equivalent Basic-auth credentials for every ApplinX/LDAP login",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "high",
+      "integrity": "none",
+      "availability": "none",
+      "description": "Plaintext-equivalent credentials (base64 username:password) exposed to all registered user-exit implementations. Any implementation can decode and exfiltrate credentials via atob(authHeader.split(' ')[1]). This enables: password capture for all ApplinX/LDAP authenticated users, credential reuse attacks across systems, account takeover. The OIDC and Natural auth paths do NOT pass authHeader, so the risk is specific to ApplinX/LDAP authentication modes."
+    },
+    "data_flow": {
+      "sources": [
+        "WebLoginComponent form fields — username and password entered by user"
+      ],
+      "transformations": [
+        "authHeader = 'Basic ' + btoa(unescape(encodeURIComponent(username + ':' + password)))",
+        "userExitsEventThrower.firePreConnect(createSessionRequest, authHeader)",
+        "forEach(u => u.preConnect(createSessionRequest, authHeader)) — delivered to every listener"
+      ],
+      "sinks": [
+        "Any IUserExits.preConnect() implementation — can call atob(authHeader.split(' ')[1]) to get 'username:password'",
+        "Logging systems if preConnect() logs authHeader parameter",
+        "Remote exfiltration via HTTP/WebSocket from malicious user-exit code"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {"component": "IUserExits.preConnect() interface — src/app/user-exits/IUserExits.ts:24", "impact": "API contract exposes credential to all implementers"},
+      {"component": "UserExitsEventThrowerService.firePreConnect() — user-exits-event-thrower.service.ts:40-42", "impact": "Distributes credential to all registered implementations without filtering"},
+      {"component": "WebLoginComponent.sessionConnect() — webLogin.component.ts:101", "impact": "Source — passes authHeader to event dispatcher"}
+    ],
+    "indirect": [
+      {"component": "AbstractUserExits default implementation", "impact": "No credential filtering or masking in default no-op implementation"},
+      {"component": "VULN-004 (listener global replacement)", "impact": "Malicious generated page can displace security hooks and register credential-capturing exit"}
+    ]
+  },
+  "remediation_guidance": {
+    "recommended_fix": "Remove the authHeader parameter from the IUserExits.preConnect() interface entirely. User exits do not require raw credentials to function. If connection context is needed by user exits, pass only a sanitized object: { username: string, authMethod: string, timestamp: number } — never the password or auth header. Update all call sites and implementations accordingly.",
+    "priority": "high",
+    "defense_in_depth": [
+      "Remove authHeader from preConnect() signature — breaking API change but necessary",
+      "If credential context needed, provide: { username, authMethod } — no password",
+      "Audit all IUserExits implementations in the codebase for authHeader logging/storage",
+      "Add static analysis rule: flag any code accessing authHeader parameter in preConnect()",
+      "Document API security contract: preConnect must not log or transmit credential parameters"
+    ]
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-005-user-exit-preconnect-credential-exposure/VULN-005-S-scan-finding.md",
+    "threat_model": ["TM-006"],
+    "attack_surface": ["AS-012"],
+    "external": [
+      "CWE-522: Insufficiently Protected Credentials",
+      "CWE-312: Cleartext Storage of Sensitive Information",
+      "OWASP A02:2021 — Cryptographic Failures",
+      "CVSS:3.1/AV:L/AC:L/PR:H/UI:N/S:U/C:H/I:N/A:N — Score: 4.4 MEDIUM"
+    ]
+  }
+}

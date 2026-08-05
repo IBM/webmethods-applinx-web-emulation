@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "phase": "rectifier",
+  "vulnerability_id": "VULN-016",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "fixed": "2026-07-31T13:00:00Z",
+    "analyst": "D4rthB0b-Rectifier",
+    "status": "fixed_pending_validation",
+    "note": "Fix was initially incomplete — app.component.ts contained a duplicate basePath field not addressed in first pass. Fixed 2026-07-31T14:00:00Z."
+  },
+  "remediation": {
+    "fix_strategy": "patch",
+    "changes_made": [
+      "1. src/app/macro/macro.component.ts — removed dead-code class field 'basePath = http://localhost:2380/applinx/rest'.",
+      "2. src/utils/GXUtils.ts — removed MACRO_BASE_URL, GET_MACROLIST_URL, MACRO_URL dead-code URL constants.",
+      "3. src/app/app.component.ts — removed second dead-code class field 'basePath = http://localhost:2380/applinx/rest' missed in first pass. All components derive the base path from environment.ts at bootstrap."
+    ],
+    "files_modified": [
+      {"file": "src/app/macro/macro.component.ts", "changes": "basePath field removed."},
+      {"file": "src/utils/GXUtils.ts", "changes": "MACRO_BASE_URL, GET_MACROLIST_URL, MACRO_URL removed."},
+      {"file": "src/app/app.component.ts", "changes": "basePath field removed (second occurrence identified in integrity audit)."}
+    ],
+    "commits": [],
+    "defense_in_depth": {
+      "primary_control": "Removed dead-code hardcoded HTTP localhost constants: (1) MacroComponent class field 'basePath = http://localhost:2380/applinx/rest' removed; (2) GXUtils.MACRO_BASE_URL, GXUtils.GET_MACROLIST_URL, GXUtils.MACRO_URL constants removed. All macro API calls use MacroService from the ApplinX SDK which reads basePath from the Angular environment configuration.",
+      "secondary_controls": [],
+      "detection": [],
+      "response": []
+    },
+    "testing": {
+      "validation_criteria": ["Fix implemented as described in changes_made."],
+      "test_cases": [],
+      "regression_tests": []
+    }
+  },
+  "verification_needed": {
+    "rescan_required": false,
+    "manual_testing": true,
+    "security_review": false
+  },
+  "references": {
+    "scan_finding": "vulnerabilities/VULN-016-hardcoded-localhost-http-basepath/VULN-016-S-scan-finding.md",
+    "investigation": "vulnerabilities/VULN-016-hardcoded-localhost-http-basepath/VULN-016-I-investigation.md",
+    "validation": null
+  }
+}

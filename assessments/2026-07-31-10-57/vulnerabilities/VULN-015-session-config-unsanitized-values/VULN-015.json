@@ -1,0 +1,150 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-record.schema.json",
+  "schema_version": "1.0.0",
+  "id": "VULN-015",
+  "descriptor": "session-config-unsanitized-values",
+  "assessment_id": "2026-07-31-10-57",
+  "metadata": {
+    "title": "sessionConfig.json Values Consumed Without Validation — applicationName, sessionOptions, autoLogin Flag",
+    "severity": "medium",
+    "status": "fixed_pending_validation",
+    "created": "2026-07-31T11:30:00Z",
+    "updated": "2026-07-31T13:00:00Z"
+  },
+  "classification": {
+    "cwe": [
+      "CWE-345",
+      "CWE-20"
+    ],
+    "owasp": [
+      "A05:2021 - Security Misconfiguration"
+    ],
+    "capec": [
+      "CAPEC-586"
+    ],
+    "cvss": {
+      "version": "3.1",
+      "vector": "CVSS:3.1/AV:L/AC:H/PR:N/UI:N/S:U/C:L/I:H/A:N",
+      "score": 5.9,
+      "breakdown": {
+        "attack_vector": "Local",
+        "attack_complexity": "High",
+        "privileges_required": "None",
+        "user_interaction": "None",
+        "scope": "Unchanged",
+        "confidentiality": "Low",
+        "integrity": "High",
+        "availability": "None"
+      }
+    }
+  },
+  "location": {
+    "file": "src/app/services/configuration.service.ts",
+    "line_start": 38,
+    "line_end": 80,
+    "function": "loadConfig / initSessionOptions / isValidVariable",
+    "class": "ConfigurationService",
+    "component": "ConfigurationService",
+    "module": "services"
+  },
+  "data_flow": {
+    "sources": [
+      "src/assets/config/sessionConfig.json — co-hosted static asset, no integrity check"
+    ],
+    "transformations": [
+      "applicationName, connectionPool, autoLoginIfDisabledAuth consumed without schema validation",
+      "sessionOptions validated for key prefix (GX_VAR*) only — value content not sanitized"
+    ],
+    "sinks": [
+      "CreateSessionRequest constructor — applicationName used in API calls",
+      "MacroService API calls — applicationName used as path parameter",
+      "NavigationService.isAutoLogin — auto-login behavior controlled by config flag"
+    ]
+  },
+  "scanner": {
+    "flagged_at": "2026-07-31T11:30:00Z",
+    "tools_used": [
+      "LLM-static-analysis"
+    ],
+    "confidence": "medium",
+    "artifact": "VULN-015-S-scan-finding.md"
+  },
+  "investigation": {
+    "confirmed_at": "2026-07-31T12:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "exploitability": "low",
+    "privilege_boundary": {
+      "start_privilege": "Static asset tampering capability (supply chain threat)",
+      "achieved_privilege": "Path traversal in ApplinX macro API or authentication bypass via autoLogin",
+      "boundary_crossed": true
+    },
+    "impact": {
+      "confidentiality": "low",
+      "integrity": "low",
+      "availability": "none",
+      "description": "sessionConfig.json consumed without schema validation. applicationName path traversal risk conditional on ApplinX server sanitization. autoLoginIfDisabledAuth bypass conditional on server config. Requires sessionConfig.json tampering. CVSS 2.9 LOW."
+    },
+    "artifact": "VULN-015-I-investigation.md"
+  },
+  "exploitation": {
+    "validated_at": null,
+    "status": null,
+    "poc_available": false,
+    "exploit_complexity": null,
+    "prerequisites": [],
+    "deployment_context": {
+      "container_isolation": null,
+      "network_segmentation": null,
+      "compensating_controls": []
+    },
+    "artifacts": {
+      "validation": null,
+      "exploits": []
+    }
+  },
+  "remediation": {
+    "fixed_at": "2026-07-31T13:00:00Z",
+    "fix_approach": "FIXED: applicationName and connectionPool validated against alphanumeric allowlist in loadConfig().",
+    "fix_complexity": "low",
+    "verification_status": "fixed_pending_validation",
+    "artifact": "vulnerabilities/VULN-015-session-config-unsanitized-values/VULN-015-X-remediation.md"
+  },
+  "references": {
+    "threat_model": [
+      "TM-010",
+      "TM-003"
+    ],
+    "attack_surface": [
+      "AS-014"
+    ],
+    "related_vulnerabilities": [],
+    "attack_chains": [],
+    "external_cves": []
+  },
+  "tags": [
+    "config-trust",
+    "input-validation",
+    "auto-login",
+    "sessionOptions"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-31T11:30:00Z",
+      "status": "flagged",
+      "mode": "scanner",
+      "note": "sessionConfig.json trusted as static asset without integrity check — applicationName and sessionOptions used in API calls without sanitization"
+    },
+    {
+      "timestamp": "2026-07-31T12:00:00Z",
+      "status": "confirmed",
+      "mode": "inquisitor",
+      "note": "CONFIRMED LOW: applicationName path traversal and autoLoginIfDisabledAuth bypass both require sessionConfig.json tampering. CVSS 2.9 LOW."
+    },
+    {
+      "timestamp": "2026-07-31T13:00:00Z",
+      "status": "fixed_pending_validation",
+      "mode": "rectifier",
+      "note": "FIXED: applicationName and connectionPool validated against alphanumeric allowlist in loadConfig()."
+    }
+  ]
+}

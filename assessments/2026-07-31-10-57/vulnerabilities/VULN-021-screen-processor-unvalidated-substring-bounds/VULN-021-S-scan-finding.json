@@ -1,0 +1,63 @@
+﻿{
+    "schema_version":  "1.0",
+    "phase":  "scanner",
+    "vulnerability_id":  "VULN-021",
+    "descriptor":  "screen-processor-unvalidated-substring-bounds",
+    "assessment_id":  "2026-07-31-10-57",
+    "metadata":  {
+                     "task_id":  "R-M-005",
+                     "task_name":  "Screen Processor Rendering",
+                     "executed":  "2026-07-31T11:30:00Z",
+                     "analyst":  "D4rthB0b-Scanner",
+                     "status":  "complete"
+                 },
+    "execution":  {
+                      "tools_used":  [
+                                         {
+                                             "name":  "LLM-static-analysis",
+                                             "version":  "N/A"
+                                         }
+                                     ],
+                      "target":  "src/app/services/screen-processor.service.ts",
+                      "coverage":  "100%"
+                  },
+    "finding":  {
+                    "severity":  "low",
+                    "file":  "src/app/services/screen-processor.service.ts",
+                    "line":  136,
+                    "function":  "splitField",
+                    "code_snippet":  "f1.content = f1.content.substring(0, rect.minX - 1);",
+                    "preliminary_assessment":  "rect coordinates from server used in substring() without bounds; array growth in filterCollisions()",
+                    "threat_model_refs":  [
+                                              "TM-001",
+                                              "TM-004"
+                                          ],
+                    "attack_surface_refs":  [
+                                                "AS-002"
+                                            ],
+                    "recommended_action":  "FLAG_FOR_INQUISITOR"
+                },
+    "analysis":  {
+                     "patterns_observed":  [
+                                               "rect.minX/maxX from server without bounds check",
+                                               "filterCollisions extends iteration array",
+                                               "bottomRight.row set from rows.length without max cap"
+                                           ],
+                     "false_positives":  [
+
+                                         ],
+                     "coverage_assessment":  "100% of in-scope files reviewed"
+                 },
+    "next_steps":  {
+                       "for_inquisitor":  [
+                                              "Add bounds validation before substring calls",
+                                              "Add maxFields cap in filterCollisions"
+                                          ],
+                       "for_scanner":  [
+
+                                       ],
+                       "for_registry":  [
+                                            "Add VULN-021 to vulnerability-registry.json"
+                                        ]
+                   }
+}

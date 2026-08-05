@@ -1,0 +1,72 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-004",
+  "descriptor": "xss-document-write-print-copy",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-003",
+    "task_name": "Angular Template Binding and XSS Surface Review",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/**/*.html, src/app/app.component.ts, src/app/mini-components/transformations/**/*.html, src/app/generated-pages/GXGeneratedPage.ts",
+    "coverage": "~90% — all HTML templates and key TypeScript components reviewed; some utility function bodies (GXUtils) partially reviewed"
+  },
+  "finding": {
+    "severity": "high",
+    "file": "src/app/app.component.ts",
+    "line": 533,
+    "function": "formatPrintPage",
+    "tool": "LLM analysis",
+    "code_snippet": "popupWindow.document.write('<div class=\"copyWrapper crosshair\" style=\"white-space: pre !important;\"><pre>');\nprintDetails.forEach(element => {\n  popupWindow.document.write(\"<div>\" + element + \"</div>\");  // LINE 535: element from screen content concatenated into HTML\n});\n\n// SECOND SINK at modalpopup.component.ts:61:\ndocument.getElementById(\"copyDiv\").innerHTML = this.copyData;  // copyData = divElement.innerHTML from app.component.ts:560",
+    "preliminary_assessment": "Angular template binding review found the application correctly uses {{ }} interpolation (with built-in HTML encoding) for rendering server-supplied field content across all transformation component templates (text, menu, table, calendar, clickable). However, the print and copy functionality in AppComponent bypasses Angular's sanitization in two places: (1) formatPrintPage() at line 533-535 uses document.write() with unsanitized screen line content concatenated into HTML — if any screen line contains HTML-like characters from the host terminal data (e.g., '<', '>', '\"', or fully formed HTML tags), they will be interpreted as HTML in the popup window; (2) formatCopyPage() at line 560 reads divElement.innerHTML and stores it as copyData, which is then written to copyDiv.innerHTML in modalpopup.component.ts line 61. The DomSanitizer is imported and injected in AppComponent but never used — indicating incomplete sanitization implementation.",
+    "threat_model_refs": ["TM-003", "TM-006"],
+    "attack_surface_refs": ["AS-004"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "All transformation templates (text, menu, table, calendar, clickable) correctly use {{ }} interpolation — safe",
+      "Host key labels in host-keys-template use {{ hostKey.caption }} — safe",
+      "All [ngStyle] bindings use numeric grid position primitives — safe",
+      "DomSanitizer injected in AppComponent constructor but never used — incomplete sanitization",
+      "Print popup: document.write() with unsanitized server content concatenation",
+      "Copy modal: innerHTML chain from divElement.innerHTML → copyData → copyDiv.innerHTML",
+      "modalpopup.component.ts line 117: innerHTML assignment with getSelection() text: '<span class=customselect>' + element + '</span>'"
+    ],
+    "false_positives": [
+      {
+        "pattern": "Carbon [ngStyle] bindings",
+        "rationale": "Angular's [ngStyle] directive sanitizes CSS values; bindings use numeric primitives only"
+      },
+      {
+        "pattern": "Toast notification service",
+        "rationale": "showToast() is completely commented out (disabled); risk only exists if re-enabled"
+      },
+      {
+        "pattern": "GXGeneratedPage.mergeScreens() rendering",
+        "rationale": "Generated page components use field/text components with safe {{ }} interpolation, not direct innerHTML"
+      }
+    ],
+    "coverage_assessment": "20+ HTML template files reviewed; 30+ TypeScript component files checked for bypassSecurityTrust*, innerHTML, outerHTML, and DomSanitizer usage. Complete for key risk areas."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Verify GXUtils.formatLineText() output — does it return plaintext or could it produce HTML markup from host screen data?",
+      "Test: inject terminal screen data containing '<img src=x onerror=alert(1)>' — does it execute in the print popup window?",
+      "Verify whether modalpopup copyDiv innerHTML content is ever displayed to other users or only the current user",
+      "Assess whether the print popup window has a CSP that would block inline scripts",
+      "Confirm scope: is XSS confined to the current user's session or could it affect other users?"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-004 to xss-document-write-print-copy",
+      "Set status: flagged, severity: high"
+    ]
+  }
+}

@@ -94,7 +94,9 @@ export class AppComponent implements OnInit, OnDestroy {
   align = "left";
   flip: boolean = false;
   macroSaveSubscription: Subscription;
-  basePath = 'http://localhost:2380/applinx/rest';
+  // VULN-016: basePath dead-code field removed — the application base path is
+  // read from environment.ts at bootstrap; this field was unused and leaked
+  // a hardcoded HTTP localhost URL.
   observe = "body";
   reportProgress = false;
   defaultHeaders = new HttpHeaders();
@@ -351,7 +353,11 @@ export class AppComponent implements OnInit, OnDestroy {
         res => this.userExitsEventThrower.firePostDisconnect(res),
         error => this.userExitsEventThrower.fireOnDisconnectError(error)
       );
-    this.disconnectSubscription.add(() => this.storageService.setNotConnected())
+    // VULN-013: stop the 5-second polling interval before setNotConnected() navigates to webLogin.
+    this.disconnectSubscription.add(() => {
+      this.navigationService.stopHostScreenUpdate();
+      this.storageService.setNotConnected();
+    });
   }
 
   clearMacroDetails() {
@@ -528,11 +534,23 @@ export class AppComponent implements OnInit, OnDestroy {
     let width = window.screen.availWidth - 750;
     const popupWindow = window.open('', '', `height=${height},width=${width},top=${height / 2},left=${width / 2}`);
     popupWindow.document.open();
-    popupWindow.document.write('<div class="copyWrapper crosshair" style="white-space: pre !important;"><pre>');
+    // VULN-004: replaced document.write() string concatenation with safe DOM construction.
+    // Previous: popupWindow.document.write("<div>" + element + "</div>") was an XSS sink —
+    // unsanitized ApplinX field.content (server-controlled) could inject script tags and
+    // steal gx_token from the same-origin popup's parent sessionStorage.
+    // Fix: create DOM elements and assign via textContent so the browser never parses content
+    // as HTML — special characters are rendered literally, no script execution possible.
+    const wrapper = popupWindow.document.createElement('div');
+    wrapper.className = 'copyWrapper crosshair';
+    wrapper.style.cssText = 'white-space: pre !important;';
+    const pre = popupWindow.document.createElement('pre');
     printDetails.forEach(element => {
-      popupWindow.document.write("<div>" + element + "</div>");
-    })
-    popupWindow.document.write('</pre></div>')
+      const div = popupWindow.document.createElement('div');
+      div.textContent = element;
+      pre.appendChild(div);
+    });
+    wrapper.appendChild(pre);
+    popupWindow.document.body.appendChild(wrapper);
     popupWindow.print();
     popupWindow.close();
   }
@@ -582,8 +600,10 @@ export class AppComponent implements OnInit, OnDestroy {
       this.hostKeysEmitterSubscription = component.hostKeysEmitter.subscribe(e => this.setHostKeys(e));
     }
     if (component instanceof ScreenComponent) {
-      this.userExitsEventThrower.clearEventListeners();
-      this.userExitsEventThrower.addEventListener(new LifecycleUserExits(this.infoService, this.navigationService, this.storageService, this.keyboardMappingService, this.logger));
+      // VULN-004: do NOT call clearEventListeners() here — it wipes every customer-registered
+      // security/audit hook (IUserExits) on every ScreenComponent navigation.
+      // LifecycleUserExits is registered once in the constructor (line 248-249) and must not
+      // be replaced by clearing the entire list on each route activation.
     } else if (component instanceof WebLoginComponent) {
       this.loginComponent = component;
       this.changeBackgroundColor('White');
@@ -635,8 +655,10 @@ export class AppComponent implements OnInit, OnDestroy {
     this.recordStop = this.sharedService.getMacroRecordFlag();
     let token = this.storageService.getAuthToken();
     let applicationName = this.configurationService.applicationName;
-    let tempUserName = sessionStorage.getItem('userName');
-    this.userName = tempUserName.substr(1, tempUserName.length-2);
+    // VULN-010: use JSON.parse() and optional chaining — tempUserName may be null if
+    // sessionStorage was cleared externally, and substr() on null throws TypeError.
+    const tempUserName = sessionStorage.getItem('userName');
+    this.userName = tempUserName ? JSON.parse(tempUserName) : '';
     this.macroFileListSubscription = this.macroService
       .getMacro(this.userName, applicationName, token)
       .subscribe(data => {

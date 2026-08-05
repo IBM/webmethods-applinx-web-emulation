@@ -1,0 +1,60 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-scan-finding.schema.json",
+  "schema_version": "1.0",
+  "phase": "scanner",
+  "vulnerability_id": "VULN-012",
+  "descriptor": "filter-collisions-unbounded-growth",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "task_id": "R-M-002",
+    "task_name": "ScreenProcessorService Server-Supplied Coordinate Handling",
+    "executed": "2026-08-02T21:30:00Z",
+    "analyst": "D4rthB0b-Scanner",
+    "status": "complete"
+  },
+  "execution": {
+    "tools_used": [],
+    "target": "src/app/services/screen-processor.service.ts",
+    "coverage": "100% — complete screen-processor.service.ts analysis"
+  },
+  "finding": {
+    "severity": "medium",
+    "file": "src/app/services/screen-processor.service.ts",
+    "line": 107,
+    "function": "filterCollisions",
+    "tool": "LLM analysis",
+    "code_snippet": "private filterCollisions(fields: Field[], transforms: AbstractTransformation[]): Field[] {\n  let filtered: Field[] = [];\n  for (let i = 0; i < fields.length; i++) {  // fields.length read each iteration\n    let field: Field | null = fields[i];\n    const collisions = this.tree.search({ ... });\n    for (let j = 0; j < collisions.length && field; j++) {\n      const rect = collisions[j];\n      if (this.isFieldContainsRect(field, rect)) {\n        fields = fields.concat(this.splitField(field, rect));  // LINE 110: APPENDS 2 new fields per split\n        field = null;\n      } else {\n        field = this.cutField(field, rect);\n      }\n    }\n    if (field) filtered.push(field);\n  }\n  return filtered;\n}",
+    "preliminary_assessment": "filterCollisions() iterates over the fields array using an index that reads fields.length on each iteration. When splitField() is called (line 110), it returns [f1, f2] which are concatenated to the fields array via fields.concat(). Because the outer loop reads fields.length dynamically, the two new split fields are immediately queued for processing. If a server sends 1000 overlapping transformation rectangles for a single field, each split produces 2 more fields which are also processed — in the worst case this creates O(n) or worse growth. For 1000 overlapping rects: approximately 2000+ fields processed. Combined with VULN-006 (null pointer dereference), a compromised ApplinX backend could chain these to cause a browser-side denial of service by sending a screen response with many overlapping regionsToHide for fields with null content.",
+    "threat_model_refs": ["TM-005"],
+    "attack_surface_refs": ["AS-001"],
+    "recommended_action": "FLAG_FOR_INQUISITOR"
+  },
+  "analysis": {
+    "patterns_observed": [
+      "Array mutation during iteration — fields.concat() grows array while loop uses dynamic length",
+      "No maximum field count limit per input field",
+      "No maximum transformation rectangle count per screen",
+      "VULN-006 (null content) and VULN-012 (unbounded growth) can be chained for compounded DoS"
+    ],
+    "false_positives": [
+      {
+        "pattern": "Exponential growth claim",
+        "rationale": "Growth is linear per split (2 fields per split), not exponential — but 1000 overlapping rects still produces 2000+ iterations, which may be sufficient for DoS"
+      }
+    ],
+    "coverage_assessment": "Complete analysis of filterCollisions() including the loop structure, concat behavior, and interaction with splitField/cutField."
+  },
+  "next_steps": {
+    "for_inquisitor": [
+      "Test with 100, 1000, and 10000 overlapping rectangles — measure browser performance impact",
+      "Verify if ApplinX REST API has server-side limits on transformation rectangle count per field",
+      "Evaluate fix: add a maximum fields count check (e.g., if fields.length > MAX_FIELDS break)",
+      "Assess whether this is exploitable via a compromised ApplinX backend vs normal operational conditions"
+    ],
+    "for_scanner": [],
+    "for_registry": [
+      "Assign VULN-012 to filter-collisions-unbounded-growth",
+      "Set status: flagged, severity: medium"
+    ]
+  }
+}

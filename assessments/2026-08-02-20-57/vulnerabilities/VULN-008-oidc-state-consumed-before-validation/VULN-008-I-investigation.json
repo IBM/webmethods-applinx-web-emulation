@@ -1,0 +1,75 @@
+{
+  "$schema": "../../../../d4rthb0b/schemas/vulnerability-investigation.schema.json",
+  "schema_version": "1.0",
+  "phase": "inquisitor",
+  "vulnerability_id": "VULN-008",
+  "descriptor": "oidc-state-consumed-before-validation",
+  "assessment_id": "2026-08-02-20-57",
+  "metadata": {
+    "investigated": "2026-08-02T22:00:00Z",
+    "analyst": "D4rthB0b-Inquisitor",
+    "status": "false_positive"
+  },
+  "investigation": {
+    "confirmed_at": null,
+    "exploitability": "theoretical",
+    "root_cause": "Scanner identified the state removeItem at line 58 before the validation check at line 59 as a security issue. Investigation confirms this is correct OIDC behavior: the state parameter is a single-use CSRF token that must be consumed (deleted) regardless of validation outcome. If validation fails, the state is gone and no session is created — this is the intended defense. No CSRF window exists: the IdP authorization code is also single-use; an attacker cannot reuse a consumed state. The separate concern (poor error recovery if sendCodeAndConnectSession fails) is a UX reliability issue only.",
+    "attack_scenario": "No viable attack exists against this pattern. Attacker sends user to /?code=evil&state=wrong. State is consumed, validation fails (mismatched), no session created, user redirected to /webLogin. Attacker cannot replay a valid code because: (1) the valid code was never submitted, (2) even if attacker had the valid code+state pair, the state is now consumed, and (3) IdP codes are one-time use. The removeItem-before-compare ordering creates no exploitable window.",
+    "prerequisites": [
+      "N/A — this is a false positive; no exploitation prerequisites exist for the claimed vulnerability"
+    ],
+    "privilege_boundary": {
+      "start_privilege": "Unauthenticated user",
+      "achieved_privilege": "Unauthenticated user — no escalation",
+      "boundary_crossed": false
+    },
+    "impact": {
+      "confidentiality": "none",
+      "integrity": "none",
+      "availability": "low",
+      "description": "No security impact from the state ordering. Residual availability concern: if sendCodeAndConnectSession() fails (network error), catchError does not explicitly navigate to /webLogin, leaving user on current URL without a clear recovery path. User can recover by manually navigating to /webLogin and clicking Login again."
+    },
+    "data_flow": {
+      "sources": [
+        "route.queryParams.state (OIDC callback URL parameter)",
+        "sessionStorage.getItem('oidc_state') (previously stored nonce)"
+      ],
+      "transformations": [
+        "sessionStorage.removeItem('oidc_state') — single-use consumption (correct OIDC practice)",
+        "receivedState !== storedState comparison — CSRF validation",
+        "router.navigate(['webLogin']) on mismatch"
+      ],
+      "sinks": [
+        "sendCodeAndConnectSession(idPcode) — only reached when state validates correctly",
+        "sessionStorage (state cleared, no residual)"
+      ]
+    }
+  },
+  "affected_components": {
+    "direct": [
+      {
+        "component": "RouteGuardService.canActivate()",
+        "impact": "No security impact. Reliability gap: catchError handler should call router.navigate(['webLogin']) explicitly."
+      }
+    ],
+    "indirect": []
+  },
+  "remediation_guidance": {
+    "recommended_fix": "No security fix required — the state ordering is correct. For reliability: in the catchError handler at lines 73-76, add an explicit router.navigate(['webLogin']) before returning of(false) to ensure users see the login screen when code exchange fails. Optionally add explicit sessionStorage.removeItem('oidc_state') in StorageService.setNotConnected() as defense-in-depth (currently relies on constructor clear()).",
+    "priority": "low",
+    "defense_in_depth": [
+      "Add router.navigate(['webLogin']) to catchError handler in canActivate() for explicit error recovery",
+      "Add sessionStorage.removeItem('oidc_state') to StorageService.setNotConnected() for defense-in-depth",
+      "Consider logging the code exchange failure to NGX logger for observability"
+    ]
+  },
+  "references": {
+    "scan_finding": "VULN-008-S-scan-finding.md",
+    "threat_model": ["TM-001"],
+    "attack_surface": ["AS-002", "AS-003"],
+    "external": [
+      "RFC 6749 Section 10.12: CSRF — state parameter must be single-use",
+      "OIDC Core 1.0 Section 3.1.2.1: state parameter lifecycle"
+    ]
+  }
+}
