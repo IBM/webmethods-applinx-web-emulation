@@ -1,0 +1,97 @@
+<!--
+  Copyright IBM Corp. 2024, 2025
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<!--
+  Hidden input for the menuOption navigation field.
+  Must live outside <app-screen> so the ApplinX framework can locate it by ID.
+-->
+<input type="hidden" id="menuOption" [value]="selectedApp" />
+
+<app-screen [screen]="generatedPage" [isGeneratedPage]="true">
+  <div class="ls-wrapper" style="grid-row: 1/24; grid-column: 1/80">
+
+    <!-- ── Header band ──────────────────────────────────────────────── -->
+    <header class="ls-header">
+      <div class="ls-header__brand">
+        <span class="ls-header__brand-label">IBM</span>
+        <span class="ls-header__brand-product">z/OS Standard Development/Test Image</span>
+      </div>
+      <div class="ls-header__meta">
+        <span class="ls-header__time-label">System time</span>
+        <span class="ls-header__time-value">{{ currentTime || '—' }}</span>
+      </div>
+    </header>
+
+    <!-- ── Main card ────────────────────────────────────────────────── -->
+    <main class="ls-card" role="main">
+
+      <!-- Card heading -->
+      <div class="ls-card__heading">
+        <h1 class="ls-card__title">Application Sign-On</h1>
+        <p class="ls-card__subtitle">
+          Select an application to connect to on the IBM z/OS mainframe.
+        </p>
+      </div>
+
+      <hr class="ls-divider" />
+
+      <!-- Application selector -->
+      <div class="ls-card__field-group">
+        <label class="ls-field-label" for="appDropdown">
+          Target Application
+          <span class="ls-field-label--required">*</span>
+        </label>
+        <p class="ls-field-helper">
+          Choose the VTAM application you wish to log on to.
+        </p>
+
+        <ibm-dropdown
+          id="appDropdown"
+          placeholder="Select an application…"
+          [label]="''"
+          (selected)="onAppSelected($event)">
+          <ibm-dropdown-list [items]="appOptions"></ibm-dropdown-list>
+        </ibm-dropdown>
+      </div>
+
+      <!-- Selected value display (read-only context) -->
+      <div class="ls-card__field-group ls-card__field-group--inline" *ngIf="selectedApp">
+        <span class="ls-inline-label">Application code:</span>
+        <span class="ls-inline-value">{{ selectedApp }}</span>
+      </div>
+
+      <!-- Submit -->
+      <div class="ls-card__actions">
+        <button
+          ibmButton="primary"
+          id="enter"
+          size="lg"
+          (click)="onSubmit()">
+          Connect
+        </button>
+      </div>
+
+    </main>
+
+    <!-- ── Footer ────────────────────────────────────────────────────── -->
+    <footer class="ls-footer">
+      <span class="ls-footer__text">
+        IBM z/OS · CICS Banking Sample Application · ApplinX Web Emulation
+      </span>
+    </footer>
+
+  </div>
+</app-screen>

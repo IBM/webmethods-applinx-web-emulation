@@ -12,9 +12,16 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 
-export const environment = {
-  production: true,
-  basePath: 'http://9.60.201.218:2380/applinx/rest'
-};
+/**
+ * Model for the ApplinxBankOfZ TransferFunds screen.
+ * Description: Transfer funds between accounts.
+ * Key fields: fromAccountNumber, toAccountNumber, transactionAmount.
+ *
+ * This component also drives a DisplayAccount balance-check step
+ * before the transfer is submitted.
+ */
+export class TransferFunds {
+  static readonly screenModel = {};
+}

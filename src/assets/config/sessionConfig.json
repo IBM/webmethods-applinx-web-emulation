@@ -1,5 +1,5 @@
 {
-    "applicationName" : "InstantDemo",  
+    "applicationName" : "ApplinxBankOfZ",  
     "connectionPool" : "",
     "autoLoginIfDisabledAuth": false,
     "logger" : {

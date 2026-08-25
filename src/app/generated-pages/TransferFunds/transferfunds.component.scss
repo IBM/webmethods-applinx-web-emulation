@@ -1,0 +1,333 @@
+/*
+ * Copyright IBM Corp. 2024, 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background: #f4f4f4;
+  font-family: -apple-system, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  color: #161616;
+}
+
+.tf-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Header */
+.tf-header {
+  padding: 16px 24px 12px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tf-eyebrow {
+  display: block;
+  font-size: 11px;
+  color: #6f6f6f;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.tf-heading {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #161616;
+}
+
+/* Step indicator */
+.tf-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 13px;
+}
+
+.tf-step {
+  color: #6f6f6f;
+
+  &--active {
+    color: #0f62fe;
+    font-weight: 600;
+  }
+
+  &--done {
+    color: #24a148;
+  }
+}
+
+.tf-step-sep {
+  color: #c6c6c6;
+}
+
+/* Body */
+.tf-body {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+/* Card */
+.tf-card {
+  width: 100%;
+  max-width: 520px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  padding: 24px;
+
+  &--success {
+    border-left: 4px solid #24a148;
+  }
+}
+
+.tf-card-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tf-card-desc {
+  margin: 0;
+  color: #525252;
+  line-height: 1.5;
+}
+
+.tf-divider {
+  border: none;
+  border-top: 1px solid #e0e0e0;
+  margin: 20px 0;
+}
+
+/* Error / warning banners */
+.tf-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #fff1f1;
+  border-left: 4px solid #da1e28;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #da1e28;
+}
+
+.tf-error-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #da1e28;
+  padding: 0 4px;
+}
+
+.tf-warning {
+  padding: 10px 14px;
+  background: #fff8e1;
+  border-left: 4px solid #f1c21b;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #8e6a00;
+}
+
+/* Form fields */
+.tf-field {
+  margin-bottom: 20px;
+}
+
+.tf-field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.tf-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #525252;
+  margin-bottom: 4px;
+}
+
+.tf-required {
+  color: #da1e28;
+  margin-left: 2px;
+}
+
+.tf-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  font-size: 14px;
+  border: 1px solid #8d8d8d;
+  background: #fff;
+  outline: none;
+
+  &:focus {
+    border-color: #0f62fe;
+    box-shadow: inset 0 0 0 1px #0f62fe;
+  }
+
+  &--readonly {
+    background: #f4f4f4;
+    color: #6f6f6f;
+    cursor: default;
+  }
+
+  &--error {
+    border-color: #da1e28;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.tf-hint {
+  display: block;
+  font-size: 11px;
+  color: #6f6f6f;
+  margin-top: 4px;
+}
+
+/* Buttons */
+.tf-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+
+  &--primary {
+    background: #0f62fe;
+    color: #fff;
+
+    &:hover:not(:disabled) { background: #0353e9; }
+  }
+
+  &--ghost {
+    background: transparent;
+    color: #0f62fe;
+    border: 1px solid #0f62fe;
+
+    &:hover:not(:disabled) { background: #edf5ff; }
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+/* Action rows */
+.tf-actions {
+  display: flex;
+  gap: 12px;
+
+  &--right { justify-content: flex-end; }
+  &--spread { justify-content: space-between; align-items: center; }
+  &--mt { margin-top: 16px; }
+}
+
+/* Balance tile */
+.tf-balance-tile {
+  background: #f4f4f4;
+  border: 1px solid #e0e0e0;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.tf-balance-tile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.tf-balance-account {
+  font-family: monospace;
+  font-size: 12px;
+  color: #525252;
+  background: #e0e0e0;
+  padding: 2px 6px;
+}
+
+.tf-balance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.tf-balance-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  &--highlight .tf-balance-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #161616;
+  }
+}
+
+.tf-balance-label {
+  font-size: 11px;
+  color: #6f6f6f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tf-balance-value {
+  font-size: 14px;
+  color: #161616;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Success icon */
+.tf-success-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #24a148;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+/* Footer */
+.tf-footer {
+  padding: 12px 24px;
+  border-top: 1px solid #e0e0e0;
+  background: #fff;
+  text-align: center;
+  font-size: 11px;
+  color: #6f6f6f;
+}

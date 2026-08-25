@@ -1,0 +1,197 @@
+/*
+ * Copyright IBM Corp. 2024, 2025
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+@use '@carbon/styles/scss/spacing' as *;
+@use '@carbon/styles/scss/type'    as *;
+@use '@carbon/styles/scss/theme'   as *;
+
+// ─── Layout shell ──────────────────────────────────────────────────────────────
+
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  background-color: $background;
+}
+
+.ls-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+// ─── Header band ───────────────────────────────────────────────────────────────
+
+.ls-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-04 $spacing-07;
+  background-color: $layer-01;
+  border-bottom: 1px solid $border-subtle-01;
+}
+
+.ls-header__brand {
+  display: flex;
+  align-items: baseline;
+  gap: $spacing-03;
+}
+
+.ls-header__brand-label {
+  @include type-style('label-01');
+  font-weight: 700;
+  color: $text-primary;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ls-header__brand-product {
+  @include type-style('body-compact-01');
+  color: $text-secondary;
+}
+
+.ls-header__meta {
+  display: flex;
+  align-items: center;
+  gap: $spacing-03;
+}
+
+.ls-header__time-label {
+  @include type-style('label-01');
+  color: $text-helper;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ls-header__time-value {
+  @include type-style('code-01');
+  color: $text-secondary;
+  background-color: $layer-02;
+  padding: $spacing-01 $spacing-03;
+  border-radius: 2px;
+  border: 1px solid $border-subtle-02;
+  min-width: 7rem;
+  text-align: center;
+}
+
+// ─── Main card ─────────────────────────────────────────────────────────────────
+
+main.ls-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 36rem;
+  margin: $spacing-10 auto;
+  padding: $spacing-07 $spacing-07 $spacing-08;
+  background-color: $layer-01;
+  border: 1px solid $border-subtle-01;
+}
+
+.ls-card__heading {
+  margin-bottom: $spacing-06;
+}
+
+.ls-card__title {
+  @include type-style('heading-03');
+  color: $text-primary;
+  margin: 0 0 $spacing-03;
+}
+
+.ls-card__subtitle {
+  @include type-style('body-compact-01');
+  color: $text-secondary;
+  margin: 0;
+}
+
+.ls-divider {
+  border: none;
+  border-top: 1px solid $border-subtle-01;
+  margin: 0 0 $spacing-06;
+}
+
+// ─── Form fields ───────────────────────────────────────────────────────────────
+
+.ls-card__field-group {
+  margin-bottom: $spacing-06;
+}
+
+.ls-field-label {
+  @include type-style('label-01');
+  display: block;
+  color: $text-secondary;
+  margin-bottom: $spacing-02;
+  font-weight: 600;
+
+  &--required {
+    color: $support-error;
+    margin-left: $spacing-01;
+  }
+}
+
+.ls-field-helper {
+  @include type-style('helper-text-01');
+  color: $text-helper;
+  margin: 0 0 $spacing-03;
+}
+
+.ls-card__field-group--inline {
+  display: flex;
+  align-items: center;
+  gap: $spacing-03;
+  background-color: $layer-02;
+  border: 1px solid $border-subtle-02;
+  padding: $spacing-03 $spacing-04;
+  border-radius: 2px;
+  margin-top: -$spacing-02;
+}
+
+.ls-inline-label {
+  @include type-style('label-01');
+  color: $text-helper;
+}
+
+.ls-inline-value {
+  @include type-style('code-01');
+  color: $text-primary;
+  font-weight: 700;
+}
+
+// ─── Actions ───────────────────────────────────────────────────────────────────
+
+.ls-card__actions {
+  margin-top: $spacing-07;
+  display: flex;
+  justify-content: flex-end;
+
+  button {
+    min-width: 10rem;
+  }
+}
+
+// ─── Footer ────────────────────────────────────────────────────────────────────
+
+.ls-footer {
+  padding: $spacing-04 $spacing-07;
+  border-top: 1px solid $border-subtle-01;
+  background-color: $layer-01;
+  text-align: center;
+}
+
+.ls-footer__text {
+  @include type-style('helper-text-01');
+  color: $text-helper;
+}

@@ -21,7 +21,8 @@
 export const environment = {
   production: false,
   // basePath: 'http://localhost:2380/applinx/rest',
-  basePath: './api'
+  basePath: 'http://9.60.201.218:2380/applinx/rest'
+  //basePath: './api'
 };
 
 /*

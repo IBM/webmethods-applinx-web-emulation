@@ -8,14 +8,15 @@
     "test": "ng test",
     "testHeadless": "ng test --watch=false --browsers ChromeHeadless",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "clean": "node -e \"const fs = require('fs'); ['dist', 'build', '.next'].forEach(f => fs.rmSync(f, { recursive: true, force: true }))\""
   },
   "private": true,
   "dependencies": {
     "@angular-slider/ngx-slider": "2.0.4",
     "@angular/animations": "20.3.25",
     "@angular/cdk": "20.0.4",
-    "@angular/cli": "^20.3.25",
+    "@angular/cli": "20.3.25",
     "@angular/common": "20.3.25",
     "@angular/core": "20.3.25",
     "@angular/forms": "20.3.25",
@@ -38,7 +39,7 @@
     "zone.js": "0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^20.3.25",
+    "@angular-devkit/build-angular": "20.3.25",
     "@angular-eslint/builder": "18.4.0",
     "@angular-eslint/eslint-plugin": "18.4.0",
     "@angular-eslint/eslint-plugin-template": "18.4.0",

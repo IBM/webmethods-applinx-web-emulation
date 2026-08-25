@@ -12,9 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */ 
+ */
 
-export const environment = {
-  production: true,
-  basePath: 'http://9.60.201.218:2380/applinx/rest'
-};
+/**
+ * Model for the ApplinxBankOfZ LoginScreen.
+ * Screen description: Mainframe login screen with system details and login options.
+ * Fields:
+ *   - currentTime  (PROTECTED, row 6, col 19, len 42) — live system time
+ *   - menuOption   (UNPROTECTED, row 24, col 19, len 8) — application entry point
+ */
+export class LoginScreen {
+  static readonly screenModel = {};
+}

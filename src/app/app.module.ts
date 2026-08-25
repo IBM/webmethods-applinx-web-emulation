@@ -57,7 +57,9 @@ import { HttpHeaders } from '@angular/common/http';
 import { AuthTokenServerService } from './services/logger.service'
 import { DatePickerModule, IconModule, IconService } from 'carbon-components-angular';
 import { UIShellModule } from 'carbon-components-angular/ui-shell';
-import { ButtonModule, InputModule, DropdownModule, TableModule, ThemeModule, DialogModule, SliderModule, ToggletipModule, ContextMenuModule, CheckboxModule, RadioModule, TooltipModule, NotificationModule, SelectModule  } from 'carbon-components-angular';
+import { ButtonModule, InputModule, DropdownModule, TableModule, ThemeModule, DialogModule, SliderModule, ToggletipModule, ContextMenuModule, CheckboxModule, RadioModule, TooltipModule, NotificationModule, SelectModule, ProgressIndicatorModule  } from 'carbon-components-angular';
+import { LoginScreenComponent } from './generated-pages/LoginScreen/loginscreen.component';
+import { TransferFundsComponent } from './generated-pages/TransferFunds/transferfunds.component';
 
 // Icons
 import settings20 from '@carbon/icons/es/settings/20';
@@ -86,12 +88,17 @@ export function apiConfigFactory(): Configuration {
 }
 
 export const generatedPages: any[] = [
-
+  LoginScreenComponent,
+  TransferFundsComponent,
 ];
 
 const routes: Routes = [
   { path: 'webLogin', component: WebLoginComponent, canActivate: [RouteGuardService] },
   { path: 'instant', component: ScreenComponent, canActivate: [RouteGuardService] },
+  { path: 'LoginScreen', component: LoginScreenComponent, canActivate: [RouteGuardService] },
+  { path: 'TransferFunds', component: TransferFundsComponent, canActivate: [RouteGuardService] },
+  { path: 'BankingMainMenu', component: TransferFundsComponent, canActivate: [RouteGuardService] },
+  { path: 'DisplayAccount', component: TransferFundsComponent, canActivate: [RouteGuardService] },
   { path: '**', redirectTo: 'instant', pathMatch: 'full' }
 ];
 
@@ -139,6 +146,7 @@ const routes: Routes = [
         NotificationModule,
         TooltipModule,
         SelectModule,
+        ProgressIndicatorModule,
         LoggerModule.forRoot({
             serverLoggingUrl: environment.basePath + '/logger',
             level: NgxLoggerLevel.ERROR,

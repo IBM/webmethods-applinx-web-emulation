@@ -36,6 +36,7 @@ import { Field, GetScreenRequest,
   GetScreenResponse,
   HostKeyTransformation,
   ScreenService, InputField, ScreenBounds } from '@ibm/applinx-rest-apis';
+import { TransferFundsStateService } from '../generated-pages/TransferFunds/transferfunds-state.service';
 import { Subscription } from 'rxjs';
 import { Router } from '@angular/router';
 import { ScreenHolderService } from '../services/screen-holder.service';
@@ -95,9 +96,10 @@ export class ScreenComponent implements OnInit, OnChanges, AfterViewInit, OnDest
               private storageService: StorageService, private tabAndArrowsService: TabAndArrowsService,
               private keyboardMappingService: KeyboardMappingService, private userExitsEventThrower: UserExitsEventThrowerService,
               private ref: ElementRef, private router: Router, private screenHolderService: ScreenHolderService,
-              private logger: NGXLogger, private messages: MessagesService,         
+              private logger: NGXLogger, private messages: MessagesService,
               private screenProcessorService: ScreenProcessorService, public screenLockerService: ScreenLockerService,
-              private sharedService: SharedService,) {}
+              private sharedService: SharedService,
+              private transferFundsStateService: TransferFundsStateService,) {}
               
   ngAfterViewInit(): void {
     if (!this.isChildWindow) {
@@ -192,11 +194,11 @@ export class ScreenComponent implements OnInit, OnChanges, AfterViewInit, OnDest
     const screenName = screen.name;
     this.logger.debug(this.messages.get("GET_SCREEN") + screenName);
 
-    if (!GXUtils.isStringEmptyWithTrim(screenName) && this.navigationService.getRoutingHandler().hasRoute(screenName))
+    if (!GXUtils.isStringEmptyWithTrim(screenName) && this.navigationService.getRoutingHandler().hasRoute(screenName)) {
       this.redirectToRoute(screenName);
-    else if (this.isGeneratedPage && !this.screenHolderService.isCurrentScreenWindow())
+    } else if (this.isGeneratedPage && !this.screenHolderService.isCurrentScreenWindow()) {
       this.router.navigate(['instant']);
-    else {
+    } else {
       this.processScreen(screen);
     }
   }

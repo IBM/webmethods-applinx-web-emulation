@@ -1,0 +1,215 @@
+<!--
+  Copyright IBM Corp. 2024, 2025
+
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+
+<app-screen [screen]="generatedPage" [isGeneratedPage]="true">
+  <div class="tf-wrapper" style="grid-row: 1/24; grid-column: 1/80">
+
+    <!-- ── Page header ──────────────────────────────────────────────── -->
+    <header class="tf-header">
+      <small class="tf-eyebrow">CICS Banking · IBM z/OS</small>
+      <h1 class="tf-heading">Transfer Funds</h1>
+    </header>
+
+    <!-- ── Step indicator ───────────────────────────────────────────── -->
+    <div class="tf-steps">
+      <span class="tf-step" [class.tf-step--active]="st.currentStep === 0" [class.tf-step--done]="st.currentStep > 0">
+        1 · Balance Check
+      </span>
+      <span class="tf-step-sep">›</span>
+      <span class="tf-step" [class.tf-step--active]="st.currentStep === 1" [class.tf-step--done]="st.transferComplete">
+        2 · Transfer Details
+      </span>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- PHASE 1 & 2                                                    -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tf-body" *ngIf="!st.transferComplete">
+
+      <!-- STEP 1 — Balance Check -->
+      <section class="tf-card" *ngIf="st.currentStep === 0">
+        <h2 class="tf-card-title">Step 1: Check Source Account Balance</h2>
+        <p class="tf-card-desc">Enter the source account number to verify the available balance before initiating a transfer.</p>
+
+        <hr class="tf-divider" />
+
+        <!-- Error message from host -->
+        <div class="tf-error" *ngIf="st.hostError && !st.balanceChecked">
+          {{ st.hostError }}
+        </div>
+
+        <!-- Source account input — NO id attribute (avoids @HostListener trap) -->
+        <div class="tf-field">
+          <label class="tf-label">
+            Source Account Number <span class="tf-required">*</span>
+          </label>
+          <input
+            class="tf-input"
+            type="text"
+            placeholder="e.g. 00000001"
+            [disabled]="st.isLoading"
+            [(ngModel)]="st.sourceAccount"
+            (keydown.enter)="onCheckBalance()" />
+          <small class="tf-hint">Enter the 8-digit account number.</small>
+        </div>
+
+        <div class="tf-actions tf-actions--right">
+          <button
+            class="tf-btn tf-btn--primary"
+            [disabled]="!st.sourceAccount.trim() || st.isLoading"
+            (click)="onCheckBalance()">
+            {{ st.isLoading ? 'Checking…' : 'Check Balance' }}
+          </button>
+        </div>
+
+        <!-- Balance result — shown once host responds -->
+        <div class="tf-balance-tile" *ngIf="st.balanceChecked">
+          <div class="tf-balance-tile-header">
+            <strong>Account Balance Summary</strong>
+            <span class="tf-balance-account">Acct: {{ st.sourceAccount }}</span>
+          </div>
+          <div class="tf-balance-grid">
+            <div class="tf-balance-item tf-balance-item--highlight">
+              <span class="tf-balance-label">Available Balance</span>
+              <span class="tf-balance-value">{{ st.availableBalance || '—' }}</span>
+            </div>
+            <div class="tf-balance-item">
+              <span class="tf-balance-label">Actual Balance</span>
+              <span class="tf-balance-value">{{ st.actualBalance || '—' }}</span>
+            </div>
+            <div class="tf-balance-item">
+              <span class="tf-balance-label">Overdraft Limit</span>
+              <span class="tf-balance-value">{{ st.overdraftLimit || '—' }}</span>
+            </div>
+          </div>
+          <div class="tf-actions tf-actions--right tf-actions--mt">
+            <button class="tf-btn tf-btn--primary" (click)="st.currentStep = 1">
+              Continue to Transfer →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2 — Transfer Details -->
+      <section class="tf-card" *ngIf="st.currentStep === 1 && st.balanceChecked">
+        <h2 class="tf-card-title">Step 2: Transfer Details</h2>
+        <p class="tf-card-desc">
+          Available balance: <strong>{{ st.availableBalance }}</strong>.
+          Enter the destination account and amount to transfer.
+        </p>
+
+        <hr class="tf-divider" />
+
+        <!-- Host error -->
+        <div class="tf-error" *ngIf="st.hostError">
+          {{ st.hostError }}
+          <button class="tf-error-close" (click)="st.hostError = ''">✕</button>
+        </div>
+
+        <!-- Insufficient funds warning -->
+        <div class="tf-warning" *ngIf="amountExceedsBalance">
+          ⚠ Transfer amount exceeds available balance of {{ st.availableBalance }}.
+        </div>
+
+        <!-- From / To -->
+        <div class="tf-field-row">
+          <div class="tf-field">
+            <label class="tf-label">From Account</label>
+            <input class="tf-input tf-input--readonly" type="text" [value]="st.sourceAccount" readonly />
+          </div>
+          <div class="tf-field">
+            <label class="tf-label">To Account <span class="tf-required">*</span></label>
+            <input
+              class="tf-input"
+              type="text"
+              placeholder="e.g. 00000002"
+              [disabled]="st.isLoading"
+              [(ngModel)]="st.toAccount" />
+          </div>
+        </div>
+
+        <!-- Amount — NO id attribute -->
+        <div class="tf-field">
+          <label class="tf-label">Amount <span class="tf-required">*</span></label>
+          <input
+            class="tf-input"
+            [class.tf-input--error]="amountExceedsBalance"
+            type="text"
+            placeholder="0000000000.00"
+            [disabled]="st.isLoading"
+            [(ngModel)]="st.amountInput" />
+          <small class="tf-hint">Format: 0000000000.00</small>
+        </div>
+
+        <div class="tf-actions tf-actions--spread">
+          <button class="tf-btn tf-btn--ghost" [disabled]="st.isLoading" (click)="onBack()">
+            ← Back
+          </button>
+          <button
+            class="tf-btn tf-btn--primary"
+            [disabled]="!canTransfer || st.isLoading"
+            (click)="onTransfer()">
+            {{ st.isLoading ? 'Transferring…' : 'Transfer Funds' }}
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <!-- SUCCESS STATE                                                   -->
+    <!-- ═══════════════════════════════════════════════════════════════ -->
+    <div class="tf-body" *ngIf="st.transferComplete">
+      <section class="tf-card tf-card--success">
+        <div class="tf-success-icon">✓</div>
+        <h2 class="tf-card-title">Transfer Complete</h2>
+        <p class="tf-card-desc">
+          <strong>{{ st.amountInput }}</strong> was successfully transferred
+          from account <strong>{{ st.sourceAccount }}</strong>
+          to account <strong>{{ st.toAccount }}</strong>.
+        </p>
+
+        <hr class="tf-divider" />
+
+        <div class="tf-balance-tile">
+          <div class="tf-balance-tile-header"><strong>Updated Balances</strong></div>
+          <div class="tf-balance-grid">
+            <div class="tf-balance-item">
+              <span class="tf-balance-label">From ({{ st.sourceAccount }}) — Available</span>
+              <span class="tf-balance-value">{{ st.postTransferFromBalance || '—' }}</span>
+            </div>
+            <div class="tf-balance-item">
+              <span class="tf-balance-label">To ({{ st.toAccount }}) — Available</span>
+              <span class="tf-balance-value">{{ st.postTransferToBalance || '—' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tf-actions tf-actions--right tf-actions--mt">
+          <button class="tf-btn tf-btn--primary" (click)="onStartNewTransfer()">
+            New Transfer
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- ── Footer ─────────────────────────────────────────────────────── -->
+    <footer class="tf-footer">
+      IBM z/OS · CICS Banking Sample Application · ApplinX Web Emulation
+    </footer>
+
+  </div>
+</app-screen>
