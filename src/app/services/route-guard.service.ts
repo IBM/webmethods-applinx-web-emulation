@@ -77,9 +77,11 @@ export class RouteGuardService  {
       )
     } else if (url === 'webLogin' && !idPcode) {
       return true;
+    } else if (isLoggedIn && url === 'TransferFunds') {
+      return true;
     } else {
       this.router.navigate(['webLogin']);
-      return false; 
+      return false;
     }
   }
   

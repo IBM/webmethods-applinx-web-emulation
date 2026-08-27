@@ -59,6 +59,7 @@ import { DatePickerModule, IconModule, IconService } from 'carbon-components-ang
 import { UIShellModule } from 'carbon-components-angular/ui-shell';
 import { ButtonModule, InputModule, DropdownModule, TableModule, ThemeModule, DialogModule, SliderModule, ToggletipModule, ContextMenuModule, CheckboxModule, RadioModule, TooltipModule, NotificationModule, SelectModule, ProgressIndicatorModule  } from 'carbon-components-angular';
 import { LoginScreenComponent } from './generated-pages/LoginScreen/loginscreen.component';
+import { BankingMainMenuComponent } from './generated-pages/BankingMainMenu/bankingmainmenu.component';
 import { TransferFundsComponent } from './generated-pages/TransferFunds/transferfunds.component';
 
 // Icons
@@ -89,6 +90,7 @@ export function apiConfigFactory(): Configuration {
 
 export const generatedPages: any[] = [
   LoginScreenComponent,
+  BankingMainMenuComponent,
   TransferFundsComponent,
 ];
 
@@ -96,8 +98,8 @@ const routes: Routes = [
   { path: 'webLogin', component: WebLoginComponent, canActivate: [RouteGuardService] },
   { path: 'instant', component: ScreenComponent, canActivate: [RouteGuardService] },
   { path: 'LoginScreen', component: LoginScreenComponent, canActivate: [RouteGuardService] },
+  { path: 'BankingMainMenu', component: ScreenComponent, canActivate: [RouteGuardService] },
   { path: 'TransferFunds', component: TransferFundsComponent, canActivate: [RouteGuardService] },
-  { path: 'BankingMainMenu', component: TransferFundsComponent, canActivate: [RouteGuardService] },
   { path: 'DisplayAccount', component: TransferFundsComponent, canActivate: [RouteGuardService] },
   { path: '**', redirectTo: 'instant', pathMatch: 'full' }
 ];

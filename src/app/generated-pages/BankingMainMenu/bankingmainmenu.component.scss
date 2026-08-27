@@ -1,0 +1,23 @@
+:host {
+  display: contents;
+}
+
+.bm-combined-option {
+  position: fixed;
+  left: 170px;
+  top: 470px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  cursor: pointer;
+  color: #161616;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.bm-enter-button {
+  position: fixed;
+  right: 84px;
+  bottom: 54px;
+  z-index: 2;
+}

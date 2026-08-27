@@ -103,6 +103,13 @@ select {
     display: flex;
 }
 
+.banking-combined-option {
+    position: fixed;
+    left: 9rem;
+    top: 31.5rem;
+    z-index: 2;
+}
+
 .color-theme-style {
     padding: 19.5px;
 }

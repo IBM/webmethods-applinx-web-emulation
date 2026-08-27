@@ -30,7 +30,7 @@ import { LifecycleUserExits } from './user-exits/LifecycleUserExits';
 import { UserExitsEventThrowerService } from './services/user-exits-event-thrower.service';
 import { OAuth2HandlerService } from './services/oauth2-handler.service';
 import { MessagesService } from './services/messages.service';
-import { HostKeyTransformation, Cursor, SessionService, InfoService, MacroService } from '@ibm/applinx-rest-apis';
+import { HostKeyTransformation, Cursor, SessionService, InfoService, MacroService, InputField } from '@ibm/applinx-rest-apis';
 import { ModalpopupComponent } from './mini-components/transformations/modalpopup/modalpopup.component';
 import { GXUtils } from 'src/utils/GXUtils';
 import { MacroComponent } from './macro/macro.component';
@@ -100,6 +100,7 @@ export class AppComponent implements OnInit, OnDestroy {
   defaultHeaders = new HttpHeaders();
   selectedColor: string = '';
   macroMode: string = '';
+  showBankingCombinedOption = false;
 
   @ViewChild('container', { read: ViewContainerRef, static: true }) container: ViewContainerRef;
 
@@ -584,11 +585,23 @@ export class AppComponent implements OnInit, OnDestroy {
     if (component instanceof ScreenComponent) {
       this.userExitsEventThrower.clearEventListeners();
       this.userExitsEventThrower.addEventListener(new LifecycleUserExits(this.infoService, this.navigationService, this.storageService, this.keyboardMappingService, this.logger));
+      this.showBankingCombinedOption = this.screenHolderService.getRuntimeScreenName() === 'BankingMainMenu';
     } else if (component instanceof WebLoginComponent) {
       this.loginComponent = component;
       this.changeBackgroundColor('White');
       this.selectedColor = "White";
+      this.showBankingCombinedOption = false;
+    } else {
+      this.showBankingCombinedOption = false;
     }
+  }
+
+  onBankingCombinedFlow(): void {
+    const currentScreen = this.screenHolderService.getRuntimeScreenName();
+    if (!this.storageService.isConnected() || currentScreen !== 'BankingMainMenu') {
+      return;
+    }
+    this.navigationService.redirectToSamePath('TransferFunds');
   }
 
   onDeactivate() {

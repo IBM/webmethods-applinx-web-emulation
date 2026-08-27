@@ -146,6 +146,16 @@
       </div>
     }
   </div>
+
+  @if (showBankingCombinedOption) {
+    <button
+      ibmButton="ghost"
+      size="sm"
+      class="banking-combined-option"
+      (click)="onBankingCombinedFlow()">
+      9. Check Balance + Transfer Funds
+    </button>
+  }
   <!-- *************************** For mobile *************************** -->
   @if (isSmallScreen()) {
     <mat-sidenav-container>
