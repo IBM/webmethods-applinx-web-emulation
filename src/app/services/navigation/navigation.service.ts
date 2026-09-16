@@ -132,11 +132,12 @@ export class NavigationService {
     }
     this.getHostScreenNumber().subscribe (
       screenNumberResponse => {
-        if (screenNumberResponse.screenNumber  > this.getScreenId()) {
+        if (this.getScreenId() != -1 && screenNumberResponse.screenNumber  > this.getScreenId()) {
           //Host screen id is newer than current screen, probably intermidiate screen , updating the current screen without sending key
           this.isScreenUpdated.next(true); 
           return;
         }
+        this.setScreenId(screenNumberResponse.screenNumber);
         this.sendKeysInternal (sendKey)
       },
     );
@@ -154,12 +155,12 @@ export class NavigationService {
     const shouldReturnScreen = true;
     const returnScreen = new ReturnScreen (shouldReturnScreen);
     const sendKeysRequest = new SendKeysRequest(sendKey, this.cursorPosition, this.screenSize, Array.from(this.sendableFields.values()),returnScreen);//,returnScreen
-    this.userExitsEventThrower.firePreSendKey(sendKeysRequest); 
-    this.tearDown();     
+    this.userExitsEventThrower.firePreSendKey(sendKeysRequest);
+    this.tearDown();
     this.screenService.updateScreen(sendKeysRequest, this.screenId, this.storageService.getAuthToken()).subscribe(newScreen => {
-      // this.tearDown();      
+      // this.tearDown();
       this.userExitsEventThrower.firePostSendKey(newScreen);
-      this.screenObjectUpdated.next (newScreen);      
+      this.screenObjectUpdated.next(newScreen);
       this.checkForIntermidateScreen();
       if(this.sharedService.getMacroRecordFlag()){
         this.sharedService.recordMacro(sendKeysRequest);
