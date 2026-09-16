@@ -15,7 +15,6 @@
     "@angular-slider/ngx-slider": "2.0.4",
     "@angular/animations": "20.3.31",
     "@angular/cdk": "20.0.4",
-    "@angular/cli": "20.3.37",
     "@angular/common": "20.3.31",
     "@angular/core": "20.3.31",
     "@angular/forms": "20.3.31",
@@ -39,6 +38,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "20.3.37",
+    "@angular/cli": "20.3.37",
     "@angular-eslint/builder": "18.4.0",
     "@angular-eslint/eslint-plugin": "18.4.0",
     "@angular-eslint/eslint-plugin-template": "18.4.0",
