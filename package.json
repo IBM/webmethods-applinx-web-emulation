@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "20.3.37",
-    "@angular/cli": "20.3.37",
+    "@angular/cli": "22.2.3",
     "@angular-eslint/builder": "18.4.0",
     "@angular-eslint/eslint-plugin": "18.4.0",
     "@angular-eslint/eslint-plugin-template": "18.4.0",
