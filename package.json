@@ -87,6 +87,7 @@
     "proxy-addr": "^2.0.8",
     "shell-quote": "^1.11.0",
     "launch-editor": "^2.14.2",
-    "webpack-dev-middleware": "^7.4.6"
+    "webpack-dev-middleware": "^7.4.6",
+    "source-map-js": "^1.2.2"
   }
 }
