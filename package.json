@@ -89,6 +89,7 @@
     "launch-editor": "^2.14.2",
     "webpack-dev-middleware": "^7.4.6",
     "source-map-js": "^1.2.2",
-    "systeminformation": "^5.33.16"
+    "systeminformation": "^5.33.16",
+    "qs": "^6.16.1"
   }
 }
