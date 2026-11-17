@@ -99,7 +99,11 @@ export class ScreenLockerService {
       if (currentFavicon){
         currentFavicon.remove();
       }
-      document.querySelector('head').insertAdjacentHTML('beforeend', '<link rel="icon" href="' + this.faviconFrames[this.imageCounter] + '" type="image/gif">');
+      const newFavicon = document.createElement('link');
+      newFavicon.rel = 'icon';
+      newFavicon.href = this.faviconFrames[this.imageCounter];
+      newFavicon.type = 'image/gif';
+      document.head.appendChild(newFavicon);
 
       if (this.imageCounter === this.faviconFrames.length - 1) {
         this.imageCounter = 0;
@@ -121,7 +125,11 @@ export class ScreenLockerService {
     const currentFavicon = document.querySelector('link[rel=\'icon\']');
     if (currentFavicon){
       currentFavicon.remove();
-      document.querySelector('head').insertAdjacentHTML('beforeend', '<link rel="icon" href="./assets/images/favicon.ico" type="image/x-icon">');
+      const defaultFavicon = document.createElement('link');
+      defaultFavicon.rel = 'icon';
+      defaultFavicon.href = './assets/images/favicon.ico';
+      defaultFavicon.type = 'image/x-icon';
+      document.head.appendChild(defaultFavicon);
     }
     this.imageCounter = 0;
     });

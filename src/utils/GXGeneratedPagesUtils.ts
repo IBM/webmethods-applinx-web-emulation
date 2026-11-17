@@ -150,7 +150,7 @@ export class GXGeneratedPagesUtils {
           fields.forEach(f => {
             const el = document.getElementById(f.name);
             if (el instanceof HTMLInputElement) el.value = f.content;
-            else if (el) el.innerHTML = f.content;
+            else if (el) el.textContent = f.content;
           })
         })
       )

@@ -527,14 +527,24 @@ export class AppComponent implements OnInit, OnDestroy {
     let height = window.screen.availHeight - 400;
     let width = window.screen.availWidth - 750;
     const popupWindow = window.open('', '', `height=${height},width=${width},top=${height / 2},left=${width / 2}`);
-    popupWindow.document.open();
-    popupWindow.document.write('<div class="copyWrapper crosshair" style="white-space: pre !important;"><pre>');
-    printDetails.forEach(element => {
-      popupWindow.document.write("<div>" + element + "</div>");
-    })
-    popupWindow.document.write('</pre></div>')
-    popupWindow.print();
-    popupWindow.close();
+    if (popupWindow) {
+      const doc = popupWindow.document;
+      const wrapper = doc.createElement('div');
+      wrapper.className = 'copyWrapper crosshair';
+      wrapper.style.whiteSpace = 'pre !important';
+
+      const pre = doc.createElement('pre');
+      printDetails.forEach(element => {
+        const lineDiv = doc.createElement('div');
+        lineDiv.textContent = element;
+        pre.appendChild(lineDiv);
+      });
+      wrapper.appendChild(pre);
+
+      doc.body.replaceChildren(wrapper);
+      popupWindow.print();
+      popupWindow.close();
+    }
   }
 
   formatCopyPage(formattedArray, printFlag) {

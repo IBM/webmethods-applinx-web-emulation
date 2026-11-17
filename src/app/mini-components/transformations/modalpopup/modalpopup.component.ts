@@ -113,9 +113,25 @@ export class ModalpopupComponent implements OnInit {
       }
     }
     this.copiedText.forEach((element, index) => {
-      // if (element.trim() != "") {
-      lineArray[lineObjArray[index].tabIndex].innerHTML = GXUtils.replaceBetween(lineArray[lineObjArray[index].tabIndex]["innerText"], startIndex, endIndex, "<span class='customselect'>" + element + "</span>")
-      //  }
+      if (lineObjArray[index] && lineArray[lineObjArray[index].tabIndex]) {
+        const lineEl = lineArray[lineObjArray[index].tabIndex] as HTMLElement;
+        const fullText = lineEl.innerText || lineEl.textContent || '';
+        const before = fullText.substring(0, startIndex);
+        const selected = fullText.substring(startIndex, endIndex);
+        const after = fullText.substring(endIndex);
+
+        lineEl.textContent = '';
+        if (before) {
+          lineEl.appendChild(document.createTextNode(before));
+        }
+        const highlightSpan = document.createElement('span');
+        highlightSpan.className = 'customselect';
+        highlightSpan.textContent = selected || element;
+        lineEl.appendChild(highlightSpan);
+        if (after) {
+          lineEl.appendChild(document.createTextNode(after));
+        }
+      }
     });
   }
 
